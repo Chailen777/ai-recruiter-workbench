@@ -800,6 +800,21 @@ tr:hover .ui-avatar {
   .app-content-grid {
     gap: 18px;
     padding: 18px;
+    grid-template-columns: 1fr;
+  }
+
+  .app-right-panel {
+    position: static;
+    order: 99;
+    width: 100% !important;
+    min-width: unset !important;
+  }
+
+  .app-right-panel.is-collapsed {
+    width: 100% !important;
+    min-width: unset !important;
+    display: flex;
+    justify-content: flex-end;
   }
 
   .app-sidebar {
