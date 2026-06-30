@@ -16,6 +16,27 @@ ensureWAL()
 export const metadata: Metadata = {
   description: '一人猎头工作流操作系统',
   title: 'AI超级猎头工作台 V0.2',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    title: 'AI超级猎头工作台',
+    statusBarStyle: 'default',
+  },
+  icons: {
+    icon: [
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 }
 
 export const viewport: Viewport = {
@@ -52,6 +73,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html data-theme="light" lang="zh-CN" suppressHydrationWarning>
       <head>
+        <meta name="theme-color" content="#2563eb" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="AI超级猎头工作台" />
+        <meta name="application-name" content="AI超级猎头工作台" />
+        <meta name="msapplication-TileColor" content="#2563eb" />
         <Script
           dangerouslySetInnerHTML={{ __html: themeScript }}
           id="theme-script"
