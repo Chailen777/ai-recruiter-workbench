@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useTransition, useMemo, useCallback } from 'react'
+import { useRef, useState, useTransition, useMemo, useCallback, useEffect } from 'react'
 import { addNote, deleteNote, editNote, togglePinNote, toggleDoneNote } from '@/app/actions'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useToast } from '@/components/providers/ToastProvider'
@@ -120,6 +120,46 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   const [articlePerson, setArticlePerson] = useState('')
   const diaryEditorRef = useRef<HTMLDivElement>(null)
 
+  // ── 日记草稿自动保存（localStorage）──
+  const [draftSavedAt, setDraftSavedAt] = useState<string>('')
+  const [draftVersion, setDraftVersion] = useState(0)
+  const DRAFT_KEY = 'note-diary-draft'
+
+  // 挂载时恢复草稿
+  useEffect(() => {
+    if (inputType !== 'diary') return
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (raw && diaryEditorRef.current) {
+        const draft = JSON.parse(raw)
+        if (draft.html) {
+          diaryEditorRef.current.innerHTML = draft.html
+          setArticleType(draft.articleType ?? 'diary')
+          setArticlePerson(draft.articlePerson ?? '')
+        }
+      }
+    } catch { /* ignore */ }
+  }, [inputType])
+
+  // 输入时自动保存草稿（debounce 2s）
+  useEffect(() => {
+    if (inputType !== 'diary') return
+    const timer = setTimeout(() => {
+      const html = diaryEditorRef.current?.innerHTML ?? ''
+      if (!html.trim()) return
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          html,
+          articleType,
+          articlePerson,
+          ts: Date.now(),
+        }))
+        setDraftSavedAt(new Date().toLocaleTimeString('zh-CN', { hour12: false }))
+      } catch { /* ignore */ }
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [inputType, articleType, articlePerson, draftVersion])
+
   function handleSubmit() {
     // 日记类型从 contentEditable 获取内容
     let content = inputValue.trim()
@@ -161,6 +201,8 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         setArticleType('diary')
         setArticlePerson('')
         if (diaryEditorRef.current) diaryEditorRef.current.innerHTML = ''
+        try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
+        setDraftSavedAt('')
         success('笔记已保存')
         onNotesChanged?.()
       } catch (err) {
@@ -494,7 +536,25 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
               <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('insertOrderedList') }} title="有序列表" className="note-diary-tool-btn">1. 列表</button>
               <span className="note-diary-tool-divider" />
               <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('formatBlock', '<blockquote>') }} title="引用" className="note-diary-tool-btn">❝</button>
+              <label className="note-diary-tool-btn note-diary-color-btn" title="文字颜色">
+                <span className="note-diary-color-icon">A</span>
+                <input
+                  type="color"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onChange={(e) => execCmd('foreColor', e.target.value)}
+                  className="note-diary-color-input"
+                />
+              </label>
               <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('removeFormat') }} title="清除格式" className="note-diary-tool-btn">✕格式</button>
+              <button
+                type="button"
+                className="note-diary-tool-btn note-diary-save-btn"
+                disabled={isPending}
+                onClick={(e) => { e.preventDefault(); handleSubmit() }}
+                title="保存日记"
+              >
+                {isPending ? '保存中…' : '💾 保存'}
+              </button>
             </div>
           </div>
         )}
@@ -507,6 +567,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
             contentEditable
             suppressContentEditableWarning
             data-placeholder="写下日记或文章…支持加粗、斜体、标题、列表等排版…"
+            onInput={() => setDraftVersion(v => v + 1)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault()
@@ -529,7 +590,9 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
 
         <div className="note-input-footer">
           {inputType === 'diary' ? (
-            <span className="note-char-count">Ctrl+Enter 保存</span>
+            <span className="note-char-count note-draft-status">
+              {draftSavedAt ? `✓ 草稿已自动保存 ${draftSavedAt}` : '输入时自动保存草稿…'}
+            </span>
           ) : (
             <span className="note-char-count">{inputValue.length}/500</span>
           )}
@@ -842,6 +905,41 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
     : 0
   const diaryIsLong = diaryPlainLength > 120
 
+  // ── 日记编辑自动保存 ──
+  const [autoSavedAt, setAutoSavedAt] = useState<string>('')
+  const [autoSaving, setAutoSaving] = useState(false)
+  const [contentVersion, setContentVersion] = useState(0) // 每次 onInput 递增，触发 autoSave 计时
+  const lastSavedHtmlRef = useRef<string>(note.content)
+
+  /** 自动保存到服务器（静默，不关闭编辑模式） */
+  const autoSaveDiary = useCallback(async () => {
+    if (note.type !== 'diary' || !isEditing) return
+    const html = (editDiaryRef.current?.innerHTML ?? '').trim()
+    if (!html || html === lastSavedHtmlRef.current) return
+    setAutoSaving(true)
+    try {
+      const fd = new FormData()
+      fd.set('id', String(note.id))
+      fd.set('content', html)
+      fd.set('articleType', editArticleType)
+      if (editArticlePerson.trim()) fd.set('articlePerson', editArticlePerson.trim())
+      await editNote(fd)
+      lastSavedHtmlRef.current = html
+      setAutoSavedAt(new Date().toLocaleTimeString('zh-CN', { hour12: false }))
+    } catch (err) {
+      console.error('自动保存失败:', err)
+    } finally {
+      setAutoSaving(false)
+    }
+  }, [note.id, note.type, isEditing, editArticleType, editArticlePerson])
+
+  // 编辑模式下，内容变化后 4 秒自动保存
+  useEffect(() => {
+    if (note.type !== 'diary' || !isEditing) return
+    const timer = setTimeout(() => { autoSaveDiary() }, 4000)
+    return () => clearTimeout(timer)
+  }, [note.type, isEditing, autoSaveDiary, contentVersion])
+
   /** 通用：构造 FormData → startTransition 调用 server action → 通知刷新 */
   function runAction(fn: (fd: FormData) => Promise<void>) {
     return () => {
@@ -1029,7 +1127,25 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                 <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('insertOrderedList') }} title="有序列表" className="note-diary-tool-btn">1. 列表</button>
                 <span className="note-diary-tool-divider" />
                 <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('formatBlock', '<blockquote>') }} title="引用" className="note-diary-tool-btn">❝</button>
+                <label className="note-diary-tool-btn note-diary-color-btn" title="文字颜色">
+                  <span className="note-diary-color-icon">A</span>
+                  <input
+                    type="color"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onChange={(e) => execEditCmd('foreColor', e.target.value)}
+                    className="note-diary-color-input"
+                  />
+                </label>
                 <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('removeFormat') }} title="清除格式" className="note-diary-tool-btn">✕格式</button>
+                <button
+                  type="button"
+                  className="note-diary-tool-btn note-diary-save-btn"
+                  disabled={isPending || autoSaving}
+                  onClick={(e) => { e.preventDefault(); handleEditSave() }}
+                  title="保存"
+                >
+                  {isPending || autoSaving ? '保存中…' : '💾 保存'}
+                </button>
               </div>
               <div
                 ref={editDiaryRef}
@@ -1038,7 +1154,18 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                 suppressContentEditableWarning
                 data-placeholder="编辑日记内容…"
                 dangerouslySetInnerHTML={{ __html: note.content }}
+                onInput={() => setContentVersion(v => v + 1)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault()
+                    handleEditSave()
+                  }
+                }}
               />
+              {/* 自动保存状态提示 */}
+              <div className="note-diary-autosave-status">
+                {autoSaving ? '⏳ 正在自动保存…' : autoSavedAt ? `✓ 已自动保存 ${autoSavedAt}` : '✏️ 编辑时自动保存…'}
+              </div>
             </>
           ) : (
             <textarea
@@ -1051,7 +1178,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
             />
           )}
           <div className="note-edit-actions">
-            <span className="note-edit-char-count">{note.type === 'diary' ? 'Ctrl+Enter 保存' : `${editContent.length}/500`}</span>
+            <span className="note-edit-char-count">{note.type === 'diary' ? '' : `${editContent.length}/500`}</span>
             <button
               type="button"
               className="note-edit-btn note-edit-save"
