@@ -808,7 +808,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
 
         {/* 沟通专用表单字段 */}
         {inputType === 'log' && (
-          <div className="note-todo-form" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)', borderColor: '#bbf7d0' }}>
+          <div className="note-todo-form note-log-form">
             <div className="note-appt-row">
               <label className="note-appt-label">人物</label>
               <input

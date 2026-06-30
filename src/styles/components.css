@@ -3971,6 +3971,12 @@
   }
 }
 
+/* ── 沟通表单（黑底白线框）── */
+.note-log-form {
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 .note-todo-freq-label {
   font-size: 12px;
   color: var(--ds-color-text-secondary, #6b7280);
