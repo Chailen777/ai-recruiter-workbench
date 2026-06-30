@@ -25,7 +25,7 @@ body {
 
 /* Brand row: logo + text + toggle button inline */
 .app-brand {
-  align-items: center;
+  align-items: flex-end;
   border-bottom: 1px solid var(--sidebar-border);
   display: flex;
   gap: 10px;
@@ -63,8 +63,9 @@ body {
   color: var(--sidebar-text-muted);
 }
 
-/* Toggle button: now inline with brand */
+/* Toggle button: aligned with brand text (bottom of brand block) */
 .app-sidebar-toggle {
+  align-self: flex-end;
   background: none;
   border: 1px solid var(--sidebar-border);
   border-radius: 6px;
@@ -77,6 +78,7 @@ body {
   width: 28px;
   padding: 0;
   flex-shrink: 0;
+  margin-bottom: 2px;
   transition:
     background 0.15s ease,
     color 0.15s ease;
