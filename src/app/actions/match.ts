@@ -171,7 +171,7 @@ export async function quickMatch(
     const candidate = await prisma.candidate.findUnique({ where: { id: sourceId } })
     if (!candidate) throw new Error('候选人不存在')
 
-    const jobs = await prisma.job.findMany({ orderBy: { updatedAt: 'desc' } })
+    const jobs = await prisma.job.findMany({ orderBy: { updatedAt: 'desc' }, take: 500 })
     const savedMatches = await prisma.match.findMany({
       where: { candidateId: sourceId },
       select: { jobId: true, status: true },
@@ -239,7 +239,7 @@ export async function quickMatch(
     const job = await prisma.job.findUnique({ where: { id: sourceId } })
     if (!job) throw new Error('岗位不存在')
 
-    const candidates = await prisma.candidate.findMany({ orderBy: { updatedAt: 'desc' } })
+    const candidates = await prisma.candidate.findMany({ orderBy: { updatedAt: 'desc' }, take: 500 })
     const savedMatches = await prisma.match.findMany({
       where: { jobId: sourceId },
       select: { candidateId: true, status: true },
