@@ -29,6 +29,8 @@ export type NoteData = {
   appointmentPerson?: string | null
   articleType?: string | null
   articlePerson?: string | null
+  // 沟通字段
+  logPerson?: string | null
   // 待办重复字段
   scheduledDate?: Date | null
   repeatType?: string | null
@@ -77,7 +79,7 @@ async function findFileById(noteId: number): Promise<string | null> {
 
 function typeLabel(type: string): string {
   if (type === 'todo') return '待办'
-  if (type === 'log') return '沟通记录'
+  if (type === 'log') return '沟通'
   if (type === 'appointment') return '预约'
   if (type === 'diary') return '日记'
   return '随笔'
@@ -177,6 +179,11 @@ function buildMdContent(note: NoteData): string {
     }
     if (note.articlePerson) {
       lines.push(`| 👤 人物 | ${note.articlePerson} |`)
+    }
+  }
+  if (note.type === 'log') {
+    if (note.logPerson) {
+      lines.push(`| 👤 沟通人物 | ${note.logPerson} |`)
     }
   }
   lines.push(`| 🕐 创建时间 | ${note.createdAt.toLocaleString('zh-CN', { hour12: false })} |`)

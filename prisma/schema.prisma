@@ -361,6 +361,8 @@ model Note {
   // 日记字段 (diary 专用)
   articleType   String?  // 文章类型: diary | study | report | web | reading | lecture
   articlePerson String?  // 人物
+  // 沟通字段 (log 专用)
+  logPerson     String?  // 沟通人物
   // 待办重复字段 (todo 专用)
   scheduledDate    DateTime?  // 计划执行时间（年月日 + 时分）
   repeatType       String?    // 重复类型: weekly | monthly | yearly

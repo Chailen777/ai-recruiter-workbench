@@ -1025,6 +1025,10 @@
   white-space: nowrap;
 }
 
+.notes-calendar-todo-repeat {
+  font-size: 12px;
+}
+
 .notes-calendar-appt-done {
   margin-left: auto;
   font-size: 14px;
@@ -3967,8 +3971,22 @@
   border: 1px solid var(--ds-color-border, #e5e7eb);
   border-radius: 4px;
   font-size: 12px;
-  background: var(--ds-color-surface, #fff);
-  color: var(--ds-color-text-primary, #111827);
+  background: #ffffff;
+  color: #111827;
+}
+
+[data-theme='dark'] .note-todo-freq-input {
+  background: #1f2937;
+  color: #f3f4f6;
+  border-color: #374151;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .note-todo-freq-input {
+    background: #1f2937;
+    color: #f3f4f6;
+    border-color: #374151;
+  }
 }
 
 /* ── 待办信息卡 ── */

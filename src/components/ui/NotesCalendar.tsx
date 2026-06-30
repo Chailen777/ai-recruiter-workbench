@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { getNotesCalendarData, getAppointmentList, type CalendarDay, type AppointmentListItem } from '@/app/actions'
+import { getNotesCalendarData, getAppointmentList, getTodoList, type CalendarDay, type AppointmentListItem, type TodoListItem } from '@/app/actions'
 
 type Props = {
   onDateSelect: (dateStr: string | null) => void
@@ -65,6 +65,9 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
   // 预约列表
   const [appointments, setAppointments] = useState<AppointmentListItem[]>([])
 
+  // 待办列表
+  const [todos, setTodos] = useState<TodoListItem[]>([])
+
   // 日历展开/收起（给预约日程腾空间）
   const [calExpanded, setCalExpanded] = useState(true)
 
@@ -77,7 +80,7 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
     setOpen(true)
     setLoading(true)
     try {
-      const [data, appts] = await Promise.all([
+      const [data, appts, todoList] = await Promise.all([
         getNotesCalendarData(
           entityType as Parameters<typeof getNotesCalendarData>[0],
           entityId
@@ -86,9 +89,14 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
           entityType as Parameters<typeof getAppointmentList>[0],
           entityId
         ),
+        getTodoList(
+          entityType as Parameters<typeof getTodoList>[0],
+          entityId
+        ),
       ])
       setCalendarData(data)
       setAppointments(appts)
+      setTodos(todoList)
     } catch { /* ignore */ }
     setLoading(false)
   }, [entityType, entityId])
@@ -310,6 +318,46 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
                       <div className="notes-calendar-appt-content">{a.content}</div>
                     )}
                   </div>
+                  )
+                }
+                return items
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* ── 待办列表 ── */}
+        {todos.length > 0 && (
+          <div className="notes-calendar-appt-section">
+            <h3 className="notes-calendar-appt-title">📋 待办日程</h3>
+            <div className="notes-calendar-appt-list">
+              {(() => {
+                let lastDate = ''
+                const items: React.ReactNode[] = []
+                for (const t of todos) {
+                  if (t.date !== lastDate) {
+                    lastDate = t.date
+                    items.push(
+                      <div key={`todo-date-${t.date}`} className="notes-calendar-appt-date-header">
+                        {formatApptDate(t.date)}
+                        <span className="notes-calendar-appt-date-sub">{t.date}</span>
+                      </div>
+                    )
+                  }
+                  items.push(
+                    <div key={t.id} className={`notes-calendar-appt-item${t.done ? ' is-done' : ''}`}>
+                      <div className="notes-calendar-appt-item-row">
+                        <span className="notes-calendar-appt-time">{t.time}</span>
+                        {t.repeatType && <span className="notes-calendar-todo-repeat">🔄</span>}
+                        {t.entityName && (
+                          <span className="notes-calendar-appt-entity">{t.entityName}</span>
+                        )}
+                        {t.done && <span className="notes-calendar-appt-done">✓</span>}
+                      </div>
+                      {t.content && (
+                        <div className="notes-calendar-appt-content">{t.content}</div>
+                      )}
+                    </div>
                   )
                 }
                 return items

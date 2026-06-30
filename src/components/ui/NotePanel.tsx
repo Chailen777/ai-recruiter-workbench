@@ -24,6 +24,8 @@ export type NoteItem = {
   // 日记字段
   articleType?: string | null
   articlePerson?: string | null
+  // 沟通字段
+  logPerson?: string | null
   // 待办重复字段
   scheduledDate?: string | null
   repeatType?: string | null
@@ -50,7 +52,7 @@ type NotePanelProps = {
 
 const TYPE_LABELS: Record<string, string> = {
   todo: '待办',
-  log: '沟通记录',
+  log: '沟通',
   note: '随笔',
   appointment: '预约',
   diary: '日记',
@@ -147,6 +149,9 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   const [articlePerson, setArticlePerson] = useState('')
   const diaryEditorRef = useRef<HTMLDivElement>(null)
 
+  // ── 沟通表单字段 ──
+  const [logPerson, setLogPerson] = useState('')
+
   // ── 待办表单字段 ──
   const [todoDate, setTodoDate] = useState('')       // datetime-local 格式
   const [todoRepeat, setTodoRepeat] = useState('')   // '' | weekly | monthly | yearly
@@ -242,6 +247,10 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       fd.set('articleType', articleType)
       if (articlePerson.trim()) fd.set('articlePerson', articlePerson.trim())
     }
+    // 沟通字段
+    if (inputType === 'log') {
+      if (logPerson.trim()) fd.set('logPerson', logPerson.trim())
+    }
     // 待办字段
     if (inputType === 'todo') {
       if (todoDate) fd.set('scheduledDate', todoDate)
@@ -266,6 +275,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         setApptPerson('')
         setArticleType('diary')
         setArticlePerson('')
+        setLogPerson('')
         setTodoDate('')
         setTodoRepeat('')
         setTodoFreq(1)
@@ -515,7 +525,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
             )}
           </button>
 
-          {/* 沟通记录 */}
+          {/* 沟通 */}
           <button
             type="button"
             className={`note-type-tab ${filterType === 'log' ? 'active' : ''} ${TYPE_COLORS.log}`}
@@ -785,6 +795,22 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
           </div>
         )}
 
+        {/* 沟通专用表单字段 */}
+        {inputType === 'log' && (
+          <div className="note-todo-form" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)', borderColor: '#bbf7d0' }}>
+            <div className="note-appt-row">
+              <label className="note-appt-label">人物</label>
+              <input
+                type="text"
+                className="note-appt-input"
+                value={logPerson}
+                onChange={(e) => setLogPerson(e.target.value)}
+                placeholder="沟通对象姓名（选填）"
+              />
+            </div>
+          </div>
+        )}
+
         {/* 输入框 — 日记用富文本编辑器，其他用 textarea */}
         {inputType === 'diary' ? (
           <div
@@ -1029,7 +1055,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
             <div className="note-empty">
               <span className="note-empty-icon">✦</span>
               <p>{searchTerm ? `没有匹配"${searchTerm}"的笔记` : filterDate ? `"${filterDate}" 当天没有记录` : filterType === 'all' ? '还没有记录' : `没有"${TYPE_LABELS[filterType] ?? filterType}"记录`}</p>
-              <p className="note-empty-hint">{searchTerm ? '尝试其他关键词' : filterDate ? '选择其他日期查看笔记' : '用上面的输入框添加待办、沟通记录或随笔'}</p>
+              <p className="note-empty-hint">{searchTerm ? '尝试其他关键词' : filterDate ? '选择其他日期查看笔记' : '用上面的输入框添加待办、沟通或随笔'}</p>
             </div>
           ) : (
             searchFiltered.map((note) => (
@@ -1084,7 +1110,7 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
       }
     } else if (filterType === 'all') {
       title = '还没有记录'
-      hint = '用上面的输入框添加待办、沟通记录或随笔'
+      hint = '用上面的输入框添加待办、沟通或随笔'
     }
 
     return (
@@ -1293,6 +1319,8 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
   const [editArticleType, setEditArticleType] = useState(note.articleType ?? 'diary')
   const [editArticlePerson, setEditArticlePerson] = useState(note.articlePerson ?? '')
   const editDiaryRef = useRef<HTMLDivElement>(null)
+  // 沟通编辑状态
+  const [editLogPerson, setEditLogPerson] = useState(note.logPerson ?? '')
   // 待办编辑状态
   const [editTodoDate, setEditTodoDate] = useState(
     note.scheduledDate ? note.scheduledDate.slice(0, 16) : ''
@@ -1430,6 +1458,9 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
           fd.set('articleType', editArticleType)
           if (editArticlePerson.trim()) fd.set('articlePerson', editArticlePerson.trim())
         }
+        if (note.type === 'log') {
+          if (editLogPerson.trim()) fd.set('logPerson', editLogPerson.trim())
+        }
         if (note.type === 'todo' && editTodoDate) {
           fd.set('scheduledDate', editTodoDate)
         }
@@ -1501,6 +1532,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
     setEditApptPerson(note.appointmentPerson ?? '')
     setEditArticleType(note.articleType ?? 'diary')
     setEditArticlePerson(note.articlePerson ?? '')
+    setEditLogPerson(note.logPerson ?? '')
     setEditTodoDate(note.scheduledDate ? note.scheduledDate.slice(0, 16) : '')
     setIsEditing(false)
     setIsEditFullscreen(false)

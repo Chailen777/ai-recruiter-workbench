@@ -142,6 +142,7 @@ async function toNoteData(note: {
   appointmentPerson?: string | null
   articleType?: string | null
   articlePerson?: string | null
+  logPerson?: string | null
   scheduledDate?: Date | null
   repeatType?: string | null
   repeatFrequency?: number | null
@@ -164,6 +165,7 @@ async function toNoteData(note: {
     appointmentPerson: note.appointmentPerson ?? null,
     articleType: note.articleType ?? null,
     articlePerson: note.articlePerson ?? null,
+    logPerson: note.logPerson ?? null,
     scheduledDate: note.scheduledDate ?? null,
     repeatType: note.repeatType ?? null,
     repeatFrequency: note.repeatFrequency ?? null,
@@ -194,6 +196,7 @@ export async function getNotes(entityType: EntityType, entityId: number) {
       appointmentPerson: n.appointmentPerson ?? null,
       articleType: n.articleType ?? null,
       articlePerson: n.articlePerson ?? null,
+      logPerson: n.logPerson ?? null,
       scheduledDate: n.scheduledDate?.toISOString() ?? null,
       repeatType: n.repeatType ?? null,
       repeatFrequency: n.repeatFrequency ?? null,
@@ -226,6 +229,9 @@ export async function addNote(formData: FormData): Promise<AddNoteResult> {
     // 日记字段
     const articleType = type === 'diary' ? (formData.get('articleType') as string) || null : null
     const articlePerson = type === 'diary' ? (formData.get('articlePerson') as string)?.trim() || null : null
+
+    // 沟通字段
+    const logPerson = type === 'log' ? (formData.get('logPerson') as string)?.trim() || null : null
 
     // 待办重复字段
     const isTodo = type === 'todo'
@@ -297,6 +303,7 @@ export async function addNote(formData: FormData): Promise<AddNoteResult> {
       ...(appointmentPerson ? { appointmentPerson } : {}),
       ...(articleType ? { articleType } : {}),
       ...(articlePerson ? { articlePerson } : {}),
+      ...(logPerson ? { logPerson } : {}),
       ...(isTodo && scheduledDateStr ? { scheduledDate: new Date(scheduledDateStr) } : {}),
     })
 
@@ -412,6 +419,10 @@ export async function editNote(formData: FormData) {
   const articleType = isDiary ? (formData.get('articleType') as string) || null : undefined
   const articlePerson = isDiary ? (formData.get('articlePerson') as string)?.trim() || null : undefined
 
+  // 沟通字段（仅 log 类型才更新）
+  const isLog = note.type === 'log'
+  const logPerson = isLog ? (formData.get('logPerson') as string)?.trim() || null : undefined
+
   const data: Record<string, unknown> = { content }
   if (appointmentTime !== undefined) data.appointmentTime = appointmentTime ? new Date(appointmentTime) : null
   if (appointmentLocation !== undefined) data.appointmentLocation = appointmentLocation
@@ -419,6 +430,7 @@ export async function editNote(formData: FormData) {
   if (appointmentPerson !== undefined) data.appointmentPerson = appointmentPerson
   if (articleType !== undefined) data.articleType = articleType
   if (articlePerson !== undefined) data.articlePerson = articlePerson
+  if (logPerson !== undefined) data.logPerson = logPerson
 
   const updated = await prisma.note.update({ where: { id }, data })
 
@@ -601,6 +613,7 @@ export async function getAllNotes() {
       appointmentPerson: n.appointmentPerson ?? null,
       articleType: n.articleType ?? null,
       articlePerson: n.articlePerson ?? null,
+      logPerson: n.logPerson ?? null,
       scheduledDate: n.scheduledDate?.toISOString() ?? null,
       repeatType: n.repeatType ?? null,
       repeatFrequency: n.repeatFrequency ?? null,
@@ -707,13 +720,16 @@ export async function getNotesCalendarData(entityType?: EntityType, entityId?: n
 
     const notes = await prisma.note.findMany({ where, orderBy: { createdAt: 'desc' } })
 
-    // 按日期分组统计：预约用 appointmentTime，其余用 createdAt
+    // 按日期分组统计：预约用 appointmentTime，待办用 scheduledDate，其余用 createdAt
     const dayMap = new Map<string, CalendarDay>()
 
     for (const n of notes) {
-      const targetDate = n.type === 'appointment' && n.appointmentTime
-        ? n.appointmentTime
-        : n.createdAt
+      const targetDate =
+        n.type === 'appointment' && n.appointmentTime
+          ? n.appointmentTime
+          : n.type === 'todo' && n.scheduledDate
+          ? n.scheduledDate
+          : n.createdAt
       const dateStr = targetDate.toISOString().slice(0, 10) // 'YYYY-MM-DD'
       let day = dayMap.get(dateStr)
       if (!day) {
@@ -721,13 +737,11 @@ export async function getNotesCalendarData(entityType?: EntityType, entityId?: n
         dayMap.set(dateStr, day)
       }
       if (n.type === 'todo') {
-        if (n.done) {
-          day.todoCount++
-        } else {
-          day.todoCount++
+        day.todoCount++
+        if (!n.done) {
           // 未完成的 todo 也计入 futureTodos（如果日期在未来）
           const now = new Date()
-          if (n.createdAt > now) day.futureTodos++
+          if (targetDate > now) day.futureTodos++
         }
       } else if (n.type === 'log') {
         day.logCount++
@@ -818,6 +832,78 @@ export async function getAppointmentList(entityType?: EntityType, entityId?: num
           entityType: a.entityType,
         }
       })
+  } catch {
+    return []
+  }
+}
+
+// ── 待办列表：按计划时间升序返回所有待办详情 ──────
+export type TodoListItem = {
+  id: number
+  date: string           // YYYY-MM-DD
+  time: string           // HH:mm
+  fullTime: string       // ISO string
+  content: string
+  done: boolean
+  repeatType: string | null
+  repeatGroupId: string | null
+  entityName: string | null
+  entityType: string
+}
+
+export async function getTodoList(entityType?: EntityType, entityId?: number): Promise<TodoListItem[]> {
+  try {
+    const where: Record<string, unknown> = { type: 'todo', scheduledDate: { not: null } }
+    if (entityType && entityType !== 'global') {
+      where.entityType = entityType
+      where.entityId = entityId ?? 0
+    }
+
+    const todos = await prisma.note.findMany({
+      where,
+      orderBy: { scheduledDate: 'asc' },
+      select: {
+        id: true,
+        content: true,
+        done: true,
+        entityType: true,
+        entityId: true,
+        scheduledDate: true,
+        repeatType: true,
+        repeatGroupId: true,
+      },
+    })
+
+    // 批量解析实体名称（去重）
+    const entityKeys = new Set<string>()
+    for (const t of todos) {
+      if (t.entityType !== 'global' && t.entityId !== 0) {
+        entityKeys.add(`${t.entityType}:${t.entityId}`)
+      }
+    }
+    const entityNameMap = new Map<string, string | null>()
+    for (const key of entityKeys) {
+      const [et, eidStr] = key.split(':')
+      const name = await getEntityName(et, Number(eidStr))
+      entityNameMap.set(key, name)
+    }
+
+    return todos.map((t) => {
+      const sd = t.scheduledDate!
+      const entityKey = `${t.entityType}:${t.entityId ?? 0}`
+      return {
+        id: t.id,
+        date: sd.toISOString().slice(0, 10),
+        time: `${String(sd.getHours()).padStart(2, '0')}:${String(sd.getMinutes()).padStart(2, '0')}`,
+        fullTime: sd.toISOString(),
+        content: t.content,
+        done: t.done,
+        repeatType: t.repeatType ?? null,
+        repeatGroupId: t.repeatGroupId ?? null,
+        entityName: entityNameMap.get(entityKey) ?? null,
+        entityType: t.entityType,
+      }
+    })
   } catch {
     return []
   }
