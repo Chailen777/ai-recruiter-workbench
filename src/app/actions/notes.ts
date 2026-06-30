@@ -156,25 +156,32 @@ export async function addNote(formData: FormData) {
   const entityType = (formData.get('entityType') as EntityType) || 'global'
   const entityId = Number(formData.get('entityId') ?? 0)
 
-  if (!content) return
+  if (!content) return { success: false, error: '内容不能为空' }
 
-  const note = await prisma.note.create({
-    data: {
-      content, type, entityType, entityId,
-      ...(type === 'appointment' ? {
-        ...(formData.get('appointmentTime') ? { appointmentTime: new Date(formData.get('appointmentTime') as string) } : {}),
-        ...(formData.get('appointmentLocation') ? { appointmentLocation: (formData.get('appointmentLocation') as string).trim() } : {}),
-        ...(formData.get('appointmentType') ? { appointmentType: formData.get('appointmentType') as string } : {}),
-        ...(formData.get('appointmentPerson') ? { appointmentPerson: (formData.get('appointmentPerson') as string).trim() } : {}),
-      } : {}),
-    },
-  })
+  try {
+    const note = await prisma.note.create({
+      data: {
+        content, type, entityType, entityId,
+        ...(type === 'appointment' ? {
+          ...(formData.get('appointmentTime') ? { appointmentTime: new Date(formData.get('appointmentTime') as string) } : {}),
+          ...(formData.get('appointmentLocation') ? { appointmentLocation: (formData.get('appointmentLocation') as string).trim() } : {}),
+          ...(formData.get('appointmentType') ? { appointmentType: formData.get('appointmentType') as string } : {}),
+          ...(formData.get('appointmentPerson') ? { appointmentPerson: (formData.get('appointmentPerson') as string).trim() } : {}),
+        } : {}),
+      },
+    })
 
-  // MD 文件同步（Vercel 只读文件系统会静默失败，不影响核心功能）
-  try { await syncMd(entityType, entityId) } catch { /* Vercel 文件系统不可写 */ }
-  try { await writeNoteMd(await toNoteData(note)) } catch { /* Vercel 文件系统不可写 */ }
+    // MD 文件同步（Vercel 只读文件系统会静默失败，不影响核心功能）
+    try { await syncMd(entityType, entityId) } catch { /* Vercel 文件系统不可写 */ }
+    try { await writeNoteMd(await toNoteData(note)) } catch { /* Vercel 文件系统不可写 */ }
 
-  revalidateForEntity(entityType, entityId)
+    revalidateForEntity(entityType, entityId)
+
+    return { success: true }
+  } catch (error) {
+    console.error('[addNote] 数据库写入失败:', error instanceof Error ? error.message : error)
+    return { success: false, error: '数据库暂不可用，请稍后重试' }
+  }
 }
 
 // ── 删除笔记 ───────────────────────────────────

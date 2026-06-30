@@ -114,13 +114,24 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       if (apptPerson.trim()) fd.set('appointmentPerson', apptPerson.trim())
     }
     startTransition(async () => {
-      await addNote(fd)
-      setInputValue('')
-      setApptTime('')
-      setApptLocation('')
-      setApptType('interview')
-      setApptPerson('')
-      onNotesChanged?.()
+      try {
+        const result = await addNote(fd)
+        // result 可能是 { success: boolean } 或 undefined（旧版兼容）
+        if (result && !result.success) {
+          alert(result.error ?? '添加失败，请重试')
+          return
+        }
+        setInputValue('')
+        setApptTime('')
+        setApptLocation('')
+        setApptType('interview')
+        setApptPerson('')
+        onNotesChanged?.()
+      } catch (err) {
+        // 最终兜底：防止未处理错误穿透到 global-error.tsx
+        console.error('添加笔记异常:', err)
+        alert('添加笔记失败，请稍后重试。')
+      }
     })
   }
 
@@ -667,10 +678,15 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
   function runAction(fn: (fd: FormData) => Promise<void>) {
     return () => {
       startTransition(async () => {
-        const fd = new FormData()
-        fd.set('id', String(note.id))
-        await fn(fd)
-        onChanged?.()
+        try {
+          const fd = new FormData()
+          fd.set('id', String(note.id))
+          await fn(fd)
+          onChanged?.()
+        } catch (err) {
+          console.error('笔记操作异常:', err)
+          alert('操作失败，请稍后重试。')
+        }
       })
     }
   }

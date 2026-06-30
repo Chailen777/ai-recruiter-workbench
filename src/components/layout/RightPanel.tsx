@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, useRef } from 'react'
 import { useMounted } from '@/hooks/useMounted'
 import { NotePanel } from '@/components/ui/NotePanel'
 import type { NoteItem } from '@/components/ui/NotePanel'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { NotesCalendar } from '@/components/ui/NotesCalendar'
 import { getAllNotes } from '@/app/actions'
 import { useNotesRefresh } from '@/components/providers'
@@ -193,6 +194,7 @@ export function RightPanel() {
       {!collapsed && (
         <div className="app-right-panel-body">
           {/* 全局备忘录 */}
+          <ErrorBoundary>
           <NotePanel
             entityType="global"
             entityId={0}
@@ -203,6 +205,7 @@ export function RightPanel() {
             searchTerm={globalSearchTerm}
             loading={!notesLoaded}
           />
+          </ErrorBoundary>
         </div>
       )}
     </aside>
