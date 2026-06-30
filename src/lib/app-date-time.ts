@@ -6,6 +6,7 @@
  */
 export const APP_TIME_ZONE = 'Asia/Shanghai'
 const APP_UTC_OFFSET = '+08:00'
+export type AppRepeatType = 'weekly' | 'monthly' | 'yearly'
 
 const DATE_TIME_LOCAL_RE =
   /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/
@@ -89,4 +90,103 @@ export function formatAppDateTime(value: string | Date): string {
 export function toAppDateTimeLocal(value: string | Date): string {
   const { year, month, day, hour, minute } = getAppDateParts(value)
   return `${year}-${month}-${day}T${hour}:${minute}`
+}
+
+function daysInMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate()
+}
+
+function createAppDateTime(
+  year: number,
+  month: number,
+  day: number,
+  hour: string,
+  minute: string,
+): Date {
+  return assertValidDate(
+    new Date(
+      `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${hour}:${minute}:00${APP_UTC_OFFSET}`,
+    ),
+    `${year}-${month}-${day} ${hour}:${minute}`,
+  )
+}
+
+/**
+ * 从首个待办时间计算第 N 个重复时间。
+ *
+ * 每月、每年始终以首日为锚点，避免 1 月 31 日经过 2 月后漂移成 3 月 28 日。
+ * 如果目标月份没有该日，则使用当月最后一天。
+ */
+export function addAppRepeatInterval(
+  start: Date,
+  repeatType: AppRepeatType,
+  intervalCount: number,
+): Date {
+  if (!Number.isInteger(intervalCount) || intervalCount < 0) {
+    throw new Error('重复间隔必须是非负整数')
+  }
+
+  if (repeatType === 'weekly') {
+    return new Date(start.getTime() + intervalCount * 7 * 24 * 60 * 60 * 1000)
+  }
+
+  const parts = getAppDateParts(start)
+  const startYear = Number(parts.year)
+  const startMonth = Number(parts.month)
+  const startDay = Number(parts.day)
+
+  if (repeatType === 'monthly') {
+    const totalMonths = startYear * 12 + (startMonth - 1) + intervalCount
+    const targetYear = Math.floor(totalMonths / 12)
+    const targetMonth = (totalMonths % 12) + 1
+    const targetDay = Math.min(startDay, daysInMonth(targetYear, targetMonth))
+    return createAppDateTime(
+      targetYear,
+      targetMonth,
+      targetDay,
+      parts.hour,
+      parts.minute,
+    )
+  }
+
+  const targetYear = startYear + intervalCount
+  const targetDay = Math.min(startDay, daysInMonth(targetYear, startMonth))
+  return createAppDateTime(
+    targetYear,
+    startMonth,
+    targetDay,
+    parts.hour,
+    parts.minute,
+  )
+}
+
+/** 生成重复计划；超过上限时不返回不完整结果。 */
+export function createAppRepeatDates(
+  start: Date,
+  end: Date,
+  repeatType: AppRepeatType,
+  frequency: number,
+  maxOccurrences = 365,
+): { dates: Date[]; exceedsLimit: boolean } {
+  if (!Number.isInteger(frequency) || frequency < 1) {
+    throw new Error('重复频率必须是正整数')
+  }
+  if (!Number.isInteger(maxOccurrences) || maxOccurrences < 1) {
+    throw new Error('重复数量上限必须是正整数')
+  }
+  if (end < start) return { dates: [], exceedsLimit: false }
+
+  const dates: Date[] = []
+  let occurrenceIndex = 0
+  while (true) {
+    const current = addAppRepeatInterval(
+      start,
+      repeatType,
+      occurrenceIndex * frequency,
+    )
+    if (current > end) return { dates, exceedsLimit: false }
+    if (dates.length >= maxOccurrences) return { dates: [], exceedsLimit: true }
+    dates.push(current)
+    occurrenceIndex += 1
+  }
 }

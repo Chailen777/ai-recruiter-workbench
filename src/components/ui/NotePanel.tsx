@@ -217,6 +217,25 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
     }
     if (!content) return
 
+    if (inputType === 'todo' && todoRepeat) {
+      if (!todoDate) {
+        error('无法创建重复待办', '请先选择待办时间')
+        return
+      }
+      if (!todoEndDate) {
+        error('无法创建重复待办', '请选择重复截止日期')
+        return
+      }
+      if (!Number.isInteger(todoFreq) || todoFreq < 1 || todoFreq > 99) {
+        error('无法创建重复待办', '重复频率必须是 1–99 的整数')
+        return
+      }
+      if (todoEndDate < todoDate.slice(0, 10)) {
+        error('无法创建重复待办', '重复截止日期不能早于首次待办时间')
+        return
+      }
+    }
+
     const fd = new FormData()
     fd.set('content', content)
     fd.set('type', inputType)
@@ -273,7 +292,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         setDiaryCharCount(0)
         try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
         setDraftSavedAt('')
-        if (result.success && result.createdCount && result.createdCount > 1) {
+        if (result.success && result.createdCount !== undefined) {
           success(`已创建 ${result.createdCount} 个重复待办`)
         } else {
           success('笔记已保存')
@@ -738,6 +757,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
                 className="note-appt-input"
                 value={todoDate}
                 onChange={(e) => setTodoDate(e.target.value)}
+                required={!!todoRepeat}
               />
             </div>
             <div className="note-appt-row">
@@ -759,9 +779,11 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
                     type="number"
                     className="note-todo-freq-input"
                     value={todoFreq}
-                    onChange={(e) => setTodoFreq(Math.max(1, Number(e.target.value) || 1))}
+                    onChange={(e) => setTodoFreq(Math.min(99, Math.max(1, Number(e.target.value) || 1)))}
                     min={1}
                     max={99}
+                    step={1}
+                    required
                     style={{ width: '50px' }}
                   />
                   <span className="note-todo-freq-label">{todoRepeat === 'weekly' ? '周' : todoRepeat === 'monthly' ? '月' : '年'}</span>
@@ -776,6 +798,8 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
                   className="note-appt-input"
                   value={todoEndDate}
                   onChange={(e) => setTodoEndDate(e.target.value)}
+                  min={todoDate ? todoDate.slice(0, 10) : undefined}
+                  required
                 />
               </div>
             )}

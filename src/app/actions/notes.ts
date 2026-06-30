@@ -6,15 +6,23 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { syncNotesToMd } from '@/lib/notes-md'
 import { writeNoteMd, deleteNoteMd, type NoteData } from '@/lib/notes-data-md'
-import { parseAppDateTime, parseAppEndOfDay } from '@/lib/app-date-time'
+import {
+  createAppRepeatDates,
+  parseAppDateTime,
+  parseAppEndOfDay,
+  type AppRepeatType,
+} from '@/lib/app-date-time'
 
 type EntityType = 'global' | 'job' | 'candidate' | 'company' | 'match' | 'knowledge' | 'school' | 'chart' | 'info' | 'contact' | 'project'
 
 export type AddNoteResult =
   | { success: true; noteId: number; createdCount?: number }
-  | { success: false; code: 'INVALID_CONTENT' | 'DATABASE_UNAVAILABLE' | 'SAVE_FAILED'; message: string }
+  | { success: false; code: 'INVALID_CONTENT' | 'INVALID_REPEAT' | 'DATABASE_UNAVAILABLE' | 'SAVE_FAILED'; message: string }
 
 const TRANSIENT_DATABASE_CODES = new Set(['P1001', 'P2024'])
+const REPEAT_TYPES = new Set<AppRepeatType>(['weekly', 'monthly', 'yearly'])
+const MAX_REPEAT_FREQUENCY = 99
+const MAX_REPEAT_OCCURRENCES = 365
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -237,35 +245,64 @@ export async function addNote(formData: FormData): Promise<AddNoteResult> {
     // 待办重复字段
     const isTodo = type === 'todo'
     const scheduledDateStr = isTodo ? (formData.get('scheduledDate') as string) || null : null
-    const repeatType = isTodo ? (formData.get('repeatType') as string) || null : null
-    const repeatFrequency = isTodo ? Number(formData.get('repeatFrequency') ?? 1) || 1 : null
+    const repeatTypeValue = isTodo ? (formData.get('repeatType') as string) || null : null
+    const repeatFrequency = isTodo ? Number(formData.get('repeatFrequency') ?? 1) : null
     const repeatEndDateStr = isTodo ? (formData.get('repeatEndDate') as string) || null : null
 
     // ── 重复待办：生成多条记录 ──
-    if (isTodo && scheduledDateStr && repeatType) {
-      const startDate = parseAppDateTime(scheduledDateStr)
-      const endDate = repeatEndDateStr ? parseAppEndOfDay(repeatEndDateStr) : null
-      const groupId = randomUUID()
-      const frequency = repeatFrequency || 1
-
-      // 计算所有重复日期
-      const dates: Date[] = []
-      const current = new Date(startDate)
-      let safetyCount = 0
-      while (safetyCount < 365) { // 最多365次重复
-        if (endDate && current > endDate) break
-        dates.push(new Date(current))
-        if (repeatType === 'weekly') {
-          current.setDate(current.getDate() + 7 * frequency)
-        } else if (repeatType === 'monthly') {
-          current.setMonth(current.getMonth() + frequency)
-        } else if (repeatType === 'yearly') {
-          current.setFullYear(current.getFullYear() + frequency)
-        } else {
-          break // 不支持的类型，只创建一条
-        }
-        safetyCount++
+    if (isTodo && repeatTypeValue) {
+      if (!REPEAT_TYPES.has(repeatTypeValue as AppRepeatType)) {
+        return { success: false, code: 'INVALID_REPEAT', message: '不支持的重复类型' }
       }
+      if (!scheduledDateStr) {
+        return { success: false, code: 'INVALID_REPEAT', message: '请先选择待办时间' }
+      }
+      if (!repeatEndDateStr) {
+        return { success: false, code: 'INVALID_REPEAT', message: '请选择重复截止日期' }
+      }
+      if (
+        repeatFrequency === null ||
+        !Number.isInteger(repeatFrequency) ||
+        repeatFrequency < 1 ||
+        repeatFrequency > MAX_REPEAT_FREQUENCY
+      ) {
+        return {
+          success: false,
+          code: 'INVALID_REPEAT',
+          message: `重复频率必须是 1–${MAX_REPEAT_FREQUENCY} 的整数`,
+        }
+      }
+
+      const repeatType = repeatTypeValue as AppRepeatType
+      const startDate = parseAppDateTime(scheduledDateStr)
+      const endDate = parseAppEndOfDay(repeatEndDateStr)
+      if (endDate < startDate) {
+        return {
+          success: false,
+          code: 'INVALID_REPEAT',
+          message: '重复截止日期不能早于首次待办时间',
+        }
+      }
+
+      const groupId = randomUUID()
+      const frequency = repeatFrequency
+
+      // 始终从首日按第 N 个间隔计算，避免月末和闰年日期逐次漂移。
+      const schedule = createAppRepeatDates(
+        startDate,
+        endDate,
+        repeatType,
+        frequency,
+        MAX_REPEAT_OCCURRENCES,
+      )
+      if (schedule.exceedsLimit) {
+        return {
+          success: false,
+          code: 'INVALID_REPEAT',
+          message: `单次最多创建 ${MAX_REPEAT_OCCURRENCES} 个重复待办，请缩短日期范围或调大频率`,
+        }
+      }
+      const dates = schedule.dates
 
       // 批量创建
       const records = dates.map((d) => ({
@@ -280,10 +317,13 @@ export async function addNote(formData: FormData): Promise<AddNoteResult> {
         repeatGroupId: groupId,
       }))
 
-      const created = await prisma.note.createMany({ data: records })
-      const firstNote = await prisma.note.findFirst({
-        where: { repeatGroupId: groupId },
-        orderBy: { scheduledDate: 'asc' },
+      const { createdCount, firstNote } = await prisma.$transaction(async (tx) => {
+        const created = await tx.note.createMany({ data: records })
+        const first = await tx.note.findFirst({
+          where: { repeatGroupId: groupId },
+          orderBy: { scheduledDate: 'asc' },
+        })
+        return { createdCount: created.count, firstNote: first }
       })
 
       try { await syncMd(entityType, entityId) } catch {}
@@ -292,7 +332,7 @@ export async function addNote(formData: FormData): Promise<AddNoteResult> {
       }
 
       revalidateForEntity(entityType, entityId)
-      return { success: true, noteId: firstNote?.id ?? 0, createdCount: created.count }
+      return { success: true, noteId: firstNote?.id ?? 0, createdCount }
     }
 
     // ── 普通待办（无重复）或其他类型 ──
