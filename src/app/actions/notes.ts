@@ -57,11 +57,11 @@ async function getEntityName(entityType: string, entityId: number): Promise<stri
 }
 
 // 页面路径映射，用于 revalidatePath
+// 注意：global 笔记不在首页展示，不需要 revalidate /home
 function revalidateForEntity(entityType: EntityType, _entityId: number) {
-  if (entityType === 'global') {
-    revalidatePath('/home')
-    return
-  }
+  // global 笔记不 revalidate 首页（首页不展示笔记数据，且 fetchDashboardStats 22
+  // 个并行查询在 Neon 上间歇失败会崩溃到 global-error.tsx）
+  if (entityType === 'global') return
   const map: Record<string, string> = {
     job: '/jobs',
     candidate: '/candidates',
@@ -75,7 +75,9 @@ function revalidateForEntity(entityType: EntityType, _entityId: number) {
     project: '/projects',
   }
   const base = map[entityType]
-  if (base) revalidatePath(base)
+  if (base) {
+    try { revalidatePath(base) } catch { /* revalidation failure is non-critical */ }
+  }
 }
 
 // 同步 MD 文件的公共函数（未 migrate 时静默跳过）

@@ -72,7 +72,29 @@ function formatRelativeTime(date: Date): string {
   return `${days} 天前`
 }
 
+/** 返回空的 DashboardStats 作为 fallback，防止数据库查询失败导致页面崩溃 */
+function emptyDashboardStats(): DashboardStats {
+  return {
+    candidateStatusDistribution: [{ count: 0, label: '暂无数据' }],
+    jobStatusDistribution: [{ count: 0, label: '暂无数据' }],
+    kanbanCandidates: [],
+    kpi: {
+      candidates: 0, companies: 0, conversionRate: '0.0%',
+      followCandidates: 0, highMatches: 0, jobs: 0,
+      pendingJobs: 0, todayCandidates: 0, todayCompanies: 0, todayJobs: 0,
+    },
+    latestCandidates: [],
+    tasks: [{
+      action: '刷新', href: '/home', owner: '系统', priority: '中',
+      target: '数据库连接异常，请刷新页面', time: '稍后再试', type: '系统提示',
+    }],
+    topJobs: [],
+    trend: [],
+  }
+}
+
 export async function fetchDashboardStats(): Promise<DashboardStats> {
+  try {
   const today = startOfToday()
 
   const [
@@ -357,6 +379,10 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
     tasks,
     topJobs,
     trend,
+  }
+  } catch (error) {
+    console.error('[fetchDashboardStats] Database query failed:', error)
+    return emptyDashboardStats()
   }
 }
 
