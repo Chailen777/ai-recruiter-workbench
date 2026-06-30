@@ -27,6 +27,8 @@ export type NoteData = {
   appointmentLocation?: string | null
   appointmentType?: string | null
   appointmentPerson?: string | null
+  articleType?: string | null
+  articlePerson?: string | null
 }
 
 const DATA_NOTES_DIR = join(process.cwd(), 'data', 'notes')
@@ -70,6 +72,8 @@ async function findFileById(noteId: number): Promise<string | null> {
 function typeLabel(type: string): string {
   if (type === 'todo') return '待办'
   if (type === 'log') return '沟通记录'
+  if (type === 'appointment') return '预约'
+  if (type === 'diary') return '日记'
   return '随笔'
 }
 
@@ -158,6 +162,15 @@ function buildMdContent(note: NoteData): string {
     }
     if (note.appointmentLocation) {
       lines.push(`| 📍 预约地点 | ${note.appointmentLocation} |`)
+    }
+  }
+  if (note.type === 'diary') {
+    if (note.articleType) {
+      const articleLabels: Record<string, string> = { diary: '日记', study: '学习笔记', report: '报告内容', web: '网络', reading: '读书笔记', lecture: '讲座笔记' }
+      lines.push(`| 📝 文章类型 | ${articleLabels[note.articleType] ?? note.articleType} |`)
+    }
+    if (note.articlePerson) {
+      lines.push(`| 👤 人物 | ${note.articlePerson} |`)
     }
   }
   lines.push(`| 🕐 创建时间 | ${note.createdAt.toLocaleString('zh-CN', { hour12: false })} |`)

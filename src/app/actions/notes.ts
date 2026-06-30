@@ -139,6 +139,8 @@ async function toNoteData(note: {
   appointmentLocation?: string | null
   appointmentType?: string | null
   appointmentPerson?: string | null
+  articleType?: string | null
+  articlePerson?: string | null
 }): Promise<NoteData> {
   return {
     id: note.id,
@@ -154,6 +156,8 @@ async function toNoteData(note: {
     appointmentLocation: note.appointmentLocation ?? null,
     appointmentType: note.appointmentType ?? null,
     appointmentPerson: note.appointmentPerson ?? null,
+    articleType: note.articleType ?? null,
+    articlePerson: note.articlePerson ?? null,
   }
 }
 
@@ -177,6 +181,8 @@ export async function getNotes(entityType: EntityType, entityId: number) {
       appointmentLocation: n.appointmentLocation ?? null,
       appointmentType: n.appointmentType ?? null,
       appointmentPerson: n.appointmentPerson ?? null,
+      articleType: n.articleType ?? null,
+      articlePerson: n.articlePerson ?? null,
     }))
   } catch {
     return []
@@ -201,12 +207,18 @@ export async function addNote(formData: FormData): Promise<AddNoteResult> {
     const appointmentType = type === 'appointment' ? (formData.get('appointmentType') as string) || null : null
     const appointmentPerson = type === 'appointment' ? (formData.get('appointmentPerson') as string)?.trim() || null : null
 
+    // 日记字段
+    const articleType = type === 'diary' ? (formData.get('articleType') as string) || null : null
+    const articlePerson = type === 'diary' ? (formData.get('articlePerson') as string)?.trim() || null : null
+
     const note = await createNoteWithRetry({
       content, type, entityType, entityId,
       ...(appointmentTime ? { appointmentTime: new Date(appointmentTime) } : {}),
       ...(appointmentLocation ? { appointmentLocation } : {}),
       ...(appointmentType ? { appointmentType } : {}),
       ...(appointmentPerson ? { appointmentPerson } : {}),
+      ...(articleType ? { articleType } : {}),
+      ...(articlePerson ? { articlePerson } : {}),
     })
 
     // MD 文件同步（Vercel 只读文件系统会静默失败，不影响核心功能）
@@ -298,6 +310,46 @@ export async function toggleDoneNote(formData: FormData) {
   revalidateForEntity(note.entityType as EntityType, note.entityId)
 }
 
+// ── 编辑笔记内容 ───────────────────────────────
+export async function editNote(formData: FormData) {
+  const id = Number(formData.get('id'))
+  if (!id) return
+
+  const content = (formData.get('content') as string)?.trim()
+  if (!content) return
+
+  const note = await prisma.note.findUnique({ where: { id } })
+  if (!note) return
+
+  // 预约字段（仅 appointment 类型才更新）
+  const isAppointment = note.type === 'appointment'
+  const appointmentTime = isAppointment ? (formData.get('appointmentTime') as string) || null : undefined
+  const appointmentLocation = isAppointment ? (formData.get('appointmentLocation') as string)?.trim() || null : undefined
+  const appointmentType = isAppointment ? (formData.get('appointmentType') as string) || null : undefined
+  const appointmentPerson = isAppointment ? (formData.get('appointmentPerson') as string)?.trim() || null : undefined
+
+  // 日记字段（仅 diary 类型才更新）
+  const isDiary = note.type === 'diary'
+  const articleType = isDiary ? (formData.get('articleType') as string) || null : undefined
+  const articlePerson = isDiary ? (formData.get('articlePerson') as string)?.trim() || null : undefined
+
+  const data: Record<string, unknown> = { content }
+  if (appointmentTime !== undefined) data.appointmentTime = appointmentTime ? new Date(appointmentTime) : null
+  if (appointmentLocation !== undefined) data.appointmentLocation = appointmentLocation
+  if (appointmentType !== undefined) data.appointmentType = appointmentType
+  if (appointmentPerson !== undefined) data.appointmentPerson = appointmentPerson
+  if (articleType !== undefined) data.articleType = articleType
+  if (articlePerson !== undefined) data.articlePerson = articlePerson
+
+  const updated = await prisma.note.update({ where: { id }, data })
+
+  // MD 文件同步（Vercel 文件系统不可写时静默失败）
+  try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
+  try { await writeNoteMd(await toNoteData(updated)) } catch {}
+
+  revalidateForEntity(note.entityType as EntityType, note.entityId)
+}
+
 // ── 查询全部笔记（全局 + 所有实体），附带实体名称 ──
 export async function getAllNotes() {
   try {
@@ -372,6 +424,8 @@ export async function getAllNotes() {
       appointmentLocation: n.appointmentLocation ?? null,
       appointmentType: n.appointmentType ?? null,
       appointmentPerson: n.appointmentPerson ?? null,
+      articleType: n.articleType ?? null,
+      articlePerson: n.articlePerson ?? null,
     }))
   } catch {
     return []
@@ -459,6 +513,7 @@ export type CalendarDay = {
   logCount: number    // 当天创建的沟通记录数
   noteCount: number   // 当天创建的随笔数
   apptCount: number   // 当天创建的预约数
+  diaryCount: number  // 当天创建的日记数
   futureTodos: number // 当天到期/关联的未完成待办（未来）
 }
 
@@ -482,7 +537,7 @@ export async function getNotesCalendarData(entityType?: EntityType, entityId?: n
       const dateStr = targetDate.toISOString().slice(0, 10) // 'YYYY-MM-DD'
       let day = dayMap.get(dateStr)
       if (!day) {
-        day = { date: dateStr, todoCount: 0, logCount: 0, noteCount: 0, apptCount: 0, futureTodos: 0 }
+        day = { date: dateStr, todoCount: 0, logCount: 0, noteCount: 0, apptCount: 0, diaryCount: 0, futureTodos: 0 }
         dayMap.set(dateStr, day)
       }
       if (n.type === 'todo') {
@@ -498,6 +553,8 @@ export async function getNotesCalendarData(entityType?: EntityType, entityId?: n
         day.logCount++
       } else if (n.type === 'appointment') {
         day.apptCount++
+      } else if (n.type === 'diary') {
+        day.diaryCount++
       } else {
         day.noteCount++
       }

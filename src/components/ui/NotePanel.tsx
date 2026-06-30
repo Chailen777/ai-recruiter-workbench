@@ -1,7 +1,7 @@
 'use client'
 
-import { useRef, useState, useTransition, useMemo } from 'react'
-import { addNote, deleteNote, togglePinNote, toggleDoneNote } from '@/app/actions'
+import { useRef, useState, useTransition, useMemo, useCallback } from 'react'
+import { addNote, deleteNote, editNote, togglePinNote, toggleDoneNote } from '@/app/actions'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useToast } from '@/components/providers/ToastProvider'
 
@@ -20,6 +20,9 @@ export type NoteItem = {
   appointmentLocation?: string | null
   appointmentType?: string | null
   appointmentPerson?: string | null
+  // 日记字段
+  articleType?: string | null
+  articlePerson?: string | null
 }
 
 type NotePanelProps = {
@@ -43,6 +46,7 @@ const TYPE_LABELS: Record<string, string> = {
   log: '沟通记录',
   note: '随笔',
   appointment: '预约',
+  diary: '日记',
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -50,6 +54,16 @@ const TYPE_COLORS: Record<string, string> = {
   log: 'note-type-log',
   note: 'note-type-note',
   appointment: 'note-type-appointment',
+  diary: 'note-type-diary',
+}
+
+const ARTICLE_TYPE_LABELS: Record<string, string> = {
+  diary: '日记',
+  study: '学习笔记',
+  report: '报告内容',
+  web: '网络',
+  reading: '读书笔记',
+  lecture: '讲座笔记',
 }
 
 function formatDate(iso: string) {
@@ -82,14 +96,14 @@ const APPT_TYPE_LABELS: Record<string, string> = {
 }
 
 export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false }: NotePanelProps) {
-  const [inputType, setInputType] = useState<'todo' | 'log' | 'note' | 'appointment'>('note')
+  const [inputType, setInputType] = useState<'todo' | 'log' | 'note' | 'appointment' | 'diary'>('note')
   const [inputValue, setInputValue] = useState('')
   const [isPending, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
   const { success, error } = useToast()
 
   // ── 过滤状态 ──
-  const [filterType, setFilterType] = useState<'all' | 'todo' | 'log' | 'note' | 'appointment'>('all')
+  const [filterType, setFilterType] = useState<'all' | 'todo' | 'log' | 'note' | 'appointment' | 'diary'>('all')
   const [showOnlyUndone, setShowOnlyUndone] = useState(false)
 
   // ── 视图模式 ──
@@ -101,10 +115,21 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   const [apptType, setApptType] = useState('interview')
   const [apptPerson, setApptPerson] = useState('')
 
+  // ── 日记表单字段 ──
+  const [articleType, setArticleType] = useState('diary')
+  const [articlePerson, setArticlePerson] = useState('')
+  const diaryEditorRef = useRef<HTMLDivElement>(null)
+
   function handleSubmit() {
-    if (!inputValue.trim()) return
+    // 日记类型从 contentEditable 获取内容
+    let content = inputValue.trim()
+    if (inputType === 'diary') {
+      content = (diaryEditorRef.current?.innerHTML ?? '').trim()
+    }
+    if (!content) return
+
     const fd = new FormData()
-    fd.set('content', inputValue.trim())
+    fd.set('content', content)
     fd.set('type', inputType)
     fd.set('entityType', entityType)
     fd.set('entityId', String(entityId))
@@ -114,6 +139,11 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       if (apptLocation.trim()) fd.set('appointmentLocation', apptLocation.trim())
       fd.set('appointmentType', apptType)
       if (apptPerson.trim()) fd.set('appointmentPerson', apptPerson.trim())
+    }
+    // 日记字段
+    if (inputType === 'diary') {
+      fd.set('articleType', articleType)
+      if (articlePerson.trim()) fd.set('articlePerson', articlePerson.trim())
     }
     startTransition(async () => {
       try {
@@ -128,6 +158,9 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         setApptLocation('')
         setApptType('interview')
         setApptPerson('')
+        setArticleType('diary')
+        setArticlePerson('')
+        if (diaryEditorRef.current) diaryEditorRef.current.innerHTML = ''
         success('笔记已保存')
         onNotesChanged?.()
       } catch (err) {
@@ -172,12 +205,18 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
     if (!searchTerm) return dateFiltered
     const q = searchTerm.toLowerCase()
     return dateFiltered.filter((n) => {
+      // 对于日记类型，content 是 HTML，需要去除标签再搜索
+      const plainContent = n.type === 'diary'
+        ? n.content.replace(/<[^>]+>/g, '')
+        : n.content
       return (
-        n.content.toLowerCase().includes(q) ||
+        plainContent.toLowerCase().includes(q) ||
         (n.entityName && n.entityName.toLowerCase().includes(q)) ||
         (n.appointmentPerson && n.appointmentPerson.toLowerCase().includes(q)) ||
         (n.appointmentLocation && n.appointmentLocation.toLowerCase().includes(q)) ||
         (n.appointmentType && (APPT_TYPE_LABELS[n.appointmentType] ?? n.appointmentType).toLowerCase().includes(q)) ||
+        (n.articleType && (ARTICLE_TYPE_LABELS[n.articleType] ?? n.articleType).toLowerCase().includes(q)) ||
+        (n.articlePerson && n.articlePerson.toLowerCase().includes(q)) ||
         (TYPE_LABELS[n.type] && TYPE_LABELS[n.type].toLowerCase().includes(q))
       )
     })
@@ -194,7 +233,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   }, [notes])
 
   // ── 标签点击：设置过滤类型 + 输入类型 ──
-  function handleTabClick(type: 'all' | 'todo' | 'log' | 'note' | 'appointment') {
+  function handleTabClick(type: 'all' | 'todo' | 'log' | 'note' | 'appointment' | 'diary') {
     setFilterType(type)
     setShowOnlyUndone(false)
     if (type !== 'all') {
@@ -234,6 +273,12 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       handleSubmit()
     }
   }
+
+  // ── 富文本工具栏命令 ──
+  const execCmd = useCallback((command: string, value?: string) => {
+    document.execCommand(command, false, value)
+    diaryEditorRef.current?.focus()
+  }, [])
 
   return (
     <div className="note-panel">
@@ -309,6 +354,15 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
                 {undoneAppointmentCount}
               </span>
             )}
+          </button>
+
+          {/* 日记 */}
+          <button
+            type="button"
+            className={`note-type-tab ${filterType === 'diary' ? 'active' : ''} ${TYPE_COLORS.diary}`}
+            onClick={() => handleTabClick('diary')}
+          >
+            {TYPE_LABELS.diary}
           </button>
 
         </div>
@@ -390,24 +444,99 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
           </div>
         )}
 
-        {/* 输入框 */}
-        <textarea
-          className="note-textarea"
-          name="content"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={inputType === 'todo' ? '输入待办事项，回车保存…' : inputType === 'log' ? '记录沟通内容，回车保存…' : inputType === 'appointment' ? '预约事项描述，如：面试张某某 产品经理…' : '写下随笔，回车保存…'}
-          rows={2}
-          maxLength={500}
-        />
+        {/* 日记专用表单字段 */}
+        {inputType === 'diary' && (
+          <div className="note-diary-form">
+            <button
+              type="button"
+              className="note-appt-close-btn"
+              onClick={() => setInputType('note')}
+              aria-label="关闭日记表单"
+              title="关闭日记表单"
+            >✕</button>
+            <div className="note-appt-row">
+              <label className="note-appt-label">类型</label>
+              <select
+                className="note-appt-select"
+                value={articleType}
+                onChange={(e) => setArticleType(e.target.value)}
+              >
+                <option value="diary">日记</option>
+                <option value="study">学习笔记</option>
+                <option value="report">报告内容</option>
+                <option value="web">网络</option>
+                <option value="reading">读书笔记</option>
+                <option value="lecture">讲座笔记</option>
+              </select>
+            </div>
+            <div className="note-appt-row">
+              <label className="note-appt-label">人物</label>
+              <input
+                type="text"
+                className="note-appt-input"
+                value={articlePerson}
+                onChange={(e) => setArticlePerson(e.target.value)}
+                placeholder="相关人物…"
+                maxLength={50}
+              />
+            </div>
+            {/* 富文本工具栏 */}
+            <div className="note-diary-toolbar">
+              <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('bold') }} title="粗体" className="note-diary-tool-btn"><b>B</b></button>
+              <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('italic') }} title="斜体" className="note-diary-tool-btn"><i>I</i></button>
+              <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('underline') }} title="下划线" className="note-diary-tool-btn"><u>U</u></button>
+              <span className="note-diary-tool-divider" />
+              <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('formatBlock', '<h3>') }} title="大标题" className="note-diary-tool-btn">H1</button>
+              <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('formatBlock', '<h4>') }} title="小标题" className="note-diary-tool-btn">H2</button>
+              <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('formatBlock', '<p>') }} title="正文" className="note-diary-tool-btn">P</button>
+              <span className="note-diary-tool-divider" />
+              <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('insertUnorderedList') }} title="无序列表" className="note-diary-tool-btn">• 列表</button>
+              <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('insertOrderedList') }} title="有序列表" className="note-diary-tool-btn">1. 列表</button>
+              <span className="note-diary-tool-divider" />
+              <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('formatBlock', '<blockquote>') }} title="引用" className="note-diary-tool-btn">❝</button>
+              <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('removeFormat') }} title="清除格式" className="note-diary-tool-btn">✕格式</button>
+            </div>
+          </div>
+        )}
+
+        {/* 输入框 — 日记用富文本编辑器，其他用 textarea */}
+        {inputType === 'diary' ? (
+          <div
+            ref={diaryEditorRef}
+            className="note-diary-editor"
+            contentEditable
+            suppressContentEditableWarning
+            data-placeholder="写下日记或文章…支持加粗、斜体、标题、列表等排版…"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault()
+                handleSubmit()
+              }
+            }}
+          />
+        ) : (
+          <textarea
+            className="note-textarea"
+            name="content"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={inputType === 'todo' ? '输入待办事项，回车保存…' : inputType === 'log' ? '记录沟通内容，回车保存…' : inputType === 'appointment' ? '预约事项描述，如：面试张某某 产品经理…' : '写下随笔，回车保存…'}
+            rows={2}
+            maxLength={500}
+          />
+        )}
 
         <div className="note-input-footer">
-          <span className="note-char-count">{inputValue.length}/500</span>
+          {inputType === 'diary' ? (
+            <span className="note-char-count">Ctrl+Enter 保存</span>
+          ) : (
+            <span className="note-char-count">{inputValue.length}/500</span>
+          )}
           <button
             type="submit"
             className="note-add-btn"
-            disabled={isPending || !inputValue.trim()}
+            disabled={isPending}
           >
             {isPending ? '保存中…' : '添加'}
           </button>
@@ -597,7 +726,7 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
                           <span className="note-timeline-done-mark">✓ 已完成</span>
                         )}
                       </div>
-                      <p className="note-timeline-content">{note.content}</p>
+                      <p className="note-timeline-content">{note.type === 'diary' ? note.content.replace(/<[^>]+>/g, '') : note.content}</p>
                       {/* 预约信息 */}
                       {note.type === 'appointment' && (note.appointmentTime || note.appointmentPerson || note.appointmentLocation) && (
                         <div className="note-timeline-appt">
@@ -619,6 +748,21 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
                           {note.appointmentLocation && (
                             <span className="note-timeline-appt-item">
                               📍 {note.appointmentLocation}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {/* 日记信息 */}
+                      {note.type === 'diary' && (note.articleType || note.articlePerson) && (
+                        <div className="note-timeline-appt">
+                          {note.articleType && (
+                            <span className="note-timeline-appt-item">
+                              📝 {ARTICLE_TYPE_LABELS[note.articleType] ?? note.articleType}
+                            </span>
+                          )}
+                          {note.articlePerson && (
+                            <span className="note-timeline-appt-item">
+                              👤 {note.articlePerson}
                             </span>
                           )}
                         </div>
@@ -677,6 +821,20 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
   const [isPending, startTransition] = useTransition()
   const [confirmOpen, setConfirmOpen] = useState(false)
 
+  // ── 编辑模式状态 ──
+  const [isEditing, setIsEditing] = useState(false)
+  const [editContent, setEditContent] = useState(note.content)
+  const [editApptTime, setEditApptTime] = useState(
+    note.appointmentTime ? note.appointmentTime.slice(0, 16) : ''
+  )
+  const [editApptLocation, setEditApptLocation] = useState(note.appointmentLocation ?? '')
+  const [editApptType, setEditApptType] = useState(note.appointmentType ?? 'interview')
+  const [editApptPerson, setEditApptPerson] = useState(note.appointmentPerson ?? '')
+  // 日记编辑状态
+  const [editArticleType, setEditArticleType] = useState(note.articleType ?? 'diary')
+  const [editArticlePerson, setEditArticlePerson] = useState(note.articlePerson ?? '')
+  const editDiaryRef = useRef<HTMLDivElement>(null)
+
   /** 通用：构造 FormData → startTransition 调用 server action → 通知刷新 */
   function runAction(fn: (fd: FormData) => Promise<void>) {
     return () => {
@@ -694,9 +852,59 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
     }
   }
 
+  function handleEditSave() {
+    // 日记类型从 contentEditable 获取内容
+    let content = editContent.trim()
+    if (note.type === 'diary') {
+      content = (editDiaryRef.current?.innerHTML ?? '').trim()
+    }
+    if (!content) return
+    startTransition(async () => {
+      try {
+        const fd = new FormData()
+        fd.set('id', String(note.id))
+        fd.set('content', content)
+        if (note.type === 'appointment') {
+          if (editApptTime) fd.set('appointmentTime', editApptTime)
+          if (editApptLocation.trim()) fd.set('appointmentLocation', editApptLocation.trim())
+          fd.set('appointmentType', editApptType)
+          if (editApptPerson.trim()) fd.set('appointmentPerson', editApptPerson.trim())
+        }
+        if (note.type === 'diary') {
+          fd.set('articleType', editArticleType)
+          if (editArticlePerson.trim()) fd.set('articlePerson', editArticlePerson.trim())
+        }
+        await editNote(fd)
+        setIsEditing(false)
+        onChanged?.()
+      } catch (err) {
+        console.error('编辑笔记异常:', err)
+        alert('保存失败，请稍后重试。')
+      }
+    })
+  }
+
+  function handleEditCancel() {
+    // 还原编辑前的值
+    setEditContent(note.content)
+    setEditApptTime(note.appointmentTime ? note.appointmentTime.slice(0, 16) : '')
+    setEditApptLocation(note.appointmentLocation ?? '')
+    setEditApptType(note.appointmentType ?? 'interview')
+    setEditApptPerson(note.appointmentPerson ?? '')
+    setEditArticleType(note.articleType ?? 'diary')
+    setEditArticlePerson(note.articlePerson ?? '')
+    setIsEditing(false)
+  }
+
+  // ── 编辑模式富文本工具栏 ──
+  const execEditCmd = useCallback((command: string, value?: string) => {
+    document.execCommand(command, false, value)
+    editDiaryRef.current?.focus()
+  }, [])
+
   return (
     <article
-      className={`note-card ${note.pinned ? 'is-pinned' : ''} ${note.done && (note.type === 'todo' || note.type === 'appointment') ? 'is-done' : ''} ${isPending ? 'is-pending' : ''}`}
+      className={`note-card ${note.pinned ? 'is-pinned' : ''} ${note.done && (note.type === 'todo' || note.type === 'appointment') ? 'is-done' : ''} ${isPending ? 'is-pending' : ''} ${isEditing ? 'is-editing' : ''}`}
       data-type={note.type}
     >
       {/* ── 类型标签 + 来源 + 置顶标记 ── */}
@@ -714,91 +922,270 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
         <span className="note-date">{formatDate(note.createdAt)}</span>
       </div>
 
-      {/* ── 内容 ── */}
-      <div className="note-card-body">
-        {/* todo / 预约 复选框 */}
-        {(note.type === 'todo' || note.type === 'appointment') && (
-          <button
-            type="button"
-            className={`note-check ${note.done ? 'checked' : ''}`}
-            title={note.done ? '标记为未完成' : '标记为完成'}
-            disabled={isPending}
-            onClick={runAction(toggleDoneNote)}
-          >
-            {note.done ? '✓' : '○'}
-          </button>
-        )}
-        <p className="note-content">{note.content}</p>
-      </div>
-
-      {/* ── 预约信息卡 ── */}
-      {note.type === 'appointment' && (note.appointmentTime || note.appointmentLocation || note.appointmentType || note.appointmentPerson) && (
-        <div className="note-appointment-bar">
-          <div className="note-appt-main">
-            {/* 时间 — 主力展示 */}
-            {note.appointmentTime && (
-              <span className="note-appt-time">
-                <svg className="note-appt-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="8" cy="8" r="7"/>
-                  <polyline points="8,4 8,8 11,10"/>
-                </svg>
-                <span className="note-appt-time-text">{formatApptTime(note.appointmentTime)}</span>
-              </span>
-            )}
-            {/* 类型标签 */}
-            {note.appointmentType && (
-              <span className="note-appt-type-tag">
-                {APPT_TYPE_LABELS[note.appointmentType] ?? note.appointmentType}
-              </span>
-            )}
-            {/* 人物 */}
-            {note.appointmentPerson && (
-              <span className="note-appt-person-tag">
-                <svg className="note-appt-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="8" cy="5" r="3"/>
-                  <path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
-                </svg>
-                <span>{note.appointmentPerson}</span>
-              </span>
-            )}
-          </div>
-          {/* 地点 — 第二行 */}
-          {note.appointmentLocation && (
-            <div className="note-appt-sub">
-              <svg className="note-appt-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 14s6-5 6-8.5A6 6 0 0 0 2 5.5C2 9 8 14 8 14Z"/>
-                <circle cx="8" cy="5.5" r="1.5"/>
-              </svg>
-              <span className="note-appt-location-text">{note.appointmentLocation}</span>
+      {isEditing ? (
+        /* ── 编辑模式 ── */
+        <div className="note-card-edit">
+          {/* 预约字段编辑 */}
+          {note.type === 'appointment' && (
+            <div className="note-edit-appt">
+              <div className="note-edit-appt-row">
+                <label className="note-edit-label">时间</label>
+                <input
+                  type="datetime-local"
+                  className="note-edit-datetime"
+                  value={editApptTime}
+                  onChange={(e) => setEditApptTime(e.target.value)}
+                />
+              </div>
+              <div className="note-edit-appt-row">
+                <label className="note-edit-label">类型</label>
+                <select
+                  className="note-edit-select"
+                  value={editApptType}
+                  onChange={(e) => setEditApptType(e.target.value)}
+                >
+                  <option value="interview">面试</option>
+                  <option value="business">商务沟通</option>
+                  <option value="todo_appointment">待办预约</option>
+                  <option value="other">其他</option>
+                </select>
+              </div>
+              <div className="note-edit-appt-row">
+                <label className="note-edit-label">人物</label>
+                <input
+                  type="text"
+                  className="note-edit-input"
+                  value={editApptPerson}
+                  onChange={(e) => setEditApptPerson(e.target.value)}
+                  placeholder="面试官/联系人姓名…"
+                  maxLength={50}
+                />
+              </div>
+              <div className="note-edit-appt-row">
+                <label className="note-edit-label">地点</label>
+                <input
+                  type="text"
+                  className="note-edit-input"
+                  value={editApptLocation}
+                  onChange={(e) => setEditApptLocation(e.target.value)}
+                  placeholder="地点/公司名称/会议室…"
+                  maxLength={100}
+                />
+              </div>
             </div>
           )}
+          {/* 日记字段编辑 */}
+          {note.type === 'diary' && (
+            <div className="note-edit-appt">
+              <div className="note-edit-appt-row">
+                <label className="note-edit-label">类型</label>
+                <select
+                  className="note-edit-select"
+                  value={editArticleType}
+                  onChange={(e) => setEditArticleType(e.target.value)}
+                >
+                  <option value="diary">日记</option>
+                  <option value="study">学习笔记</option>
+                  <option value="report">报告内容</option>
+                  <option value="web">网络</option>
+                  <option value="reading">读书笔记</option>
+                  <option value="lecture">讲座笔记</option>
+                </select>
+              </div>
+              <div className="note-edit-appt-row">
+                <label className="note-edit-label">人物</label>
+                <input
+                  type="text"
+                  className="note-edit-input"
+                  value={editArticlePerson}
+                  onChange={(e) => setEditArticlePerson(e.target.value)}
+                  placeholder="相关人物…"
+                  maxLength={50}
+                />
+              </div>
+            </div>
+          )}
+          {/* 日记用富文本编辑器，其他用 textarea */}
+          {note.type === 'diary' ? (
+            <>
+              {/* 富文本工具栏 */}
+              <div className="note-diary-toolbar">
+                <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('bold') }} title="粗体" className="note-diary-tool-btn"><b>B</b></button>
+                <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('italic') }} title="斜体" className="note-diary-tool-btn"><i>I</i></button>
+                <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('underline') }} title="下划线" className="note-diary-tool-btn"><u>U</u></button>
+                <span className="note-diary-tool-divider" />
+                <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('formatBlock', '<h3>') }} title="大标题" className="note-diary-tool-btn">H1</button>
+                <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('formatBlock', '<h4>') }} title="小标题" className="note-diary-tool-btn">H2</button>
+                <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('formatBlock', '<p>') }} title="正文" className="note-diary-tool-btn">P</button>
+                <span className="note-diary-tool-divider" />
+                <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('insertUnorderedList') }} title="无序列表" className="note-diary-tool-btn">• 列表</button>
+                <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('insertOrderedList') }} title="有序列表" className="note-diary-tool-btn">1. 列表</button>
+                <span className="note-diary-tool-divider" />
+                <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('formatBlock', '<blockquote>') }} title="引用" className="note-diary-tool-btn">❝</button>
+                <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('removeFormat') }} title="清除格式" className="note-diary-tool-btn">✕格式</button>
+              </div>
+              <div
+                ref={editDiaryRef}
+                className="note-diary-editor"
+                contentEditable
+                suppressContentEditableWarning
+                data-placeholder="编辑日记内容…"
+                dangerouslySetInnerHTML={{ __html: note.content }}
+              />
+            </>
+          ) : (
+            <textarea
+              className="note-edit-textarea"
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              maxLength={500}
+              rows={3}
+              autoFocus
+            />
+          )}
+          <div className="note-edit-actions">
+            <span className="note-edit-char-count">{note.type === 'diary' ? 'Ctrl+Enter 保存' : `${editContent.length}/500`}</span>
+            <button
+              type="button"
+              className="note-edit-btn note-edit-save"
+              disabled={isPending}
+              onClick={handleEditSave}
+            >
+              {isPending ? '保存中…' : '保存'}
+            </button>
+            <button
+              type="button"
+              className="note-edit-btn note-edit-cancel"
+              disabled={isPending}
+              onClick={handleEditCancel}
+            >
+              取消
+            </button>
+          </div>
         </div>
+      ) : (
+        <>
+          {/* ── 内容 ── */}
+          <div className="note-card-body">
+            {/* todo / 预约 复选框 */}
+            {(note.type === 'todo' || note.type === 'appointment') && (
+              <button
+                type="button"
+                className={`note-check ${note.done ? 'checked' : ''}`}
+                title={note.done ? '标记为未完成' : '标记为完成'}
+                disabled={isPending}
+                onClick={runAction(toggleDoneNote)}
+              >
+                {note.done ? '✓' : '○'}
+              </button>
+            )}
+            {note.type === 'diary' ? (
+              <div className="note-content note-diary-content" dangerouslySetInnerHTML={{ __html: note.content }} />
+            ) : (
+              <p className="note-content">{note.content}</p>
+            )}
+          </div>
+
+          {/* ── 日记信息条 ── */}
+          {note.type === 'diary' && (note.articleType || note.articlePerson) && (
+            <div className="note-diary-bar">
+              {note.articleType && (
+                <span className="note-diary-type-tag">
+                  {ARTICLE_TYPE_LABELS[note.articleType] ?? note.articleType}
+                </span>
+              )}
+              {note.articlePerson && (
+                <span className="note-diary-person-tag">
+                  <svg className="note-appt-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="8" cy="5" r="3"/>
+                    <path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+                  </svg>
+                  <span>{note.articlePerson}</span>
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* ── 预约信息卡 ── */}
+          {note.type === 'appointment' && (note.appointmentTime || note.appointmentLocation || note.appointmentType || note.appointmentPerson) && (
+            <div className="note-appointment-bar">
+              <div className="note-appt-main">
+                {/* 时间 — 主力展示 */}
+                {note.appointmentTime && (
+                  <span className="note-appt-time">
+                    <svg className="note-appt-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="8" cy="8" r="7"/>
+                      <polyline points="8,4 8,8 11,10"/>
+                    </svg>
+                    <span className="note-appt-time-text">{formatApptTime(note.appointmentTime)}</span>
+                  </span>
+                )}
+                {/* 类型标签 */}
+                {note.appointmentType && (
+                  <span className="note-appt-type-tag">
+                    {APPT_TYPE_LABELS[note.appointmentType] ?? note.appointmentType}
+                  </span>
+                )}
+                {/* 人物 */}
+                {note.appointmentPerson && (
+                  <span className="note-appt-person-tag">
+                    <svg className="note-appt-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="8" cy="5" r="3"/>
+                      <path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+                    </svg>
+                    <span>{note.appointmentPerson}</span>
+                  </span>
+                )}
+              </div>
+              {/* 地点 — 第二行 */}
+              {note.appointmentLocation && (
+                <div className="note-appt-sub">
+                  <svg className="note-appt-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 14s6-5 6-8.5A6 6 0 0 0 2 5.5C2 9 8 14 8 14Z"/>
+                    <circle cx="8" cy="5.5" r="1.5"/>
+                  </svg>
+                  <span className="note-appt-location-text">{note.appointmentLocation}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── 操作按钮 ── */}
+          <div className="note-card-actions">
+            <button
+              type="button"
+              className="note-action-btn note-edit-trigger"
+              title="编辑"
+              disabled={isPending}
+              onClick={() => setIsEditing(true)}
+            >
+              编辑
+            </button>
+
+            <button
+              type="button"
+              className={`note-action-btn ${note.pinned ? 'active' : ''}`}
+              title={note.pinned ? '取消置顶' : '置顶'}
+              disabled={isPending}
+              onClick={runAction(togglePinNote)}
+            >
+              {note.pinned ? '取消置顶' : '置顶'}
+            </button>
+
+            <button
+              type="button"
+              className="note-action-btn note-delete-btn"
+              title="删除"
+              disabled={isPending}
+              onClick={() => setConfirmOpen(true)}
+            >
+              删除
+            </button>
+
+            <span className="note-global-author">作者：陈成</span>
+          </div>
+        </>
       )}
-
-      {/* ── 操作按钮 ── */}
-      <div className="note-card-actions">
-        <button
-          type="button"
-          className={`note-action-btn ${note.pinned ? 'active' : ''}`}
-          title={note.pinned ? '取消置顶' : '置顶'}
-          disabled={isPending}
-          onClick={runAction(togglePinNote)}
-        >
-          {note.pinned ? '取消置顶' : '置顶'}
-        </button>
-
-        <button
-          type="button"
-          className="note-action-btn note-delete-btn"
-          title="删除"
-          disabled={isPending}
-          onClick={() => setConfirmOpen(true)}
-        >
-          删除
-        </button>
-
-        <span className="note-global-author">作者：陈成</span>
-      </div>
 
       {/* ── 删除确认弹窗 ── */}
       <ConfirmDialog

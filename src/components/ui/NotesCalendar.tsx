@@ -160,14 +160,15 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
 
   // 总数统计
   const totalCounts = useMemo(() => {
-    let todos = 0, logs = 0, notes = 0, appts = 0
+    let todos = 0, logs = 0, notes = 0, appts = 0, diaries = 0
     for (const d of calendarData) {
       todos += d.todoCount
       logs += d.logCount
       notes += d.noteCount
       appts += d.apptCount ?? 0
+      diaries += d.diaryCount ?? 0
     }
-    return { todos, logs, notes, appts }
+    return { todos, logs, notes, appts, diaries }
   }, [calendarData])
 
   // ── 渲染 ──
@@ -222,6 +223,9 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
             <span className="notes-calendar-legend-item">
               <span className="notes-calendar-dot appt" />预约
             </span>
+            <span className="notes-calendar-legend-item">
+              <span className="notes-calendar-dot diary" />日记
+            </span>
             {selectedDate && (
               <button className="notes-calendar-clear-btn" onClick={() => { onDateSelect(null); handleClose() }}>
                 清除筛选
@@ -249,7 +253,7 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
                 key={dateStr}
                 className={`notes-calendar-cell${isToday ? ' is-today' : ''}${isSelected ? ' is-selected' : ''}${info ? ' has-notes' : ''}`}
                 onClick={() => handleDateClick(dateStr)}
-                title={info ? `待办${info.todoCount} 沟通${info.logCount} 随笔${info.noteCount} 预约${info.apptCount ?? 0}` : '无笔记'}
+                title={info ? `待办${info.todoCount} 沟通${info.logCount} 随笔${info.noteCount} 预约${info.apptCount ?? 0} 日记${info.diaryCount ?? 0}` : '无笔记'}
                 type="button"
               >
                 <span className="notes-calendar-day-num">{day}</span>
@@ -259,6 +263,7 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
                     {info.logCount > 0 && <span className="notes-calendar-badge log">{info.logCount}</span>}
                     {info.noteCount > 0 && <span className="notes-calendar-badge note">{info.noteCount}</span>}
                     {(info.apptCount ?? 0) > 0 && <span className="notes-calendar-badge appt">{info.apptCount ?? 0}</span>}
+                    {(info.diaryCount ?? 0) > 0 && <span className="notes-calendar-badge diary">{info.diaryCount ?? 0}</span>}
                   </span>
                 )}
               </button>
@@ -298,10 +303,13 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
                         )}
                         {a.done && <span className="notes-calendar-appt-done">✓</span>}
                       </div>
-                      {a.location && (
-                        <div className="notes-calendar-appt-location">📍 {a.location}</div>
-                      )}
-                    </div>
+                    {a.location && (
+                      <div className="notes-calendar-appt-location">📍 {a.location}</div>
+                    )}
+                    {a.content && (
+                      <div className="notes-calendar-appt-content">{a.content}</div>
+                    )}
+                  </div>
                   )
                 }
                 return items
@@ -317,6 +325,7 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
           <span className="notes-calendar-stat log">{totalCounts.logs} 沟通</span>
           <span className="notes-calendar-stat note">{totalCounts.notes} 随笔</span>
           <span className="notes-calendar-stat appt">{totalCounts.appts} 预约</span>
+          <span className="notes-calendar-stat diary">{totalCounts.diaries} 日记</span>
         </div>
 
         {loading && (
