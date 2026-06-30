@@ -59,13 +59,6 @@ function fmtDate(d: Date | null) {
   return new Date(d).toLocaleDateString('zh-CN')
 }
 
-function pageForSelected(rows: ProjectRow[], selectedId?: string) {
-  if (!selectedId) return 1
-  const index = rows.findIndex(r => String(r.id) === selectedId)
-  if (index === -1) return 1
-  return Math.floor(index / PAGE_SIZE) + 1
-}
-
 function statusColor(s: string) {
   if (s === '已完成') return 'success'
   if (s === '进行中') return 'progress'
@@ -90,30 +83,31 @@ export default async function ProjectsPage({
   searchParams: Promise<{ projectId?: string; page?: string }>
 }) {
   const { projectId, page: pageParam } = await searchParams
-  const items = await prisma.project.findMany({ orderBy: { updatedAt: 'desc' } })
+  const today = startOfToday()
+  const page = Math.max(1, pageParam ? Number(pageParam) : 1)
+
+  const [items, total, todayCount, activeCount, completedCount, selectedRaw] = await Promise.all([
+    prisma.project.findMany({
+      orderBy: { updatedAt: 'desc' },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.project.count(),
+    prisma.project.count({ where: { createdAt: { gte: today } } }),
+    prisma.project.count({ where: { status: '进行中' } }),
+    prisma.project.count({ where: { status: '已完成' } }),
+    projectId ? prisma.project.findUnique({ where: { id: Number(projectId) } }) : null,
+  ])
 
   const rows: ProjectRow[] = items.map(item => ({ ...item }))
 
-  const today = startOfToday()
-  const todayCount = items.filter(i => i.createdAt >= today).length
-  const activeCount = items.filter(i => i.status === '进行中').length
-  const completedCount = items.filter(i => i.status === '已完成').length
-
-  const selectedItem = rows.find(r => String(r.id) === projectId) ?? rows[0] ?? null
-
-  const pageFromSelected = pageForSelected(rows, projectId)
-  const pageFromParam = pageParam ? Number(pageParam) : 1
-  const currentPage = projectId ? pageFromSelected : Math.max(1, Number.isFinite(pageFromParam) ? pageFromParam : 1)
-
-  const totalPages = Math.ceil(rows.length / PAGE_SIZE)
-  const clampedPage = Math.max(1, Math.min(currentPage, totalPages || 1))
-  const startIdx = (clampedPage - 1) * PAGE_SIZE
-  const pageRows = rows.slice(startIdx, startIdx + PAGE_SIZE)
+  const selectedItem: ProjectRow | null =
+    (selectedRaw as unknown as ProjectRow | null) ?? rows[0] ?? null
 
   return (
     <div className="company-page">
       <section className="grid stats">
-        <StatCard title="项目总数" value={items.length} tone="blue" description="所有猎头项目的总览" />
+        <StatCard title="项目总数" value={total} tone="blue" description="所有猎头项目的总览" />
         <StatCard title="今日新增" value={todayCount} tone="green" description="今日创建的新项目" />
         <StatCard title="进行中" value={activeCount} tone="orange" description="当前正在推进的项目" />
         <StatCard title="已完成" value={completedCount} tone="blue" description="成功交付的项目数量" />
@@ -121,9 +115,9 @@ export default async function ProjectsPage({
 
       <div className="company-workspace">
         <DetailPanel actions={<ProjectCreateSheet />} title="项目列表">
-          {pageRows.length > 0 ? (
+          {rows.length > 0 ? (
             <div className="resource-card-list">
-              {pageRows.map(item => (
+              {rows.map(item => (
                 <ResourceCard
                   key={item.id}
                   title={item.name}
@@ -146,7 +140,7 @@ export default async function ProjectsPage({
           ) : (
             <EmptyState variant="knowledge" action={<ProjectCreateSheet />} />
           )}
-          <Pagination baseHref="/projects" page={clampedPage} pageSize={PAGE_SIZE} total={rows.length} />
+          <Pagination baseHref="/projects" page={page} pageSize={PAGE_SIZE} total={total} />
         </DetailPanel>
 
         <DetailPanel

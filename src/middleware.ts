@@ -1,46 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createHmac } from 'crypto'
 
 /**
  * API 守卫 middleware
- * 拦截所有 /api/* 请求（排除 /api/auth），验证 cookie 中的 token
- * token 格式：base64(时间戳:随机数)，由 /api/auth 登录成功后签发
+ * 拦截所有 /api/* 请求（排除 /api/auth），验证 cookie 中的 HMAC 签名 token
  */
 
 // 不需要认证的 API 路径
 const PUBLIC_API = ['/api/auth']
 
+const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000
+
+function getSecret(): string {
+  return process.env.APP_PASSWORD || 'admin123'
+}
+
+function verifyToken(token: string): boolean {
+  try {
+    const decoded = Buffer.from(token, 'base64').toString('utf-8')
+    const parts = decoded.split(':')
+    if (parts.length !== 3) return false
+
+    const [timestampStr, random, signature] = parts
+    const timestamp = Number(timestampStr)
+
+    if (Date.now() - timestamp > TOKEN_EXPIRY_MS) return false
+
+    const secret = getSecret()
+    const payload = `${timestampStr}:${random}`
+    const expected = createHmac('sha256', secret).update(payload).digest('hex')
+
+    return signature === expected
+  } catch {
+    return false
+  }
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // 只拦截 /api/* 路径
   if (!pathname.startsWith('/api/')) {
     return NextResponse.next()
   }
 
-  // 排除公开 API
   if (PUBLIC_API.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
     return NextResponse.next()
   }
 
-  // 从 cookie 读取 token
   const token = request.cookies.get('ai-recruiter-token')?.value
 
-  if (!token) {
+  if (!token || !verifyToken(token)) {
     return NextResponse.json(
       { success: false, error: '未登录或会话已过期' },
-      { status: 401 }
-    )
-  }
-
-  // 验证 token 格式：base64 解码后应包含冒号
-  try {
-    const decoded = Buffer.from(token, 'base64').toString('utf-8')
-    if (!decoded.includes(':')) {
-      throw new Error('invalid token')
-    }
-  } catch {
-    return NextResponse.json(
-      { success: false, error: '无效的认证凭证' },
       { status: 401 }
     )
   }

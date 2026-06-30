@@ -43,22 +43,26 @@ function hasText(value?: string | null) {
   return Boolean(value && value.trim())
 }
 
-function pageForSelected(rows: ChartRow[], selectedId?: string) {
-  if (!selectedId) return 1
-  const index = rows.findIndex((row) => String(row.id) === selectedId)
-  if (index === -1) return 1
-  return Math.floor(index / PAGE_SIZE) + 1
-}
-
 export default async function ChartsPage({
   searchParams,
 }: {
   searchParams: Promise<{ chartId?: string; page?: string }>
 }) {
   const { chartId, page: pageParam } = await searchParams
-  const items = await prisma.chart.findMany({
-    orderBy: { updatedAt: 'desc' },
-  })
+  const today = startOfToday()
+  const page = Math.max(1, pageParam ? Number(pageParam) : 1)
+
+  const [items, total, todayCount, hasDataCount, selectedRaw] = await Promise.all([
+    prisma.chart.findMany({
+      orderBy: { updatedAt: 'desc' },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.chart.count(),
+    prisma.chart.count({ where: { createdAt: { gte: today } } }),
+    prisma.chart.count({ where: { NOT: { indicatorTotal: null } } }),
+    chartId ? prisma.chart.findUnique({ where: { id: Number(chartId) } }) : null,
+  ])
 
   const rows: ChartRow[] = items.map((item) => ({
     id: item.id,
@@ -80,22 +84,8 @@ export default async function ChartsPage({
     createdAt: item.createdAt,
   }))
 
-  const today = startOfToday()
-  const todayCount = items.filter((item) => item.createdAt >= today).length
-  const hasDataCount = items.filter((item) => (item.indicatorTotal ?? '') !== '').length
-
-  const selectedItem =
-    rows.find((row) => String(row.id) === chartId) ?? rows[0] ?? null
-
-  const pageFromSelected = pageForSelected(rows, chartId)
-  const pageFromParam = pageParam ? Number(pageParam) : 1
-  const currentPage = chartId ? pageFromSelected : Math.max(1, Number.isFinite(pageFromParam) ? pageFromParam : 1)
-
-  // Pagination
-  const totalPages = Math.ceil(rows.length / PAGE_SIZE)
-  const clampedPage = Math.max(1, Math.min(currentPage, totalPages || 1))
-  const startIdx = (clampedPage - 1) * PAGE_SIZE
-  const pageRows = rows.slice(startIdx, startIdx + PAGE_SIZE)
+  const selectedItem: ChartRow | null =
+    (selectedRaw as unknown as ChartRow | null) ?? rows[0] ?? null
 
   return (
     <div className="company-page">
@@ -104,7 +94,7 @@ export default async function ChartsPage({
           description="数据可视化驱动决策——市场趋势、人才分布一目了然"
           title="图表总数"
           tone="blue"
-          value={items.length}
+          value={total}
         />
         <StatCard description="今日新建的数据图表" title="今日新增" tone="green" value={todayCount} />
         <StatCard description="含完整指标数据，可直接引用" title="有数据" tone="orange" value={hasDataCount} />
@@ -116,7 +106,7 @@ export default async function ChartsPage({
           actions={<ChartCreateSheet />}
           title="图表列表"
         >
-          {pageRows.length > 0 ? (
+          {rows.length > 0 ? (
             <div className="resource-card-list">
               {pageRows.map((item) => (
               <ResourceCard
@@ -149,9 +139,9 @@ export default async function ChartsPage({
           )}
           <Pagination
             baseHref="/charts"
-            page={clampedPage}
+            page={page}
             pageSize={PAGE_SIZE}
-            total={rows.length}
+            total={total}
           />
         </DetailPanel>
 

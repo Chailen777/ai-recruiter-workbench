@@ -6,9 +6,11 @@ import { required, validateForm } from '@/lib/form'
 import { prisma } from '@/lib/prisma'
 import { processAttachments, deleteAllAttachments, saveAvatar, removeAvatar } from '@/lib/uploads'
 import { syncCompanyMd, deleteCompanyMd } from '@/lib/markdown'
+import { requireServerAuth } from '@/lib/server-auth'
 import { actionError, actionSuccess, collectErrors, value, multiValue, cityValue, requiredValue } from './shared'
 
 export async function createCompany(formData: FormData): Promise<ActionResult> {
+  await requireServerAuth()
   const { errors, valid } = validateForm(formData, { name: required() })
   if (!valid) return actionError('请检查表单填写是否正确', errors)
 
@@ -78,6 +80,7 @@ export async function updateCompany(formData: FormData): Promise<ActionResult> {
 }
 
 export async function deleteCompany(formData: FormData): Promise<void> {
+  await requireServerAuth()
   const id = Number(formData.get('id'))
   if (!id) throw new Error('缺少企业 ID')
   const company = await prisma.company.findUnique({ where: { id }, select: { attachments: true, avatar: true } })

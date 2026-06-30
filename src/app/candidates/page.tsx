@@ -22,16 +22,9 @@ import { prisma } from '@/lib/prisma'
 import { scoreCandidateForJobs } from '@/lib/matching'
 import type { MatchJob } from '@/lib/matching'
 import { startOfToday } from '@/lib/date'
+import { candidateStatusVariant } from '@/lib/status-utils'
 
 const PAGE_SIZE = 10
-
-function statusVariant(status?: string | null) {
-  if (status === '入职') return 'success'
-  if (status === '已沟通' || status === '已推荐' || status === '面试中' || status === 'Offer')
-    return 'progress'
-  if (status === '淘汰') return 'risk'
-  return 'pending'
-}
 
 function hasText(value?: string | null) {
   return Boolean(value && value.trim())
@@ -256,7 +249,7 @@ export default async function CandidatesPage({
                 <div className="is-highlight">
                   <dt>状态</dt>
                   <dd>
-                    <StatusBadge variant={statusVariant(selectedCandidate.status)}>
+                    <StatusBadge variant={candidateStatusVariant(selectedCandidate.status)}>
                       {selectedCandidate.status}
                     </StatusBadge>
                   </dd>

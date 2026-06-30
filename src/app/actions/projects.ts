@@ -103,6 +103,7 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
 }
 
 export async function deleteProject(formData: FormData): Promise<void> {
+  await requireServerAuth()
   const id = Number(formData.get('id'))
   if (!id) throw new Error('缺少项目 ID')
   const item = await prisma.project.findUnique({ where: { id }, select: { attachments: true } })

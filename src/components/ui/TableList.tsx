@@ -21,16 +21,6 @@ type TableListProps<Row> = {
   selectedKey?: string | number
 }
 
-type BadgeVariant = 'success' | 'progress' | 'pending' | 'risk' | 'neutral'
-
-function statusVariant(value: string): BadgeVariant {
-  if (['合作中', '成功', '已成交', '入职'].includes(value)) return 'success'
-  if (['已推荐', '已沟通', '面试中', '推荐中', '已跟进', 'Offer'].includes(value)) return 'progress'
-  if (['开放', '新建', '待沟通', '待跟进', '暂停中'].includes(value)) return 'pending'
-  if (['关闭', '淘汰', '已拒绝', '风险'].includes(value)) return 'risk'
-  return 'neutral'
-}
-
 function shouldRenderStatus(key: string, label: string) {
   return key.toLowerCase().includes('status') || label.includes('状态')
 }

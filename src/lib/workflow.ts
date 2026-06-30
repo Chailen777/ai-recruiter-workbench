@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { startOfToday } from './date'
 
 export const candidateFlow = [
   '新建',
@@ -59,11 +60,6 @@ function countByStatus<T extends { status: string }>(items: T[], statuses: reado
     count: items.filter((item) => item.status === status).length,
     status,
   }))
-}
-
-export function startOfToday() {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate())
 }
 
 export function workflowBadgeVariant(status: string): WorkflowBadgeVariant {

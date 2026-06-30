@@ -12,10 +12,12 @@ import {
   syncInfoMd, deleteInfoMd,
 } from '@/lib/markdown'
 import { actionError, actionSuccess, collectErrors, value, intValue, requiredValue } from './shared'
+import { requireServerAuth } from '@/lib/server-auth'
 
 /* ─── Knowledge ─── */
 
 export async function createKnowledge(formData: FormData): Promise<ActionResult> {
+  await requireServerAuth()
   const { errors, valid } = validateForm(formData, { title: required() })
   if (!valid) return actionError('请检查表单填写是否正确', errors)
   try {
@@ -99,6 +101,7 @@ export async function deleteKnowledge(formData: FormData): Promise<void> {
 /* ─── School ─── */
 
 export async function createSchool(formData: FormData): Promise<ActionResult> {
+  await requireServerAuth()
   const { errors, valid } = validateForm(formData, { name: required() })
   if (!valid) return actionError('请检查表单填写是否正确', errors)
   try {

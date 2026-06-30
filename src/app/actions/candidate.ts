@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { processAttachments, deleteAllAttachments, saveAvatar, removeAvatar } from '@/lib/uploads'
 import { syncCandidateMd, deleteCandidateMd } from '@/lib/markdown'
 import { applyCandidateStatusEffects } from '@/lib/workflow'
+import { requireServerAuth } from '@/lib/server-auth'
 import { actionError, actionSuccess, collectErrors, value, intValue, requiredValue } from './shared'
 
 export async function createCandidate(formData: FormData): Promise<ActionResult> {
@@ -64,6 +65,7 @@ export async function createCandidate(formData: FormData): Promise<ActionResult>
 }
 
 export async function updateCandidate(formData: FormData): Promise<ActionResult> {
+  await requireServerAuth()
   const id = Number(formData.get('id'))
   if (!id) return actionError('缺少候选人 ID', { id: '候选人 ID 无效' })
 
@@ -126,6 +128,7 @@ export async function updateCandidate(formData: FormData): Promise<ActionResult>
 }
 
 export async function deleteCandidate(formData: FormData): Promise<void> {
+  await requireServerAuth()
   const id = Number(formData.get('id'))
   if (!id) throw new Error('缺少候选人 ID')
   const candidate = await prisma.candidate.findUnique({ where: { id }, select: { attachments: true, avatar: true } })

@@ -165,6 +165,7 @@ export async function updateJob(formData: FormData): Promise<ActionResult> {
 }
 
 export async function deleteJob(formData: FormData): Promise<void> {
+  await requireServerAuth()
   const id = Number(formData.get('id'))
   if (!id) throw new Error('缺少岗位 ID')
   const job = await prisma.job.findUnique({ where: { id }, select: { attachments: true, avatar: true } })

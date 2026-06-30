@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
+import { signToken } from '@/lib/server-auth'
 
 /**
  * 认证 API
  * POST /api/auth
  * Body: { password: string }
  * Response: { success: boolean, token?: string, error?: string }
- * token 存在 sessionStorage，关闭浏览器即失效
+ * Token 使用 HMAC-SHA256 签名，防伪造
  */
 
 export async function POST(request: Request) {
@@ -22,10 +23,8 @@ export async function POST(request: Request) {
       )
     }
 
-    // 生成 token：base64(时间戳 + 随机数)
-    const timestamp = Date.now()
-    const random = Math.random().toString(36).slice(2, 10)
-    const token = Buffer.from(`${timestamp}:${random}`).toString('base64')
+    // 生成带 HMAC-SHA256 签名的 token
+    const token = signToken()
 
     // 创建响应
     const res = NextResponse.json({
@@ -33,7 +32,7 @@ export async function POST(request: Request) {
       token,
     })
 
-    // 设置 cookie（session cookie，浏览器关闭即清除，与 sessionStorage 行为一致）
+    // 设置 cookie（session cookie，浏览器关闭即清除）
     res.cookies.set('ai-recruiter-token', token, {
       path: '/',
       sameSite: 'strict',

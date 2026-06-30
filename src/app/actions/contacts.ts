@@ -6,10 +6,12 @@ import { required, validateForm } from '@/lib/form'
 import { prisma } from '@/lib/prisma'
 import { processAttachments, deleteAllAttachments } from '@/lib/uploads'
 import { actionError, actionSuccess, collectErrors, value, intValue, requiredValue } from './shared'
+import { requireServerAuth } from '@/lib/server-auth'
 
 /* ─── Contact (人脉库) ─── */
 
 export async function createContact(formData: FormData): Promise<ActionResult> {
+  await requireServerAuth()
   const { errors, valid } = validateForm(formData, { name: required() })
   if (!valid) return actionError('请检查表单填写是否正确', errors)
   try {
@@ -117,6 +119,7 @@ export async function updateContact(formData: FormData): Promise<ActionResult> {
 }
 
 export async function deleteContact(formData: FormData): Promise<void> {
+  await requireServerAuth()
   const id = Number(formData.get('id'))
   if (!id) throw new Error('缺少人脉 ID')
   const item = await prisma.contact.findUnique({ where: { id }, select: { attachments: true } })

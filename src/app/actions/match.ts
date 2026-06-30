@@ -7,6 +7,7 @@ import { applyMatchStatusEffects, normalizeMatchStatus } from '@/lib/workflow'
 import { requiredValue, jsonListValue } from './shared'
 import { scoreCandidateForJobs, scoreJobForCandidates, passesDimensionFilter } from '@/lib/matching'
 import type { MatchCandidate, MatchJob, MatchDimensionKey, MatchDimension } from '@/lib/matching'
+import { requireServerAuth } from '@/lib/server-auth'
 
 /* ─── 安全地 revalidate 多个路径（Neon 连接池限制下非关键操作不崩溃） ─── */
 function safeRevalidate(...paths: string[]) {
@@ -560,6 +561,7 @@ export async function quickReset(
   candidateId: number,
   jobId: number,
 ): Promise<{ success: boolean }> {
+  await requireServerAuth()
   try {
     await prisma.match.delete({
       where: { candidateId_jobId: { candidateId, jobId } },

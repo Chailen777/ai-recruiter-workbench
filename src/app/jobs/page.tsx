@@ -22,15 +22,9 @@ import { salaryMax } from '@/lib/salary'
 import { scoreJobForCandidates } from '@/lib/matching'
 import type { MatchCandidate } from '@/lib/matching'
 import { prisma } from '@/lib/prisma'
+import { jobStatusVariant } from '@/lib/status-utils'
 
 const PAGE_SIZE = 10
-
-function statusVariant(status?: string | null) {
-  if (status === '已关闭' || status === '关闭') return 'neutral'
-  if (status === 'Offer') return 'success'
-  if (status === '进行中' || status === '推荐中' || status === '面试中') return 'progress'
-  return 'pending'
-}
 
 function pageForSelected<T extends { id: number }>(rows: T[], selectedId?: string) {
   if (!selectedId) return 1
@@ -307,7 +301,7 @@ export default async function JobsPage({
                 <div className="is-highlight">
                   <dt>状态</dt>
                   <dd>
-                    <StatusBadge variant={statusVariant(selectedJob.status)}>
+                    <StatusBadge variant={jobStatusVariant(selectedJob.status)}>
                       {selectedJob.status}
                     </StatusBadge>
                   </dd>

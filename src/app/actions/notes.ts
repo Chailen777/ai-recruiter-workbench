@@ -588,6 +588,7 @@ export async function getAppointmentList(entityType?: EntityType, entityId?: num
 
 // ── 将数据库中所有笔记同步生成 MD 文件 ───────────
 export async function syncAllNotesMd() {
+  await requireServerAuth()
   try {
     const notes = await prisma.note.findMany()
     for (const note of notes) {

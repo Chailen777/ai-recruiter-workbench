@@ -66,13 +66,6 @@ function fmtDate(d: Date | null) {
   return new Date(d).toLocaleDateString('zh-CN')
 }
 
-function pageForSelected(rows: ContactRow[], selectedId?: string) {
-  if (!selectedId) return 1
-  const index = rows.findIndex(r => String(r.id) === selectedId)
-  if (index === -1) return 1
-  return Math.floor(index / PAGE_SIZE) + 1
-}
-
 function strengthColor(s: string | null) {
   if (!s) return 'neutral'
   if (s.includes('深度') || s.includes('老朋友')) return 'success'
@@ -94,31 +87,29 @@ export default async function ContactsPage({
   searchParams: Promise<{ contactId?: string; page?: string }>
 }) {
   const { contactId, page: pageParam } = await searchParams
-  const items = await prisma.contact.findMany({ orderBy: { updatedAt: 'desc' } })
+  const today = startOfToday()
+  const page = Math.max(1, pageParam ? Number(pageParam) : 1)
+
+  const [items, total, todayCount, aLevelCount, selectedRaw] = await Promise.all([
+    prisma.contact.findMany({
+      orderBy: { updatedAt: 'desc' },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.contact.count(),
+    prisma.contact.count({ where: { createdAt: { gte: today } } }),
+    prisma.contact.count({ where: { influenceRating: { startsWith: 'A' } } }),
+    contactId ? prisma.contact.findUnique({ where: { id: Number(contactId) } }) : null,
+  ])
+
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000)
+  const recentCount = await prisma.contact.count({ where: { lastContactDate: { gte: thirtyDaysAgo } } })
 
   const rows: ContactRow[] = items.map(item => ({
     ...item,
   }))
-
-  const today = startOfToday()
-  const todayCount = items.filter(i => i.createdAt >= today).length
-  const aLevelCount = items.filter(i => i.influenceRating?.startsWith('A')).length
-  const recentCount = items.filter(i => {
-    if (!i.lastContactDate) return false
-    const d = new Date(i.lastContactDate)
-    return d >= new Date(Date.now() - 30 * 86400000)
-  }).length
-
-  const selectedItem = rows.find(r => String(r.id) === contactId) ?? rows[0] ?? null
-
-  const pageFromSelected = pageForSelected(rows, contactId)
-  const pageFromParam = pageParam ? Number(pageParam) : 1
-  const currentPage = contactId ? pageFromSelected : Math.max(1, Number.isFinite(pageFromParam) ? pageFromParam : 1)
-
-  const totalPages = Math.ceil(rows.length / PAGE_SIZE)
-  const clampedPage = Math.max(1, Math.min(currentPage, totalPages || 1))
-  const startIdx = (clampedPage - 1) * PAGE_SIZE
-  const pageRows = rows.slice(startIdx, startIdx + PAGE_SIZE)
+  const selectedItem: ContactRow | null =
+    (selectedRaw as unknown as ContactRow | null) ?? rows[0] ?? null
 
   return (
     <div className="company-page">
@@ -131,9 +122,9 @@ export default async function ContactsPage({
 
       <div className="company-workspace">
         <DetailPanel actions={<ContactCreateSheet />} title="人脉列表">
-          {pageRows.length > 0 ? (
+          {rows.length > 0 ? (
             <div className="resource-card-list">
-              {pageRows.map(item => (
+              {rows.map(item => (
                 <ResourceCard
                   key={item.id}
                   title={item.name}
@@ -157,7 +148,7 @@ export default async function ContactsPage({
           ) : (
             <EmptyState variant="knowledge" action={<ContactCreateSheet />} />
           )}
-          <Pagination baseHref="/contacts" page={clampedPage} pageSize={PAGE_SIZE} total={rows.length} />
+          <Pagination baseHref="/contacts" page={page} pageSize={PAGE_SIZE} total={total} />
         </DetailPanel>
 
         <DetailPanel

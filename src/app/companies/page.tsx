@@ -17,6 +17,7 @@ import {
 } from '@/components/ui'
 import { prisma } from '@/lib/prisma'
 import { startOfToday } from '@/lib/date'
+import { companyStatusVariant, jobStatusVariant } from '@/lib/status-utils'
 import Link from 'next/link'
 
 const PAGE_SIZE = 10
@@ -47,21 +48,6 @@ type CompanyRow = {
   source: string
   link: string | null
   createdAt: Date
-}
-
-function statusVariant(status: string) {
-  if (status.includes('合作中') || status.includes('已联系')) return 'success'
-  if (status.includes('待沟通')) return 'pending'
-  if (status.includes('暂停')) return 'progress'
-  if (status.includes('结束')) return 'risk'
-  return 'neutral'
-}
-
-function jobStatusVariant(status: string) {
-  if (status === '进行中' || status === '推荐中') return 'progress'
-  if (status === '待发布' || status === '开放') return 'pending'
-  if (status === '已关闭' || status === '关闭') return 'neutral'
-  return 'neutral'
 }
 
 function hasText(value?: string | null) {
@@ -239,7 +225,7 @@ export default async function CompaniesPage({
                   <div className="is-highlight">
                     <dt>合作状态</dt>
                     <dd>
-                      <StatusBadge variant={statusVariant(selectedCompany.cooperationStatus)}>
+                      <StatusBadge variant={companyStatusVariant(selectedCompany.cooperationStatus)}>
                         {selectedCompany.cooperationStatus}
                       </StatusBadge>
                     </dd>

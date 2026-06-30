@@ -16,6 +16,8 @@ import { MatchKanbanBoard } from '@/components/ui/MatchKanbanBoard'
 import { prisma } from '@/lib/prisma'
 import { scoreCandidateForJobs, scoreJobForCandidates, passesDimensionFilter, type MatchLevel } from '@/lib/matching'
 import type { MatchDimensionKey } from '@/lib/matching'
+import { startOfToday } from '@/lib/date'
+import { matchStatusVariant } from '@/lib/status-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,20 +38,6 @@ type MatchRow = {
   score: number
   status: string
   suggestion: string
-}
-
-function startOfToday() {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate())
-}
-
-function statusVariant(status: string) {
-  if (status === '已推荐') return 'success'
-  if (status === '已拒绝') return 'risk'
-  if (status === '已淘汰') return 'pending'
-  if (status === '已放弃') return 'neutral'
-  if (status === '已跟进' || status === '已成交') return 'progress'
-  return 'neutral'
 }
 
 function modeFromParams(mode?: string, candidateId?: string, jobId?: string): MatchMode {
@@ -201,7 +189,7 @@ export default async function MatchPage({
         row.status === '未推荐' ? (
           <span className="ui-status-badge" style={{ borderColor: '#d1d5db', background: 'transparent', color: '#9ca3af' }}>未推荐</span>
         ) : (
-          <StatusBadge variant={statusVariant(row.status)}>{row.status}</StatusBadge>
+          <StatusBadge variant={matchStatusVariant(row.status)}>{row.status}</StatusBadge>
         ),
     },
     { key: 'reasons', label: '匹配理由', render: (row) => row.reasons.slice(0, 3).join('；') },

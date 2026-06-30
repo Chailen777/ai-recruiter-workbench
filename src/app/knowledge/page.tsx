@@ -58,22 +58,28 @@ function hasText(value?: string | null) {
   return Boolean(value && value.trim())
 }
 
-function pageForSelected(rows: KnowledgeRow[], selectedId?: string) {
-  if (!selectedId) return 1
-  const index = rows.findIndex((row) => String(row.id) === selectedId)
-  if (index === -1) return 1
-  return Math.floor(index / PAGE_SIZE) + 1
-}
-
 export default async function KnowledgePage({
   searchParams,
 }: {
   searchParams: Promise<{ knowledgeId?: string; page?: string }>
 }) {
   const { knowledgeId, page: pageParam } = await searchParams
-  const items = await prisma.knowledge.findMany({
-    orderBy: { updatedAt: 'desc' },
-  })
+  const today = startOfToday()
+  const page = Math.max(1, pageParam ? Number(pageParam) : 1)
+
+  // 数据库级分页：只加载当前页数据
+  const [items, total, todayCount, publicCount, approvedCount, selectedRaw] = await Promise.all([
+    prisma.knowledge.findMany({
+      orderBy: { updatedAt: 'desc' },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.knowledge.count(),
+    prisma.knowledge.count({ where: { createdAt: { gte: today } } }),
+    prisma.knowledge.count({ where: { publicStatus: '公开' } }),
+    prisma.knowledge.count({ where: { reviewStatus: '已通过' } }),
+    knowledgeId ? prisma.knowledge.findUnique({ where: { id: Number(knowledgeId) } }) : null,
+  ])
 
   const rows: KnowledgeRow[] = items.map((item) => ({
     id: item.id,
@@ -94,23 +100,9 @@ export default async function KnowledgePage({
     createdAt: item.createdAt,
   }))
 
-  const today = startOfToday()
-  const todayCount = items.filter((item) => item.createdAt >= today).length
-  const publicCount = items.filter((item) => (item.publicStatus ?? '') === '公开').length
-  const approvedCount = items.filter((item) => (item.reviewStatus ?? '') === '已通过').length
-
-  const selectedItem =
-    rows.find((row) => String(row.id) === knowledgeId) ?? rows[0] ?? null
-
-  const pageFromSelected = pageForSelected(rows, knowledgeId)
-  const pageFromParam = pageParam ? Number(pageParam) : 1
-  const currentPage = knowledgeId ? pageFromSelected : Math.max(1, Number.isFinite(pageFromParam) ? pageFromParam : 1)
-
-  // Pagination
-  const totalPages = Math.ceil(rows.length / PAGE_SIZE)
-  const clampedPage = Math.max(1, Math.min(currentPage, totalPages || 1))
-  const startIdx = (clampedPage - 1) * PAGE_SIZE
-  const pageRows = rows.slice(startIdx, startIdx + PAGE_SIZE)
+  // 优先用数据库中查到的选中项，否则取列表中第一个
+  const selectedItem: KnowledgeRow | null =
+    (selectedRaw as unknown as KnowledgeRow | null) ?? rows[0] ?? null
 
   return (
     <div className="company-page">
@@ -161,9 +153,9 @@ export default async function KnowledgePage({
           )}
           <Pagination
             baseHref="/knowledge"
-            page={clampedPage}
+            page={page}
             pageSize={PAGE_SIZE}
-            total={rows.length}
+            total={total}
           />
         </DetailPanel>
 

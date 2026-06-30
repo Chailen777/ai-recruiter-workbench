@@ -54,25 +54,27 @@ function hasText(value?: string | null) {
   return Boolean(value && value.trim())
 }
 
-function pageForSelected(rows: InfoRow[], selectedId?: string) {
-  if (!selectedId) return 1
-  const index = rows.findIndex((row) => String(row.id) === selectedId)
-  if (index === -1) return 1
-  return Math.floor(index / PAGE_SIZE) + 1
-}
-
 export default async function InfoPage({
   searchParams,
 }: {
   searchParams: Promise<{ infoId?: string; page?: string }>
 }) {
   const { infoId, page: pageParam } = await searchParams
-  const items = await prisma.info.findMany({
-    orderBy: [
-      { pinStatus: 'desc' },
-      { updatedAt: 'desc' },
-    ],
-  })
+  const today = startOfToday()
+  const page = Math.max(1, pageParam ? Number(pageParam) : 1)
+
+  const [items, total, todayCount, pinnedCount, urgentCount, selectedRaw] = await Promise.all([
+    prisma.info.findMany({
+      orderBy: [{ pinStatus: 'desc' }, { updatedAt: 'desc' }],
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.info.count(),
+    prisma.info.count({ where: { createdAt: { gte: today } } }),
+    prisma.info.count({ where: { pinStatus: '置顶' } }),
+    prisma.info.count({ where: { urgency: '紧急' } }),
+    infoId ? prisma.info.findUnique({ where: { id: Number(infoId) } }) : null,
+  ])
 
   const rows: InfoRow[] = items.map((item) => ({
     id: item.id,
@@ -97,23 +99,8 @@ export default async function InfoPage({
     createdAt: item.createdAt,
   }))
 
-  const today = startOfToday()
-  const todayCount = items.filter((item) => item.createdAt >= today).length
-  const pinnedCount = items.filter((item) => (item.pinStatus ?? '') === '置顶').length
-  const urgentCount = items.filter((item) => (item.urgency ?? '') === '紧急').length
-
-  const selectedItem =
-    rows.find((row) => String(row.id) === infoId) ?? rows[0] ?? null
-
-  const pageFromSelected = pageForSelected(rows, infoId)
-  const pageFromParam = pageParam ? Number(pageParam) : 1
-  const currentPage = infoId ? pageFromSelected : Math.max(1, Number.isFinite(pageFromParam) ? pageFromParam : 1)
-
-  // Pagination
-  const totalPages = Math.ceil(rows.length / PAGE_SIZE)
-  const clampedPage = Math.max(1, Math.min(currentPage, totalPages || 1))
-  const startIdx = (clampedPage - 1) * PAGE_SIZE
-  const pageRows = rows.slice(startIdx, startIdx + PAGE_SIZE)
+  const selectedItem: InfoRow | null =
+    (selectedRaw as unknown as InfoRow | null) ?? rows[0] ?? null
 
   return (
     <div className="company-page">
@@ -122,7 +109,7 @@ export default async function InfoPage({
           description="汇聚行业动态与关键提醒，确保每条线索不遗漏"
           title="信息总数"
           tone="blue"
-          value={items.length}
+          value={total}
         />
         <StatCard description="今日新增的动态信息" title="今日新增" tone="green" value={todayCount} />
         <StatCard description="置顶高亮，优先关注" title="置顶信息" tone="orange" value={pinnedCount} />
@@ -134,7 +121,7 @@ export default async function InfoPage({
           actions={<InfoCreateSheet />}
           title="信息列表"
         >
-          {pageRows.length > 0 ? (
+          {rows.length > 0 ? (
             <div className="resource-card-list">
               {pageRows.map((item) => (
               <ResourceCard
@@ -166,9 +153,9 @@ export default async function InfoPage({
           )}
           <Pagination
             baseHref="/info"
-            page={clampedPage}
+            page={page}
             pageSize={PAGE_SIZE}
-            total={rows.length}
+            total={total}
           />
         </DetailPanel>
 

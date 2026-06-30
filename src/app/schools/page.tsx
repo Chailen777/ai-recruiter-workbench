@@ -49,22 +49,27 @@ function hasText(value?: string | null) {
   return Boolean(value && value.trim())
 }
 
-function pageForSelected(rows: SchoolRow[], selectedId?: string) {
-  if (!selectedId) return 1
-  const index = rows.findIndex((row) => String(row.id) === selectedId)
-  if (index === -1) return 1
-  return Math.floor(index / PAGE_SIZE) + 1
-}
-
 export default async function SchoolsPage({
   searchParams,
 }: {
   searchParams: Promise<{ schoolId?: string; page?: string }>
 }) {
   const { schoolId, page: pageParam } = await searchParams
-  const items = await prisma.school.findMany({
-    orderBy: { updatedAt: 'desc' },
-  })
+  const today = startOfToday()
+  const page = Math.max(1, pageParam ? Number(pageParam) : 1)
+
+  const [items, total, todayCount, doubleFirstClassCount, hasGradProgramCount, selectedRaw] = await Promise.all([
+    prisma.school.findMany({
+      orderBy: { updatedAt: 'desc' },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.school.count(),
+    prisma.school.count({ where: { createdAt: { gte: today } } }),
+    prisma.school.count({ where: { NOT: { doubleFirstClass: null } } }),
+    prisma.school.count({ where: { NOT: { graduatePrograms: null } } }),
+    schoolId ? prisma.school.findUnique({ where: { id: Number(schoolId) } }) : null,
+  ])
 
   const rows: SchoolRow[] = items.map((item) => ({
     id: item.id,
@@ -92,23 +97,8 @@ export default async function SchoolsPage({
     createdAt: item.createdAt,
   }))
 
-  const today = startOfToday()
-  const todayCount = items.filter((item) => item.createdAt >= today).length
-  const doubleFirstClassCount = items.filter((item) => (item.doubleFirstClass ?? '') !== '').length
-  const hasGradProgramCount = items.filter((item) => (item.graduatePrograms ?? '') !== '').length
-
-  const selectedItem =
-    rows.find((row) => String(row.id) === schoolId) ?? rows[0] ?? null
-
-  const pageFromSelected = pageForSelected(rows, schoolId)
-  const pageFromParam = pageParam ? Number(pageParam) : 1
-  const currentPage = schoolId ? pageFromSelected : Math.max(1, Number.isFinite(pageFromParam) ? pageFromParam : 1)
-
-  // Pagination
-  const totalPages = Math.ceil(rows.length / PAGE_SIZE)
-  const clampedPage = Math.max(1, Math.min(currentPage, totalPages || 1))
-  const startIdx = (clampedPage - 1) * PAGE_SIZE
-  const pageRows = rows.slice(startIdx, startIdx + PAGE_SIZE)
+  const selectedItem: SchoolRow | null =
+    (selectedRaw as unknown as SchoolRow | null) ?? rows[0] ?? null
 
   return (
     <div className="company-page">
@@ -129,9 +119,9 @@ export default async function SchoolsPage({
           actions={<SchoolCreateSheet />}
           title="学校列表"
         >
-          {pageRows.length > 0 ? (
+          {rows.length > 0 ? (
             <div className="resource-card-list">
-              {pageRows.map((item) => (
+              {rows.map((item) => (
                 <ResourceCard
                   key={item.id}
                   title={item.name}

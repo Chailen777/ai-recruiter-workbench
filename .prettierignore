@@ -1,4 +1,10 @@
-node_modules
 .next
-*.lock
-prisma/migrations
+node_modules
+out
+public
+data
+*.md
+package-lock.json
+.next
+dist
+.next
