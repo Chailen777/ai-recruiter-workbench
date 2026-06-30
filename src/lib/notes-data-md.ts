@@ -29,6 +29,12 @@ export type NoteData = {
   appointmentPerson?: string | null
   articleType?: string | null
   articlePerson?: string | null
+  // 待办重复字段
+  scheduledDate?: Date | null
+  repeatType?: string | null
+  repeatFrequency?: number | null
+  repeatEndDate?: Date | null
+  repeatGroupId?: string | null
 }
 
 const DATA_NOTES_DIR = join(process.cwd(), 'data', 'notes')

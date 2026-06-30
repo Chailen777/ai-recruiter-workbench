@@ -361,9 +361,16 @@ model Note {
   // 日记字段 (diary 专用)
   articleType   String?  // 文章类型: diary | study | report | web | reading | lecture
   articlePerson String?  // 人物
+  // 待办重复字段 (todo 专用)
+  scheduledDate    DateTime?  // 计划执行时间（年月日 + 时分）
+  repeatType       String?    // 重复类型: weekly | monthly | yearly
+  repeatFrequency  Int?       // 重复频率（每 N 周/月/年）
+  repeatEndDate    DateTime?  // 重复截止日期
+  repeatGroupId    String?    // 重复组 ID（同一组重复待办共享此 UUID）
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   @@index([entityType, entityId])
+  @@index([repeatGroupId])
   @@map("note")
 }

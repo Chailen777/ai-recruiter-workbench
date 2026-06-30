@@ -3932,6 +3932,195 @@
   color: #c084fc;
 }
 
+/* ── 待办表单 ── */
+.note-todo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-radius: 8px;
+  border: 1px solid #bfdbfe;
+}
+
+[data-theme='dark'] .note-todo-form {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .note-todo-form {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%);
+    border-color: rgba(59, 130, 246, 0.2);
+  }
+}
+
+.note-todo-freq-label {
+  font-size: 12px;
+  color: var(--ds-color-text-secondary, #6b7280);
+  white-space: nowrap;
+}
+
+.note-todo-freq-input {
+  padding: 2px 6px;
+  border: 1px solid var(--ds-color-border, #e5e7eb);
+  border-radius: 4px;
+  font-size: 12px;
+  background: var(--ds-color-surface, #fff);
+  color: var(--ds-color-text-primary, #111827);
+}
+
+/* ── 待办信息卡 ── */
+.note-todo-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  margin-top: 10px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-radius: 10px;
+  border: 1px solid #bfdbfe;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.08);
+}
+
+[data-theme='dark'] .note-todo-bar {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border-color: rgba(59, 130, 246, 0.2);
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .note-todo-bar {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%);
+    border-color: rgba(59, 130, 246, 0.2);
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.12);
+  }
+}
+
+.note-todo-repeat-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+[data-theme='dark'] .note-todo-repeat-tag {
+  background: #2563eb;
+}
+
+.note-todo-scheduled {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+[data-theme='dark'] .note-todo-scheduled {
+  color: #93c5fd;
+}
+
+.note-todo-scheduled .note-appt-svg {
+  color: #3b82f6;
+  width: 15px;
+  height: 15px;
+}
+
+[data-theme='dark'] .note-todo-scheduled .note-appt-svg {
+  color: #60a5fa;
+}
+
+/* ── 重复标记（卡片头部） ── */
+.note-repeat-mark {
+  font-size: 13px;
+  margin-left: -2px;
+}
+
+/* ── 编辑模式只读字段 ── */
+.note-edit-readonly {
+  font-size: 12px;
+  color: var(--ds-color-text-secondary, #6b7280);
+  padding: 4px 0;
+}
+
+/* ── 范围选择弹窗 ── */
+.scope-panel {
+  max-width: 360px;
+}
+
+.scope-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.scope-btn {
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid var(--ds-color-border, #e5e7eb);
+  border-radius: 8px;
+  background: var(--ds-color-surface, #f9fafb);
+  color: var(--ds-color-text-primary, #111827);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.scope-btn:hover:not(:disabled) {
+  background: var(--ds-color-surface-hover, #f3f4f6);
+  border-color: var(--ds-color-border-strong, #d1d5db);
+  transform: translateY(-1px);
+}
+
+.scope-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.scope-btn.scope-danger {
+  border-color: #fca5a5;
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.scope-btn.scope-danger:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #f87171;
+}
+
+[data-theme='dark'] .scope-btn.scope-danger {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+[data-theme='dark'] .scope-btn.scope-danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.scope-btn.scope-cancel {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ds-color-text-secondary, #6b7280);
+  font-weight: 400;
+}
+
+.scope-btn.scope-cancel:hover {
+  background: var(--ds-color-surface-hover, #f3f4f6);
+  color: var(--ds-color-text-primary, #111827);
+}
+
 /* 操作按钮 */
 .note-card-actions {
   border-top: 1px solid var(--ds-color-border-lightest, #f3f4f6);

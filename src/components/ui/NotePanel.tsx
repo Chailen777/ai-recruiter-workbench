@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition, useMemo, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { addNote, deleteNote, editNote, togglePinNote, toggleDoneNote } from '@/app/actions'
+import { addNote, deleteNote, editNote, togglePinNote, toggleDoneNote, editNoteWithScope, deleteNoteWithScope } from '@/app/actions'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useToast } from '@/components/providers/ToastProvider'
 
@@ -24,6 +24,12 @@ export type NoteItem = {
   // 日记字段
   articleType?: string | null
   articlePerson?: string | null
+  // 待办重复字段
+  scheduledDate?: string | null
+  repeatType?: string | null
+  repeatFrequency?: number | null
+  repeatEndDate?: string | null
+  repeatGroupId?: string | null
 }
 
 type NotePanelProps = {
@@ -96,6 +102,26 @@ const APPT_TYPE_LABELS: Record<string, string> = {
   other: '其他',
 }
 
+const REPEAT_LABELS: Record<string, string> = {
+  weekly: '每周',
+  monthly: '每月',
+  yearly: '每年',
+}
+
+const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']
+
+/** 格式化待办计划时间：YYYY年MM月DD日 周X HH:mm */
+function formatScheduledDate(iso: string) {
+  const d = new Date(iso)
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const week = WEEKDAY_LABELS[d.getDay()]
+  const hh = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${yyyy}年${mm}月${dd}日 周${week} ${hh}:${min}`
+}
+
 export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false }: NotePanelProps) {
   const [inputType, setInputType] = useState<'todo' | 'log' | 'note' | 'appointment' | 'diary'>('note')
   const [inputValue, setInputValue] = useState('')
@@ -120,6 +146,12 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   const [articleType, setArticleType] = useState('diary')
   const [articlePerson, setArticlePerson] = useState('')
   const diaryEditorRef = useRef<HTMLDivElement>(null)
+
+  // ── 待办表单字段 ──
+  const [todoDate, setTodoDate] = useState('')       // datetime-local 格式
+  const [todoRepeat, setTodoRepeat] = useState('')   // '' | weekly | monthly | yearly
+  const [todoFreq, setTodoFreq] = useState(1)        // 频率
+  const [todoEndDate, setTodoEndDate] = useState('') // date 格式 (YYYY-MM-DD)
 
   // ── 日记草稿自动保存（localStorage）──
   const [draftSavedAt, setDraftSavedAt] = useState<string>('')
@@ -210,6 +242,15 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       fd.set('articleType', articleType)
       if (articlePerson.trim()) fd.set('articlePerson', articlePerson.trim())
     }
+    // 待办字段
+    if (inputType === 'todo') {
+      if (todoDate) fd.set('scheduledDate', todoDate)
+      if (todoRepeat) {
+        fd.set('repeatType', todoRepeat)
+        fd.set('repeatFrequency', String(todoFreq))
+        if (todoEndDate) fd.set('repeatEndDate', todoEndDate)
+      }
+    }
     startTransition(async () => {
       try {
         const result = await addNote(fd)
@@ -225,13 +266,21 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         setApptPerson('')
         setArticleType('diary')
         setArticlePerson('')
+        setTodoDate('')
+        setTodoRepeat('')
+        setTodoFreq(1)
+        setTodoEndDate('')
         if (diaryEditorRef.current) diaryEditorRef.current.innerHTML = ''
         if (fullscreenEditorRef.current) fullscreenEditorRef.current.innerHTML = ''
         setIsFullscreen(false)
         setDiaryCharCount(0)
         try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
         setDraftSavedAt('')
-        success('笔记已保存')
+        if (result.success && result.createdCount && result.createdCount > 1) {
+          success(`已创建 ${result.createdCount} 个重复待办`)
+        } else {
+          success('笔记已保存')
+        }
         onNotesChanged?.()
       } catch (err) {
         // 最终兜底：防止未处理错误穿透到 global-error.tsx
@@ -679,6 +728,60 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
                 ⛶ 全屏
               </button>
             </div>
+          </div>
+        )}
+
+        {/* 待办专用表单字段 */}
+        {inputType === 'todo' && (
+          <div className="note-todo-form">
+            <div className="note-appt-row">
+              <label className="note-appt-label">时间</label>
+              <input
+                type="datetime-local"
+                className="note-appt-input"
+                value={todoDate}
+                onChange={(e) => setTodoDate(e.target.value)}
+              />
+            </div>
+            <div className="note-appt-row">
+              <label className="note-appt-label">重复</label>
+              <select
+                className="note-appt-select"
+                value={todoRepeat}
+                onChange={(e) => setTodoRepeat(e.target.value)}
+              >
+                <option value="">不重复</option>
+                <option value="weekly">每周</option>
+                <option value="monthly">每月</option>
+                <option value="yearly">每年</option>
+              </select>
+              {todoRepeat && (
+                <>
+                  <span className="note-todo-freq-label">每</span>
+                  <input
+                    type="number"
+                    className="note-todo-freq-input"
+                    value={todoFreq}
+                    onChange={(e) => setTodoFreq(Math.max(1, Number(e.target.value) || 1))}
+                    min={1}
+                    max={99}
+                    style={{ width: '50px' }}
+                  />
+                  <span className="note-todo-freq-label">{todoRepeat === 'weekly' ? '周' : todoRepeat === 'monthly' ? '月' : '年'}</span>
+                </>
+              )}
+            </div>
+            {todoRepeat && (
+              <div className="note-appt-row">
+                <label className="note-appt-label">截止</label>
+                <input
+                  type="date"
+                  className="note-appt-input"
+                  value={todoEndDate}
+                  onChange={(e) => setTodoEndDate(e.target.value)}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -1190,6 +1293,14 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
   const [editArticleType, setEditArticleType] = useState(note.articleType ?? 'diary')
   const [editArticlePerson, setEditArticlePerson] = useState(note.articlePerson ?? '')
   const editDiaryRef = useRef<HTMLDivElement>(null)
+  // 待办编辑状态
+  const [editTodoDate, setEditTodoDate] = useState(
+    note.scheduledDate ? note.scheduledDate.slice(0, 16) : ''
+  )
+  // 重复待办编辑/删除范围选择
+  const [editScopeOpen, setEditScopeOpen] = useState(false)
+  const [deleteScopeOpen, setDeleteScopeOpen] = useState(false)
+  const isRecurring = !!note.repeatGroupId
   // 日记折叠状态
   const [diaryExpanded, setDiaryExpanded] = useState(false)
   // 判断日记是否够长需要折叠（纯文本 > 120 字）
@@ -1297,6 +1408,13 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
       content = (ref.current?.innerHTML ?? '').trim()
     }
     if (!content) return
+
+    // 重复待办：弹出范围选择
+    if (note.type === 'todo' && isRecurring) {
+      setEditScopeOpen(true)
+      return
+    }
+
     startTransition(async () => {
       try {
         const fd = new FormData()
@@ -1312,6 +1430,9 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
           fd.set('articleType', editArticleType)
           if (editArticlePerson.trim()) fd.set('articlePerson', editArticlePerson.trim())
         }
+        if (note.type === 'todo' && editTodoDate) {
+          fd.set('scheduledDate', editTodoDate)
+        }
         await editNote(fd)
         setIsEditing(false)
         setIsEditFullscreen(false)
@@ -1319,6 +1440,54 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
       } catch (err) {
         console.error('编辑笔记异常:', err)
         alert('保存失败，请稍后重试。')
+      }
+    })
+  }
+
+  /** 带范围的编辑保存（重复待办） */
+  function handleEditSaveWithScope(scope: string) {
+    let content = editContent.trim()
+    if (note.type === 'diary') {
+      const ref = isEditFullscreen ? editFullscreenRef : editDiaryRef
+      content = (ref.current?.innerHTML ?? '').trim()
+    }
+    if (!content) return
+
+    startTransition(async () => {
+      try {
+        const fd = new FormData()
+        fd.set('id', String(note.id))
+        fd.set('content', content)
+        fd.set('scope', scope)
+        if (note.type === 'todo' && editTodoDate) {
+          fd.set('scheduledDate', editTodoDate)
+        }
+        await editNoteWithScope(fd)
+        setEditScopeOpen(false)
+        setIsEditing(false)
+        setIsEditFullscreen(false)
+        onChanged?.()
+      } catch (err) {
+        console.error('编辑笔记异常:', err)
+        alert('保存失败，请稍后重试。')
+      }
+    })
+  }
+
+  /** 带范围的删除（重复待办） */
+  function handleDeleteWithScope(scope: string) {
+    startTransition(async () => {
+      try {
+        const fd = new FormData()
+        fd.set('id', String(note.id))
+        fd.set('scope', scope)
+        await deleteNoteWithScope(fd)
+        setDeleteScopeOpen(false)
+        setConfirmOpen(false)
+        onChanged?.()
+      } catch (err) {
+        console.error('删除笔记异常:', err)
+        alert('删除失败，请稍后重试。')
       }
     })
   }
@@ -1332,6 +1501,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
     setEditApptPerson(note.appointmentPerson ?? '')
     setEditArticleType(note.articleType ?? 'diary')
     setEditArticlePerson(note.articlePerson ?? '')
+    setEditTodoDate(note.scheduledDate ? note.scheduledDate.slice(0, 16) : '')
     setIsEditing(false)
     setIsEditFullscreen(false)
   }
@@ -1425,6 +1595,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
           </span>
         )}
         {note.pinned && <span className="note-pin-mark" title="已置顶">📌</span>}
+        {note.repeatGroupId && <span className="note-repeat-mark" title="重复待办">🔄</span>}
         <span className="note-date">{formatDate(note.createdAt)}</span>
       </div>
 
@@ -1509,6 +1680,30 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                   maxLength={50}
                 />
               </div>
+            </div>
+          )}
+          {/* 待办字段编辑 */}
+          {note.type === 'todo' && (
+            <div className="note-edit-appt">
+              <div className="note-edit-appt-row">
+                <label className="note-edit-label">时间</label>
+                <input
+                  type="datetime-local"
+                  className="note-edit-datetime"
+                  value={editTodoDate}
+                  onChange={(e) => setEditTodoDate(e.target.value)}
+                />
+              </div>
+              {note.repeatType && (
+                <div className="note-edit-appt-row">
+                  <label className="note-edit-label">重复</label>
+                  <span className="note-edit-readonly">
+                    {REPEAT_LABELS[note.repeatType] ?? note.repeatType}
+                    {note.repeatFrequency && note.repeatFrequency > 1 ? `（每${note.repeatFrequency}${note.repeatType === 'weekly' ? '周' : note.repeatType === 'monthly' ? '月' : '年'}）` : ''}
+                    {note.repeatEndDate ? ` · 截止 ${new Date(note.repeatEndDate).toLocaleDateString('zh-CN')}` : ''}
+                  </span>
+                </div>
+              )}
             </div>
           )}
           {/* 日记用富文本编辑器，其他用 textarea */}
@@ -1740,6 +1935,24 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
             </div>
           )}
 
+          {/* ── 待办信息卡 ── */}
+          {note.type === 'todo' && note.scheduledDate && (
+            <div className="note-todo-bar">
+              {note.repeatType && (
+                <span className="note-todo-repeat-tag" title="重复待办">
+                  🔄 {REPEAT_LABELS[note.repeatType] ?? note.repeatType}
+                </span>
+              )}
+              <span className="note-todo-scheduled">
+                <svg className="note-appt-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="8" cy="8" r="7"/>
+                  <polyline points="8,4 8,8 11,10"/>
+                </svg>
+                <span>{formatScheduledDate(note.scheduledDate)}</span>
+              </span>
+            </div>
+          )}
+
           {/* ── 操作按钮 ── */}
           <div className="note-card-actions">
             <button
@@ -1767,7 +1980,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
               className="note-action-btn note-delete-btn"
               title="删除"
               disabled={isPending}
-              onClick={() => setConfirmOpen(true)}
+              onClick={() => isRecurring ? setDeleteScopeOpen(true) : setConfirmOpen(true)}
             >
               删除
             </button>
@@ -1790,6 +2003,58 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
         confirmLabel="删除"
         variant="danger"
       />
+
+      {/* ── 编辑范围选择弹窗（重复待办） ── */}
+      {editScopeOpen && typeof document !== 'undefined' && createPortal(
+        <>
+          <div className="confirm-backdrop" onClick={() => setEditScopeOpen(false)} />
+          <div className="confirm-panel scope-panel" role="alertdialog" aria-modal="true">
+            <h2 className="confirm-title">修改范围</h2>
+            <p className="confirm-message">这是一条重复待办，请选择修改范围：</p>
+            <div className="scope-actions">
+              <button className="scope-btn" type="button" disabled={isPending} onClick={() => handleEditSaveWithScope('single')}>
+                仅修改当条
+              </button>
+              <button className="scope-btn" type="button" disabled={isPending} onClick={() => handleEditSaveWithScope('future')}>
+                修改当前及以后
+              </button>
+              <button className="scope-btn" type="button" disabled={isPending} onClick={() => handleEditSaveWithScope('all')}>
+                修改全部重复
+              </button>
+              <button className="scope-btn scope-cancel" type="button" onClick={() => setEditScopeOpen(false)}>
+                取消
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* ── 删除范围选择弹窗（重复待办） ── */}
+      {deleteScopeOpen && typeof document !== 'undefined' && createPortal(
+        <>
+          <div className="confirm-backdrop" onClick={() => setDeleteScopeOpen(false)} />
+          <div className="confirm-panel scope-panel" role="alertdialog" aria-modal="true">
+            <h2 className="confirm-title">删除范围</h2>
+            <p className="confirm-message">这是一条重复待办，请选择删除范围：</p>
+            <div className="scope-actions">
+              <button className="scope-btn scope-danger" type="button" disabled={isPending} onClick={() => handleDeleteWithScope('single')}>
+                仅删除当条
+              </button>
+              <button className="scope-btn scope-danger" type="button" disabled={isPending} onClick={() => handleDeleteWithScope('future')}>
+                删除当前及以后
+              </button>
+              <button className="scope-btn scope-danger" type="button" disabled={isPending} onClick={() => handleDeleteWithScope('all')}>
+                删除全部重复
+              </button>
+              <button className="scope-btn scope-cancel" type="button" onClick={() => setDeleteScopeOpen(false)}>
+                取消
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
 
       {/* ── 编辑模式全屏写作 ── */}
       {isEditFullscreen && note.type === 'diary' && typeof document !== 'undefined' && createPortal(
