@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { abandonMatch, eliminateMatch, ignoreMatch, recommendMatch, resetMatch } from '@/app/actions'
 import { MatchActionForm } from './MatchActionForm'
 import Link from 'next/link'

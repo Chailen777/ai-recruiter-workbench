@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-。import nextPWA from 'next-pwa'
+import nextPWA from 'next-pwa'
 
 const nextConfig = {
   typescript: {
@@ -39,12 +39,12 @@ const withPWA = nextPWA({
   disable: process.env.NODE_ENV === 'development',
   buildExcludes: [/middleware-manifest\.json$/],
   runtimeCaching: [
+    // 仅缓存静态资源，不缓存 RSC 数据 / server action / API 响应
     {
-      urlPattern: /^https?:\/\/.*/i,
-      handler: 'NetworkFirst',
+      urlPattern: /\.(?:js|css|png|jpe?g|svg|gif|ico|webp|avif|woff2?|ttf|eot)(\?.*)?$/i,
+      handler: 'CacheFirst',
       options: {
-        cacheName: 'offlineCache',
-        matchOptions: { ignoreSearch: true },
+        cacheName: 'staticAssets',
         expiration: {
           maxEntries: 200,
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
