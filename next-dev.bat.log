@@ -1,0 +1,9 @@
+   ▲ Next.js 15.5.19
+   - Local:        http://127.0.0.1:3000
+   - Network:      http://127.0.0.1:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ⚠ Attempted to load @next/swc-win32-x64-msvc, but an error occurred: \\?\F:\00 陈成\AI猎头\AI超级猎头工作�?V1\node_modules\@next\swc-win32-x64-msvc\next-swc.win32-x64-msvc.node is not a valid Win32 application.
+\\?\F:\00 陈成\AI猎头\AI超级猎头工作台 V1\node_modules\@next\swc-win32-x64-msvc\next-swc.win32-x64-msvc.node
+ ✓ Ready in 7.8s

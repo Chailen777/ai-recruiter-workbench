@@ -1,0 +1,220 @@
+/* =====================================================
+   Theme tokens — light / dark / system
+   Supports [data-theme] overrides and prefers-color-scheme.
+   ===================================================== */
+
+:root {
+  /* Primitives */
+  --color-primary: #2563eb;
+  --color-primary-light: #60a5fa;
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-warning-100: #fef3c7;
+  --color-warning-800: #92400e;
+  --color-danger: #ef4444;
+
+  /* Spacing scale */
+  --ds-space-1: 4px;
+  --ds-space-2: 8px;
+  --ds-space-3: 12px;
+  --ds-space-4: 16px;
+  --ds-space-5: 20px;
+  --ds-space-6: 24px;
+  --ds-space-8: 32px;
+
+  /* Radius */
+  --ds-radius-sm: 6px;
+  --ds-radius-md: 10px;
+  --ds-radius-lg: 14px;
+
+  /* Typography */
+  --ds-type-h1-size: 28px;
+  --ds-type-h1-weight: 700;
+  --ds-type-h1-line: 1.25;
+  --ds-type-h2-size: 22px;
+  --ds-type-h2-weight: 600;
+  --ds-type-h2-line: 1.3;
+  --ds-type-h4-size: 18px;
+  --ds-type-h4-weight: 700;
+  --ds-type-h4-line: 1.3;
+  --ds-type-body-size: 15px;
+  --ds-type-body-weight: 400;
+  --ds-type-body-line: 1.6;
+  --ds-type-caption-size: 12px;
+  --ds-type-caption-weight: 500;
+  --ds-type-caption-line: 1.4;
+
+  /* Transitions */
+  --transition-fast: 0.14s ease;
+  --transition-base: 0.16s ease;
+  --transition-bounce: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Light theme (default) */
+  --color-background: #f5f7fb;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-border: #e5e7eb;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+
+  --sidebar-bg: #0f1f3a;
+  --sidebar-text: #ffffff;
+  --sidebar-text-muted: #a8b8cf;
+  --sidebar-border: rgba(255, 255, 255, 0.12);
+
+  --ds-shadow-card: 0 10px 24px rgb(15 23 42 / 6%);
+  --ds-shadow-hover: 0 16px 36px rgb(15 23 42 / 10%);
+
+  /* Component-token mapping (ds-color-* namespace) */
+  --ds-color-primary: var(--color-primary);
+  --ds-color-success: var(--color-success);
+  --ds-color-warning: var(--color-warning);
+  --ds-color-danger: var(--color-danger);
+  --ds-color-background: var(--color-background);
+  --ds-color-card: var(--color-surface);
+  --ds-color-border: var(--color-border);
+  --ds-color-text-primary: var(--color-text-primary);
+  --ds-color-text-secondary: var(--color-text-secondary);
+
+  /* Hover / interaction states */
+  --ds-color-hover: rgba(0, 0, 0, 0.04);
+  --ds-color-error: var(--color-danger);
+  --ds-color-warning-bg: rgba(245, 158, 11, 0.08);
+  --ds-color-text-tertiary: #9ca3af;
+  --ds-color-primary-hover: color-mix(in srgb, var(--ds-color-primary) 84%, #000000);
+
+  /* Chart & data-viz primitives (light palette) */
+  --chart-primary: #2563eb;
+  --chart-success: #16a34a;
+  --chart-warning: #f59e0b;
+  --chart-danger: #ef4444;
+  --chart-purple: #8b5cf6;
+  --chart-cyan: #06b6d4;
+  --chart-pink: #ec4899;
+  --chart-grid: #e5e7eb;
+  --chart-bg: #ffffff;
+
+  /* Empty state light adaptation */
+  --empty-state-fill: #f3f4f6;
+  --empty-state-stroke: #e5e7eb;
+
+  /* Sheet & ConfirmDialog light overrides */
+  --sheet-shadow: -4px 0 24px rgb(0 0 0 / 8%);
+  --confirm-shadow: 0 20px 60px rgb(0 0 0 / 15%);
+
+  /* Kanban light mode */
+  --kanban-empty-bg: #f9fafb;
+  --kanban-empty-border: #e5e7eb;
+
+  /* Skeleton light mode */
+  --ds-color-skeleton: #e5e7eb;
+  --ds-color-skeleton-shine: #f3f4f6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-background: #0b0f17;
+    --color-surface: #111827;
+    --color-surface-elevated: #1f2937;
+    --color-border: #374151;
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #d1d5db;
+
+    --sidebar-bg: #0b1220;
+    --sidebar-text: #f3f4f6;
+    --sidebar-text-muted: #9ca3af;
+    --sidebar-border: rgba(243, 244, 246, 0.1);
+
+    --ds-shadow-card: 0 10px 24px rgb(0 0 0 / 24%);
+    --ds-shadow-hover: 0 16px 36px rgb(0 0 0 / 34%);
+  }
+}
+
+[data-theme='dark'] {
+  --color-background: #0b0f17;
+  --color-surface: #111827;
+  --color-surface-elevated: #1f2937;
+  --color-border: #374151;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #d1d5db;
+
+  --sidebar-bg: #0b1220;
+  --sidebar-text: #f3f4f6;
+  --sidebar-text-muted: #9ca3af;
+  --sidebar-border: rgba(243, 244, 246, 0.1);
+
+  --ds-shadow-card: 0 10px 24px rgb(0 0 0 / 24%);
+  --ds-shadow-hover: 0 16px 36px rgb(0 0 0 / 34%);
+
+  /* Chart & data-viz primitives (dark palette) */
+  --chart-primary: #60a5fa;
+  --chart-success: #4ade80;
+  --chart-warning: #fbbf24;
+  --chart-danger: #f87171;
+  --chart-purple: #a78bfa;
+  --chart-cyan: #22d3ee;
+  --chart-pink: #f472b6;
+  --chart-grid: #374151;
+  --chart-bg: #1f2937;
+
+  /* Empty state dark adaptation */
+  --empty-state-fill: rgba(255, 255, 255, 0.08);
+  --empty-state-stroke: rgba(255, 255, 255, 0.12);
+
+  /* Sheet & ConfirmDialog dark overrides */
+  --sheet-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), -4px 0 24px rgba(0, 0, 0, 0.4);
+  --confirm-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 20px 60px rgba(0, 0, 0, 0.4);
+
+  /* Kanban dark mode */
+  --kanban-empty-bg: rgba(255, 255, 255, 0.03);
+  --kanban-empty-border: rgba(255, 255, 255, 0.08);
+
+  /* Hover / interaction states */
+  --ds-color-hover: rgba(255, 255, 255, 0.06);
+  --ds-color-error: var(--color-danger);
+  --ds-color-warning-bg: rgba(251, 191, 36, 0.12);
+  --ds-color-text-tertiary: #6b7280;
+
+  /* Skeleton dark mode */
+  --ds-color-skeleton: rgba(255, 255, 255, 0.06);
+  --ds-color-skeleton-shine: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme='light'] {
+  --color-background: #f5f7fb;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-border: #e5e7eb;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+
+  --sidebar-bg: #0f1f3a;
+  --sidebar-text: #ffffff;
+  --sidebar-text-muted: #a8b8cf;
+  --sidebar-border: rgba(255, 255, 255, 0.12);
+
+  --ds-shadow-card: 0 10px 24px rgb(15 23 42 / 6%);
+  --ds-shadow-hover: 0 16px 36px rgb(15 23 42 / 10%);
+}
+
+/* Smooth theme transitions on color-capable properties */
+html,
+html *,
+html *::before,
+html *::after {
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    fill var(--transition-fast),
+    stroke var(--transition-fast);
+}
+
+/* Disable transitions during theme switches to avoid painting flashes */
+html.is-changing-theme,
+html.is-changing-theme *,
+html.is-changing-theme *::before,
+html.is-changing-theme *::after {
+  transition: none !important;
+}

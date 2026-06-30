@@ -1,0 +1,1736 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI超级猎头工作台 V0.1</title>
+    <style>
+      :root {
+        --bg: #f5f7fb;
+        --panel: #fff;
+        --text: #172033;
+        --muted: #667085;
+        --line: #e3e8ef;
+        --brand: #2563eb;
+        --brand-dark: #1d4ed8;
+        --soft: #edf4ff;
+        --green: #047857;
+        --amber: #b45309;
+        --red: #dc2626;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Arial, 'Microsoft YaHei', sans-serif;
+      }
+
+      header {
+        align-items: center;
+        background: #111827;
+        color: #fff;
+        display: flex;
+        gap: 28px;
+        min-height: 60px;
+        padding: 0 28px;
+      }
+
+      .brand {
+        font-size: 18px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      nav button {
+        background: transparent;
+        border: 0;
+        border-radius: 6px;
+        color: #d1d5db;
+        cursor: pointer;
+        font: inherit;
+        font-size: 14px;
+        padding: 8px 10px;
+      }
+
+      nav button:hover,
+      nav button.active {
+        background: #1f2937;
+        color: #fff;
+      }
+
+      main {
+        margin: 0 auto;
+        max-width: 1320px;
+        padding: 28px;
+      }
+
+      .view {
+        display: none;
+      }
+      .view.active {
+        display: block;
+      }
+
+      .title-row {
+        align-items: end;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+
+      h1,
+      h2,
+      p {
+        margin-top: 0;
+      }
+      h1 {
+        font-size: 28px;
+        margin-bottom: 8px;
+      }
+      h2 {
+        font-size: 18px;
+        margin-bottom: 14px;
+      }
+
+      .muted {
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 0;
+      }
+
+      .stats {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      }
+
+      .card,
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+      }
+
+      .label {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .value {
+        font-size: 32px;
+        font-weight: 700;
+        margin-top: 8px;
+      }
+
+      .stat-card {
+        border-left: 4px solid transparent;
+        color: inherit;
+        cursor: pointer;
+        display: block;
+        font: inherit;
+        text-align: left;
+        transition:
+          background 0.15s ease,
+          border-color 0.15s ease,
+          box-shadow 0.15s ease,
+          transform 0.15s ease;
+        width: 100%;
+      }
+
+      .stat-card:hover {
+        border-color: var(--brand);
+        box-shadow: 0 10px 28px rgba(37, 99, 235, 0.14);
+        transform: translateY(-1px);
+      }
+
+      .stat-card:focus-visible {
+        outline: 3px solid rgba(37, 99, 235, 0.22);
+        outline-offset: 2px;
+      }
+
+      .stat-total {
+        border-left-color: #2563eb;
+      }
+      .stat-total:hover {
+        background: #eff6ff;
+      }
+      .stat-today {
+        border-left-color: #16a34a;
+      }
+      .stat-today:hover {
+        background: #f0fdf4;
+      }
+      .stat-alert {
+        border-left-color: #f59e0b;
+      }
+      .stat-alert:hover {
+        background: #fffbeb;
+      }
+
+      .clock-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #eef6ff 100%);
+        border-left-color: #0f172a;
+        cursor: default;
+      }
+
+      .clock-card:hover {
+        border-color: var(--line);
+        box-shadow: none;
+        transform: none;
+      }
+
+      .clock-date {
+        color: var(--text);
+        font-size: 16px;
+        font-weight: 700;
+        margin-top: 8px;
+        white-space: nowrap;
+      }
+
+      .clock-time {
+        color: var(--brand);
+        font-size: 28px;
+        font-weight: 800;
+        margin-top: 6px;
+      }
+
+      .layout {
+        align-items: start;
+        display: grid;
+        gap: 18px;
+        grid-template-columns: minmax(280px, 360px) 1fr;
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      label {
+        color: #344054;
+        display: grid;
+        font-size: 13px;
+        gap: 6px;
+      }
+
+      input,
+      select,
+      textarea {
+        border: 1px solid #cfd7e3;
+        border-radius: 6px;
+        font: inherit;
+        min-width: 0;
+        padding: 9px 10px;
+      }
+
+      textarea {
+        min-height: 72px;
+        resize: vertical;
+      }
+
+      .button,
+      form button {
+        background: var(--brand);
+        border: 0;
+        border-radius: 6px;
+        color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        font: inherit;
+        justify-content: center;
+        padding: 10px 14px;
+      }
+
+      .button:hover,
+      form button:hover {
+        background: var(--brand-dark);
+      }
+
+      .link-number {
+        background: transparent;
+        border: 0;
+        color: var(--brand);
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+        padding: 0;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      .link-number:hover {
+        color: var(--brand-dark);
+      }
+
+      .ghost {
+        background: var(--soft);
+        color: var(--brand-dark);
+      }
+
+      .danger {
+        background: var(--red);
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      table {
+        border-collapse: collapse;
+        min-width: 900px;
+        width: 100%;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        font-size: 14px;
+        padding: 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #f9fafb;
+        color: #344054;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .icon-button {
+        align-items: center;
+        background: var(--brand);
+        border: 0;
+        border-radius: 6px;
+        color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        font: inherit;
+        gap: 8px;
+        padding: 10px 14px;
+      }
+
+      .icon-button span {
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1;
+      }
+
+      .modal {
+        align-items: center;
+        background: rgb(15 23 42 / 42%);
+        display: none;
+        inset: 0;
+        overflow: auto;
+        padding: 90px 18px 54px;
+        position: fixed;
+        z-index: 50;
+      }
+
+      .modal.open {
+        display: flex;
+      }
+
+      .modal-panel {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 24px 60px rgb(15 23 42 / 22%);
+        margin: 0 auto;
+        max-width: 520px;
+        max-height: calc(100vh - 140px);
+        overflow: auto;
+        padding: 20px;
+        width: 100%;
+      }
+
+      #dashboardListModal {
+        padding-top: 64px;
+      }
+
+      #dashboardListModal .modal-panel {
+        max-height: calc(100vh - 112px);
+        max-width: min(1040px, calc(100vw - 56px));
+        min-height: 430px;
+        overflow: hidden;
+        width: min(1040px, calc(100vw - 56px));
+      }
+
+      #dashboardListBody {
+        max-height: calc(100vh - 210px);
+        overflow: auto;
+      }
+
+      #dashboardListBody .table-wrap {
+        max-height: calc(100vh - 220px);
+        overflow: auto;
+      }
+
+      #dashboardListBody table {
+        min-width: 980px;
+      }
+
+      #dashboardListBody thead th {
+        background: #f8fafc;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+
+      .modal-head {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+
+      .modal-head h2 {
+        margin: 0;
+      }
+
+      .close-button {
+        background: #eef2f7;
+        border: 0;
+        border-radius: 6px;
+        color: #344054;
+        cursor: pointer;
+        font-size: 20px;
+        height: 34px;
+        line-height: 1;
+        width: 34px;
+      }
+
+      .pill {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 8px;
+      }
+
+      .ok {
+        background: #ecfdf5;
+        color: var(--green);
+      }
+      .warn {
+        background: #fffbeb;
+        color: var(--amber);
+      }
+
+      .match-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .match-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      .score {
+        background: #eef2ff;
+        border-radius: 999px;
+        color: #3730a3;
+        display: inline-block;
+        font-weight: 700;
+        padding: 6px 10px;
+      }
+
+      .empty {
+        color: var(--muted);
+        padding: 18px;
+      }
+
+      .check-menu {
+        position: relative;
+      }
+
+      .check-menu summary {
+        border: 1px solid #cfd7e3;
+        border-radius: 6px;
+        cursor: pointer;
+        list-style: none;
+        min-height: 40px;
+        padding: 9px 10px;
+      }
+
+      .check-menu summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .check-menu summary::after {
+        color: var(--muted);
+        content: '展开';
+        float: right;
+        font-size: 12px;
+      }
+
+      .check-menu[open] summary::after {
+        content: '收起';
+      }
+
+      .check-options {
+        background: #fff;
+        border: 1px solid #cfd7e3;
+        border-radius: 6px;
+        box-shadow: 0 12px 30px rgb(15 23 42 / 12%);
+        display: grid;
+        gap: 4px;
+        margin-top: 6px;
+        max-height: 220px;
+        overflow: auto;
+        padding: 10px;
+        position: absolute;
+        width: 100%;
+        z-index: 10;
+      }
+
+      .check-options label {
+        align-items: center;
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        min-height: 28px;
+      }
+
+      .check-options input {
+        min-width: auto;
+        padding: 0;
+      }
+
+      .check-add {
+        border-top: 1px solid var(--line);
+        display: grid;
+        gap: 8px;
+        grid-template-columns: 1fr auto;
+        margin-top: 6px;
+        padding-top: 10px;
+      }
+
+      .check-add input {
+        min-width: 0;
+        padding: 8px 9px;
+      }
+
+      .check-add button {
+        align-items: center;
+        background: var(--brand);
+        border: 0;
+        border-radius: 6px;
+        color: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        font-size: 18px;
+        font-weight: 700;
+        height: 36px;
+        justify-content: center;
+        line-height: 1;
+        width: 38px;
+      }
+
+      @media (max-width: 900px) {
+        header {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 10px;
+          padding: 16px 18px;
+        }
+
+        main {
+          padding: 18px;
+        }
+        .layout,
+        .two {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand">AI超级猎头工作台 V0.1</div>
+      <nav>
+        <button class="active" data-view="dashboard">首页看板</button>
+        <button data-view="companies">企业库</button>
+        <button data-view="jobs">岗位库</button>
+        <button data-view="candidates">人才库</button>
+        <button data-view="matching">匹配评分</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="dashboard" class="view active">
+        <div class="title-row">
+          <div>
+            <h1>首页看板</h1>
+            <p class="muted">这个版本可以直接双击打开，数据暂存在当前浏览器本地。</p>
+          </div>
+          <span class="pill ok">无需启动服务器</span>
+        </div>
+        <div class="stats">
+          <div class="card stat-card clock-card" aria-live="polite">
+            <div class="label">当前时间</div>
+            <div id="currentDate" class="clock-date">--</div>
+            <div id="currentTime" class="clock-time">--:--:--</div>
+          </div>
+          <button class="card stat-card stat-total" type="button" data-stat-list="totalCompanies">
+            <div class="label">总企业数</div>
+            <div id="statTotalCompanies" class="value">0</div>
+          </button>
+          <button class="card stat-card stat-total" type="button" data-stat-list="totalJobs">
+            <div class="label">总岗位数</div>
+            <div id="statTotalJobs" class="value">0</div>
+          </button>
+          <button class="card stat-card stat-total" type="button" data-stat-list="totalCandidates">
+            <div class="label">总候选人数</div>
+            <div id="statTotalCandidates" class="value">0</div>
+          </button>
+          <button class="card stat-card stat-today" type="button" data-stat-list="todayCompanies">
+            <div class="label">今日新增企业数</div>
+            <div id="statCompanies" class="value">0</div>
+          </button>
+          <button class="card stat-card stat-today" type="button" data-stat-list="todayJobs">
+            <div class="label">今日新增岗位数</div>
+            <div id="statJobs" class="value">0</div>
+          </button>
+          <button class="card stat-card stat-today" type="button" data-stat-list="todayCandidates">
+            <div class="label">今日新增候选人数</div>
+            <div id="statCandidates" class="value">0</div>
+          </button>
+          <button class="card stat-card stat-alert" type="button" data-stat-list="matches">
+            <div class="label">高匹配推荐机会</div>
+            <div id="statMatches" class="value">0</div>
+          </button>
+          <button class="card stat-card stat-alert" type="button" data-stat-list="follow">
+            <div class="label">待跟进候选人</div>
+            <div id="statFollow" class="value">0</div>
+          </button>
+          <button class="card stat-card stat-alert" type="button" data-stat-list="openJobs">
+            <div class="label">待推荐岗位</div>
+            <div id="statOpenJobs" class="value">0</div>
+          </button>
+        </div>
+        <div class="modal" id="dashboardListModal">
+          <div class="modal-panel">
+            <div class="modal-head">
+              <h2 id="dashboardListTitle">明细列表</h2>
+              <button class="close-button" id="closeDashboardListModal" type="button">×</button>
+            </div>
+            <div id="dashboardListBody"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="companies" class="view">
+        <div class="title-row">
+          <div>
+            <h1>企业库</h1>
+            <p class="muted">录入企业名称、行业、城市、来源和合作状态。</p>
+          </div>
+          <button class="icon-button" id="openCompanyModal" type="button">
+            <span>+</span>新增企业
+          </button>
+        </div>
+        <div class="panel table-wrap">
+          <h2>企业列表</h2>
+          <div id="companyTable"></div>
+        </div>
+        <div class="modal" id="companyModal">
+          <div class="modal-panel">
+            <div class="modal-head">
+              <h2>新增企业</h2>
+              <button class="close-button" id="closeCompanyModal" type="button">×</button>
+            </div>
+            <form id="companyForm" class="form-grid">
+              <label>企业名称<input name="name" required /></label>
+              <label>行业<input name="industry" /></label>
+              <label
+                >城市
+                <details class="check-menu" data-summary="citySummary">
+                  <summary id="citySummary">请选择城市</summary>
+                  <div class="check-options" id="cityOptions">
+                    <label><input type="checkbox" name="city" value="北京" />北京</label>
+                    <label><input type="checkbox" name="city" value="上海" />上海</label>
+                    <label><input type="checkbox" name="city" value="广州" />广州</label>
+                    <label><input type="checkbox" name="city" value="深圳" />深圳</label>
+                    <label><input type="checkbox" name="city" value="杭州" />杭州</label>
+                    <label><input type="checkbox" name="city" value="苏州" />苏州</label>
+                    <label><input type="checkbox" name="city" value="南京" />南京</label>
+                    <label><input type="checkbox" name="city" value="成都" />成都</label>
+                    <label><input type="checkbox" name="city" value="武汉" />武汉</label>
+                    <label><input type="checkbox" name="city" value="西安" />西安</label>
+                    <label><input type="checkbox" name="city" value="其他" />其他</label>
+                    <div class="check-add">
+                      <input id="newCityInput" type="text" placeholder="新增城市" />
+                      <button id="addCityButton" type="button" title="新增城市">+</button>
+                    </div>
+                  </div>
+                </details>
+              </label>
+              <label
+                >来源
+                <select name="source">
+                  <option>人力聚合平台</option>
+                  <option>禾蛙网</option>
+                  <option>手工录入</option>
+                </select>
+              </label>
+              <label
+                >合作状态
+                <details class="check-menu" data-summary="statusSummary">
+                  <summary id="statusSummary">请选择合作状态</summary>
+                  <div class="check-options">
+                    <label><input type="checkbox" name="status" value="待沟通" />待沟通</label>
+                    <label><input type="checkbox" name="status" value="已联系" />已联系</label>
+                    <label><input type="checkbox" name="status" value="合作中" />合作中</label>
+                    <label><input type="checkbox" name="status" value="暂停合作" />暂停合作</label>
+                    <label><input type="checkbox" name="status" value="已结束" />已结束</label>
+                  </div>
+                </details>
+              </label>
+              <label>备注<textarea name="note"></textarea></label>
+              <button type="submit">保存企业</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section id="jobs" class="view">
+        <div class="title-row">
+          <div>
+            <h1>岗位库</h1>
+            <p class="muted">录入岗位要求，后续用于候选人匹配评分。</p>
+          </div>
+          <button class="icon-button" id="openJobModal" type="button">
+            <span>+</span>新增岗位
+          </button>
+        </div>
+        <div class="panel table-wrap">
+          <h2>岗位列表</h2>
+          <div id="jobTable"></div>
+        </div>
+        <div class="modal" id="jobModal">
+          <div class="modal-panel">
+            <div class="modal-head">
+              <h2>新增岗位</h2>
+              <button class="close-button" id="closeJobModal" type="button">×</button>
+            </div>
+            <form id="jobForm" class="form-grid">
+              <label
+                >企业名称
+                <select name="companyId" id="jobCompanySelect" required></select>
+              </label>
+              <label>岗位名称<input name="title" required /></label>
+              <label>城市<input name="city" /></label>
+              <label>薪资范围<input name="salary" placeholder="20-35K" /></label>
+              <label>保证期<input name="guarantee" placeholder="例如：1个月 / 3个月" /></label>
+              <label>佣金<input name="commission" placeholder="例如：20% / 3万" /></label>
+              <label>学历要求<input name="education" placeholder="本科以上" /></label>
+              <label>年龄要求<input name="age" placeholder="25-35" /></label>
+              <label>工作经验要求<input name="experience" placeholder="5年以上" /></label>
+              <label>行业要求<input name="industry" /></label>
+              <label>技能关键词<input name="skills" placeholder="Java, 管理, 销售" /></label>
+              <label>硬性要求<textarea name="must"></textarea></label>
+              <label>加分项<textarea name="nice"></textarea></label>
+              <label>排除项<textarea name="exclude"></textarea></label>
+              <label>JD原文<textarea name="jd"></textarea></label>
+              <label>岗位状态<input name="status" value="开放" /></label>
+              <label>来源<input name="source" /></label>
+              <button type="submit">保存岗位</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section id="candidates" class="view">
+        <div class="title-row">
+          <div>
+            <h1>人才库</h1>
+            <p class="muted">录入候选人基础信息、技能标签、行业背景和简历原文。</p>
+          </div>
+          <button class="icon-button" id="openCandidateModal" type="button">
+            <span>+</span>新增候选人
+          </button>
+        </div>
+        <div class="panel table-wrap">
+          <h2>候选人列表</h2>
+          <div id="candidateTable"></div>
+        </div>
+        <div class="modal" id="candidateModal">
+          <div class="modal-panel">
+            <div class="modal-head">
+              <h2>新增候选人</h2>
+              <button class="close-button" id="closeCandidateModal" type="button">×</button>
+            </div>
+            <form id="candidateForm" class="form-grid">
+              <label>姓名<input name="name" required /></label>
+              <label>当前职位<input name="title" /></label>
+              <label>当前公司<input name="company" /></label>
+              <label>城市<input name="city" /></label>
+              <label>学历<input name="education" /></label>
+              <label>年龄<input name="age" type="number" min="0" /></label>
+              <label>工作年限<input name="experience" type="number" min="0" /></label>
+              <label>期望薪资<input name="salary" /></label>
+              <label>技能标签<input name="skills" placeholder="Java, 管理, 销售" /></label>
+              <label>行业背景<input name="industry" /></label>
+              <label>简历原文<textarea name="resume"></textarea></label>
+              <label>沟通状态<input name="communication" value="待跟进" /></label>
+              <label>备注<textarea name="note"></textarea></label>
+              <button type="submit">保存候选人</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section id="matching" class="view">
+        <div class="title-row">
+          <div>
+            <h1>匹配评分</h1>
+            <p class="muted">选择候选人后，按规则引擎列出所有岗位匹配分。</p>
+          </div>
+        </div>
+        <div class="panel" style="margin-bottom: 18px">
+          <label
+            >选择候选人
+            <select id="matchCandidate"></select>
+          </label>
+        </div>
+        <div id="matchResults" class="match-list"></div>
+      </section>
+    </main>
+
+    <script>
+      function readLocal(key) {
+        try {
+          return JSON.parse(localStorage.getItem(key) || '[]')
+        } catch (error) {
+          return []
+        }
+      }
+
+      function writeLocal(key, value) {
+        try {
+          localStorage.setItem(key, JSON.stringify(value))
+        } catch (error) {
+          console.warn('当前浏览器不允许本地保存，页面仍可点击和临时录入。')
+        }
+      }
+
+      const store = {
+        companies: readLocal('hh_companies'),
+        jobs: readLocal('hh_jobs'),
+        candidates: readLocal('hh_candidates'),
+        customCities: readLocal('hh_custom_cities'),
+      }
+      const editing = { companies: null, jobs: null, candidates: null }
+
+      function save() {
+        writeLocal('hh_companies', store.companies)
+        writeLocal('hh_jobs', store.jobs)
+        writeLocal('hh_candidates', store.candidates)
+        writeLocal('hh_custom_cities', store.customCities)
+      }
+
+      function formObject(form) {
+        const data = new FormData(form)
+        const result = {}
+        for (const key of new Set([...data.keys()])) {
+          const values = data
+            .getAll(key)
+            .map((value) => String(value).trim())
+            .filter(Boolean)
+          result[key] = values.join('、')
+        }
+        return result
+      }
+
+      function newId() {
+        if (window.crypto && crypto.randomUUID) return crypto.randomUUID()
+        return `${Date.now()}-${Math.random().toString(16).slice(2)}`
+      }
+
+      function refreshCheckSummary(name, summaryId, placeholder) {
+        const selected = [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(
+          (input) => input.value
+        )
+        document.getElementById(summaryId).textContent = selected.length
+          ? selected.join('、')
+          : placeholder
+      }
+
+      function bindCheckMenus() {
+        document.querySelectorAll('.check-menu').forEach((menu) => {
+          menu.addEventListener('change', () => {
+            refreshCheckSummary('city', 'citySummary', '请选择城市')
+            refreshCheckSummary('status', 'statusSummary', '请选择合作状态')
+          })
+        })
+      }
+
+      function renderCustomCities() {
+        const cityOptions = document.getElementById('cityOptions')
+        const addBox = cityOptions.querySelector('.check-add')
+        cityOptions.querySelectorAll('[data-custom-city="true"]').forEach((node) => node.remove())
+        store.customCities.forEach((city) => {
+          const label = document.createElement('label')
+          label.dataset.customCity = 'true'
+          label.innerHTML = `<input type="checkbox" name="city" value="${escapeHtml(city)}" />${escapeHtml(city)}`
+          cityOptions.insertBefore(label, addBox)
+        })
+      }
+
+      function addCityFromInput() {
+        const input = document.getElementById('newCityInput')
+        const city = input.value.trim()
+        if (!city) {
+          input.focus()
+          return
+        }
+        const exists = [...document.querySelectorAll('input[name="city"]')].some(
+          (item) => item.value === city
+        )
+        if (!exists) {
+          store.customCities.push(city)
+          save()
+          renderCustomCities()
+        }
+        const checkbox = [...document.querySelectorAll('input[name="city"]')].find(
+          (item) => item.value === city
+        )
+        if (checkbox) checkbox.checked = true
+        input.value = ''
+        refreshCheckSummary('city', 'citySummary', '请选择城市')
+      }
+
+      function setCheckedValues(name, values) {
+        document.querySelectorAll(`input[name="${name}"]`).forEach((input) => {
+          input.checked = values.includes(input.value)
+        })
+      }
+
+      function ensureCityOptions(cityText) {
+        String(cityText || '')
+          .split('、')
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .forEach((city) => {
+            const exists = [...document.querySelectorAll('input[name="city"]')].some(
+              (item) => item.value === city
+            )
+            if (!exists && !store.customCities.includes(city)) {
+              store.customCities.push(city)
+            }
+          })
+        renderCustomCities()
+      }
+
+      function resetCompanyForm() {
+        const form = document.getElementById('companyForm')
+        form.reset()
+        editing.companies = null
+        setCheckedValues('city', [])
+        setCheckedValues('status', [])
+        refreshCheckSummary('city', 'citySummary', '请选择城市')
+        refreshCheckSummary('status', 'statusSummary', '请选择合作状态')
+      }
+
+      function resetJobForm() {
+        const form = document.getElementById('jobForm')
+        form.reset()
+        form.status.value = '开放'
+        editing.jobs = null
+        renderCompanyOptions()
+      }
+
+      function resetCandidateForm() {
+        const form = document.getElementById('candidateForm')
+        form.reset()
+        form.communication.value = '待跟进'
+        editing.candidates = null
+      }
+
+      function editItem(type, id) {
+        const item = store[type].find((row) => row.id === id)
+        if (!item) return
+        if (type === 'companies') {
+          resetCompanyForm()
+          editing.companies = id
+          const form = document.getElementById('companyForm')
+          form.name.value = item.name || ''
+          form.industry.value = item.industry || ''
+          form.source.value = item.source || '人力聚合平台'
+          form.note.value = item.note || ''
+          ensureCityOptions(item.city)
+          setCheckedValues(
+            'city',
+            String(item.city || '')
+              .split('、')
+              .filter(Boolean)
+          )
+          setCheckedValues(
+            'status',
+            String(item.status || '')
+              .split('、')
+              .filter(Boolean)
+          )
+          refreshCheckSummary('city', 'citySummary', '请选择城市')
+          refreshCheckSummary('status', 'statusSummary', '请选择合作状态')
+          document.getElementById('companyModal').classList.add('open')
+        }
+        if (type === 'jobs') {
+          resetJobForm()
+          editing.jobs = id
+          const form = document.getElementById('jobForm')
+          renderCompanyOptions(item.companyId || '')
+          form.companyId.value = item.companyId || ''
+          form.title.value = item.title || ''
+          form.city.value = item.city || ''
+          form.salary.value = item.salary || ''
+          form.guarantee.value = item.guarantee || ''
+          form.commission.value = item.commission || ''
+          form.education.value = item.education || ''
+          form.age.value = item.age || ''
+          form.experience.value = item.experience || ''
+          form.industry.value = item.industry || ''
+          form.skills.value = item.skills || ''
+          form.must.value = item.must || ''
+          form.nice.value = item.nice || ''
+          form.exclude.value = item.exclude || ''
+          form.jd.value = item.jd || ''
+          form.status.value = item.status || '开放'
+          form.source.value = item.source || ''
+          document.getElementById('jobModal').classList.add('open')
+        }
+        if (type === 'candidates') {
+          resetCandidateForm()
+          editing.candidates = id
+          const form = document.getElementById('candidateForm')
+          form.name.value = item.name || ''
+          form.title.value = item.title || ''
+          form.company.value = item.company || ''
+          form.city.value = item.city || ''
+          form.education.value = item.education || ''
+          form.age.value = item.age || ''
+          form.experience.value = item.experience || ''
+          form.salary.value = item.salary || ''
+          form.skills.value = item.skills || ''
+          form.industry.value = item.industry || ''
+          form.resume.value = item.resume || ''
+          form.communication.value = item.communication || '待跟进'
+          form.note.value = item.note || ''
+          document.getElementById('candidateModal').classList.add('open')
+        }
+      }
+
+      function today(item) {
+        return item.createdAt === new Date().toISOString().slice(0, 10)
+      }
+
+      function escapeHtml(value) {
+        return String(value || '').replace(
+          /[&<>"']/g,
+          (s) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[s]
+        )
+      }
+
+      function removeItem(type, id) {
+        store[type] = store[type].filter((item) => item.id !== id)
+        save()
+        render()
+      }
+
+      function updateOrInsert(type, id, payload) {
+        if (id) {
+          store[type] = store[type].map((item) => (item.id === id ? { ...item, ...payload } : item))
+        } else {
+          store[type].unshift({
+            id: newId(),
+            createdAt: new Date().toISOString().slice(0, 10),
+            ...payload,
+          })
+        }
+      }
+
+      function renderTable(targetId, rows, columns, type) {
+        const target = document.getElementById(targetId)
+        if (!rows.length) {
+          target.innerHTML = '<div class="empty">暂无数据，先在左侧录入一条。</div>'
+          return
+        }
+        const cellHtml = (row, column) => {
+          if (column.render) return column.render(row)
+          return escapeHtml(row[column.key])
+        }
+        target.innerHTML = `
+          <table>
+            <thead><tr>${columns.map((c) => `<th>${c.label}</th>`).join('')}<th>操作</th></tr></thead>
+            <tbody>
+              ${rows
+                .map(
+                  (row) => `
+                <tr>
+                  ${columns.map((c) => `<td>${cellHtml(row, c)}</td>`).join('')}
+                  <td class="actions">
+                    <button class="ghost" onclick="editItem('${type}', '${row.id}')">编辑</button>
+                    <button class="danger" onclick="removeItem('${type}', '${row.id}')">删除</button>
+                  </td>
+                </tr>
+              `
+                )
+                .join('')}
+            </tbody>
+          </table>
+        `
+      }
+
+      function renderDetailTable(rows, columns) {
+        if (!rows.length) return '<div class="empty">暂无符合条件的数据。</div>'
+        return `
+          <div class="table-wrap">
+            <table>
+              <thead><tr>${columns.map((c) => `<th>${c.label}</th>`).join('')}</tr></thead>
+              <tbody>
+                ${rows
+                  .map(
+                    (row) => `
+                  <tr>
+                    ${columns.map((c) => `<td>${escapeHtml(row[c.key])}</td>`).join('')}
+                  </tr>
+                `
+                  )
+                  .join('')}
+              </tbody>
+            </table>
+          </div>
+        `
+      }
+
+      function jobListColumns() {
+        return [
+          { key: 'companyName', label: '企业' },
+          { key: 'title', label: '岗位' },
+          { key: 'city', label: '城市' },
+          { key: 'salary', label: '薪资' },
+          { key: 'guarantee', label: '保证期' },
+          { key: 'commission', label: '佣金' },
+          { key: 'status', label: '状态' },
+        ]
+      }
+
+      function openCompanyJobs(companyId) {
+        const company = store.companies.find((item) => item.id === companyId)
+        if (!company) return
+        const rows = store.jobs.filter(
+          (job) => job.companyId === company.id || job.companyName === company.name
+        )
+        document.getElementById('dashboardListTitle').textContent = `${company.name} - 关联岗位`
+        document.getElementById('dashboardListBody').innerHTML = renderDetailTable(
+          rows,
+          jobListColumns()
+        )
+        document.getElementById('dashboardListModal').classList.add('open')
+      }
+
+      function openDashboardList(kind) {
+        const modal = document.getElementById('dashboardListModal')
+        const title = document.getElementById('dashboardListTitle')
+        const body = document.getElementById('dashboardListBody')
+        const jobColumns = jobListColumns()
+        const candidateColumns = [
+          { key: 'name', label: '姓名' },
+          { key: 'title', label: '当前职位' },
+          { key: 'company', label: '当前公司' },
+          { key: 'city', label: '城市' },
+          { key: 'communication', label: '沟通状态' },
+        ]
+        const companyColumns = [
+          { key: 'name', label: '企业名称' },
+          { key: 'industry', label: '行业' },
+          { key: 'city', label: '城市' },
+          { key: 'source', label: '来源' },
+          { key: 'status', label: '合作状态' },
+        ]
+        const configs = {
+          totalCompanies: { title: '全部企业', rows: store.companies, columns: companyColumns },
+          todayCompanies: {
+            title: '今日新增企业',
+            rows: store.companies.filter(today),
+            columns: companyColumns,
+          },
+          todayJobs: { title: '今日新增岗位', rows: store.jobs.filter(today), columns: jobColumns },
+          todayCandidates: {
+            title: '今日新增候选人',
+            rows: store.candidates.filter(today),
+            columns: candidateColumns,
+          },
+          totalJobs: { title: '全部岗位', rows: store.jobs, columns: jobColumns },
+          totalCandidates: {
+            title: '全部候选人',
+            rows: store.candidates,
+            columns: candidateColumns,
+          },
+          follow: {
+            title: '待跟进候选人',
+            rows: store.candidates.filter((c) => String(c.communication || '').includes('待')),
+            columns: candidateColumns,
+          },
+          openJobs: {
+            title: '待推荐岗位',
+            rows: store.jobs.filter((j) => String(j.status || '').includes('开放')),
+            columns: jobColumns,
+          },
+        }
+
+        if (kind === 'matches') {
+          const rows = []
+          store.candidates.forEach((candidate) => {
+            store.jobs.forEach((job) => {
+              const result = score(candidate, job)
+              if (result.total >= 80) {
+                rows.push({
+                  candidate: candidate.name,
+                  candidateTitle: candidate.title,
+                  job: job.title,
+                  company: job.companyName,
+                  score: `${result.total}分`,
+                  suggestion: result.suggestion,
+                })
+              }
+            })
+          })
+          rows.sort((a, b) => Number(b.score.replace('分', '')) - Number(a.score.replace('分', '')))
+          title.textContent = '高匹配推荐机会'
+          body.innerHTML = renderDetailTable(rows, [
+            { key: 'candidate', label: '候选人' },
+            { key: 'candidateTitle', label: '当前职位' },
+            { key: 'company', label: '目标企业' },
+            { key: 'job', label: '目标岗位' },
+            { key: 'score', label: '匹配分' },
+            { key: 'suggestion', label: '建议' },
+          ])
+          modal.classList.add('open')
+          return
+        }
+
+        const config = configs[kind]
+        if (!config) return
+        title.textContent = config.title
+        body.innerHTML = renderDetailTable(config.rows, config.columns)
+        modal.classList.add('open')
+      }
+
+      function updateClock() {
+        const now = new Date()
+        const dateText = now.toLocaleDateString('zh-CN', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+        const weekText = now.toLocaleDateString('zh-CN', { weekday: 'long' })
+        const timeText = now.toLocaleTimeString('zh-CN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false,
+        })
+        document.getElementById('currentDate').textContent = `${dateText} ${weekText}`
+        document.getElementById('currentTime').textContent = timeText
+      }
+
+      const educationRank = {
+        初中: 1,
+        高中: 2,
+        中专: 2,
+        大专: 3,
+        本科: 4,
+        硕士: 5,
+        研究生: 5,
+        博士: 6,
+      }
+      const roleFamilies = {
+        tech: [
+          '软件工程师',
+          '软件开发',
+          '开发',
+          '程序',
+          '工程师',
+          '前端',
+          '后端',
+          '全栈',
+          'java',
+          'python',
+          'c++',
+          'c#',
+          'go',
+          'golang',
+          'php',
+          'android',
+          'ios',
+          '算法',
+          '测试',
+          '运维',
+          '架构',
+          '数据库',
+          '数据开发',
+        ],
+        clerical: ['文员', '助理', '行政', '前台', '内勤', '秘书', '资料员', '录入', '客服'],
+        sales: ['销售', '客户经理', '商务', '渠道', '大客户', 'bd', '业务员'],
+        hr: ['人事', '招聘', 'hr', '人力资源', '薪酬', '绩效'],
+        finance: ['财务', '会计', '出纳', '审计', '税务'],
+        product: ['产品经理', '产品', '需求', '项目经理', '项目管理'],
+        design: ['设计', 'ui', 'ux', '视觉', '平面'],
+        operation: ['运营', '新媒体', '内容', '用户运营', '电商运营'],
+        quality: ['质量', '品质', 'qa', 'qe', '检验', '测试工程师'],
+        manufacturing: ['生产', '制造', '工艺', '设备', '机械', '结构', '电气', '自动化'],
+      }
+
+      function textOf(...values) {
+        return values.filter(Boolean).join(' ').toLowerCase()
+      }
+
+      function roleFamily(text) {
+        const normalized = textOf(text)
+        return Object.entries(roleFamilies)
+          .filter(([, words]) => words.some((word) => normalized.includes(word.toLowerCase())))
+          .map(([family]) => family)
+      }
+
+      function overlap(left, right) {
+        return left.filter((item) => right.includes(item))
+      }
+
+      function tokenHits(candidateText, jobText) {
+        const candidateTokens = tags(candidateText).filter((token) => token.length >= 2)
+        const jobTokens = tags(jobText).filter((token) => token.length >= 2)
+        const hits = jobTokens.filter((token) =>
+          candidateTokens.some((item) => item.includes(token) || token.includes(item))
+        )
+        return [...new Set(hits)]
+      }
+
+      function applyCap(value, cap, gaps, message) {
+        if (value > cap) {
+          gaps.push(message)
+          return cap
+        }
+        return value
+      }
+
+      function eduRank(text) {
+        text = text || ''
+        const key = Object.keys(educationRank).find((k) => text.includes(k))
+        return key ? educationRank[key] : 0
+      }
+      function range(text) {
+        const nums =
+          String(text || '')
+            .match(/\d+/g)
+            ?.map(Number) || []
+        if (nums.length >= 2) return [Math.min(nums[0], nums[1]), Math.max(nums[0], nums[1])]
+        if (nums.length === 1 && String(text).includes('以上')) return [nums[0], Infinity]
+        if (nums.length === 1 && String(text).includes('以下')) return [0, nums[0]]
+        if (nums.length === 1) return [nums[0], nums[0]]
+        return null
+      }
+      function loose(a, b) {
+        a = String(a || '')
+          .trim()
+          .toLowerCase()
+        b = String(b || '')
+          .trim()
+          .toLowerCase()
+        return !b || (!!a && (a.includes(b) || b.includes(a)))
+      }
+      function tags(text) {
+        return String(text || '')
+          .toLowerCase()
+          .split(/[,，、;；\s]+/)
+          .filter(Boolean)
+      }
+      function score(candidate, job) {
+        let total = 0
+        const reasons = []
+        const gaps = []
+        const candidateText = textOf(
+          candidate.title,
+          candidate.skills,
+          candidate.industry,
+          candidate.resume
+        )
+        const jobText = textOf(job.title, job.skills, job.must, job.jd, job.industry)
+        const candidateFamilies = roleFamily(candidateText)
+        const jobFamilies = roleFamily(jobText)
+        const familyHits = overlap(candidateFamilies, jobFamilies)
+        const skillHits = tokenHits(
+          textOf(candidate.skills, candidate.resume, candidate.title),
+          textOf(job.skills, job.must, job.title)
+        )
+        const mustHits = tokenHits(
+          textOf(candidate.skills, candidate.resume, candidate.title),
+          job.must
+        )
+        const hardCaps = []
+
+        if (familyHits.length) {
+          total += 25
+          reasons.push(`岗位方向一致：${familyHits.join('、')}`)
+        } else if (jobFamilies.length && candidateFamilies.length) {
+          gaps.push(
+            `岗位方向不一致：候选人偏${candidateFamilies.join('、')}，岗位偏${jobFamilies.join('、')}`
+          )
+          hardCaps.push(45)
+        } else if (skillHits.length) {
+          total += 12
+          reasons.push(`岗位方向未完全识别，但有相关技能：${skillHits.slice(0, 4).join('、')}`)
+        } else {
+          gaps.push('缺少岗位方向或核心技能命中')
+          hardCaps.push(60)
+        }
+
+        if (skillHits.length) {
+          const skillScore = Math.min(25, 10 + skillHits.length * 5)
+          total += skillScore
+          reasons.push(`核心技能命中：${skillHits.slice(0, 6).join('、')}`)
+        } else if (job.skills || job.must) {
+          gaps.push('岗位核心技能未命中')
+          hardCaps.push(55)
+        }
+
+        if (job.must && mustHits.length === 0) {
+          gaps.push('硬性要求未看到明确命中')
+          hardCaps.push(65)
+        }
+
+        const excludes = tags(job.exclude)
+        const exclusionHits = excludes.filter(
+          (item) => item.length >= 2 && candidateText.includes(item)
+        )
+        if (exclusionHits.length) {
+          gaps.push(`命中排除项：${exclusionHits.join('、')}`)
+          hardCaps.push(35)
+        }
+
+        if (!job.industry || loose(candidate.industry, job.industry)) {
+          total += 15
+          reasons.push('行业背景匹配')
+        } else gaps.push('行业背景不匹配')
+        const ageRange = range(job.age)
+        const expRange = range(job.experience)
+        if (
+          !expRange ||
+          (+candidate.experience >= expRange[0] && +candidate.experience <= expRange[1])
+        ) {
+          total += 15
+          reasons.push('工作年限符合')
+        } else gaps.push('经验年限不匹配')
+        if (loose(candidate.city, job.city)) {
+          total += 8
+          reasons.push('城市匹配')
+        } else gaps.push('城市不同')
+        if (!job.education || eduRank(candidate.education) >= eduRank(job.education)) {
+          total += 7
+          reasons.push('学历符合')
+        } else gaps.push('学历可能不足')
+        if (!ageRange || (+candidate.age >= ageRange[0] && +candidate.age <= ageRange[1])) {
+          total += 5
+          reasons.push('年龄符合')
+        } else gaps.push('年龄不匹配')
+        total = Math.min(100, total)
+        hardCaps.forEach((cap) => {
+          total = applyCap(total, cap, gaps, `因核心匹配不足，最高分限制为 ${cap} 分`)
+        })
+        total = Math.round(total)
+        return {
+          total,
+          reasons,
+          gaps,
+          suggestion: total >= 80 ? '优先推荐' : total >= 60 ? '可进一步沟通确认' : '暂不优先推荐',
+        }
+      }
+
+      function renderMatches() {
+        const select = document.getElementById('matchCandidate')
+        select.innerHTML = store.candidates.length
+          ? store.candidates
+              .map(
+                (c) =>
+                  `<option value="${c.id}">${escapeHtml(c.name)} ${escapeHtml(c.title || '')}</option>`
+              )
+              .join('')
+          : '<option value="">请先录入候选人</option>'
+        const candidate = store.candidates.find((c) => c.id === select.value) || store.candidates[0]
+        const target = document.getElementById('matchResults')
+        if (!candidate) {
+          target.innerHTML = '<div class="panel empty">请先到人才库录入候选人。</div>'
+          return
+        }
+        if (!store.jobs.length) {
+          target.innerHTML = '<div class="panel empty">请先到岗位库录入岗位。</div>'
+          return
+        }
+        target.innerHTML = store.jobs
+          .map((job) => ({ job, result: score(candidate, job) }))
+          .sort((a, b) => b.result.total - a.result.total)
+          .map(
+            ({ job, result }) => `
+            <article class="match-card">
+              <div class="title-row">
+                <div>
+                  <h2>${escapeHtml(job.companyName)} - ${escapeHtml(job.title)}</h2>
+                  <p class="muted">${escapeHtml(job.city || '城市未填')} / ${escapeHtml(job.salary || '薪资未填')} / ${escapeHtml(job.status || '开放')}</p>
+                </div>
+                <span class="score">${result.total} 分</span>
+              </div>
+              <p><span class="pill ${result.total >= 80 ? 'ok' : 'warn'}">${result.suggestion}</span></p>
+              <p><strong>匹配理由：</strong>${escapeHtml(result.reasons.join('；') || '暂无明确匹配项')}</p>
+              <p><strong>不匹配点：</strong>${escapeHtml(result.gaps.join('；') || '暂无明显不匹配点')}</p>
+            </article>
+          `
+          )
+          .join('')
+      }
+
+      function renderCompanyOptions(selectedId = '') {
+        const select = document.getElementById('jobCompanySelect')
+        if (!select) return
+        if (!store.companies.length) {
+          select.innerHTML = '<option value="">请先新增企业</option>'
+          return
+        }
+        select.innerHTML =
+          '<option value="">请选择企业</option>' +
+          store.companies
+            .map(
+              (company) =>
+                `<option value="${company.id}">${escapeHtml(company.name)}${company.city ? ` - ${escapeHtml(company.city)}` : ''}</option>`
+            )
+            .join('')
+        if (selectedId) select.value = selectedId
+      }
+
+      function render() {
+        document.getElementById('statCompanies').textContent = store.companies.filter(today).length
+        document.getElementById('statJobs').textContent = store.jobs.filter(today).length
+        document.getElementById('statCandidates').textContent =
+          store.candidates.filter(today).length
+        document.getElementById('statTotalCompanies').textContent = store.companies.length
+        document.getElementById('statTotalJobs').textContent = store.jobs.length
+        document.getElementById('statTotalCandidates').textContent = store.candidates.length
+        document.getElementById('statFollow').textContent = store.candidates.filter((c) =>
+          String(c.communication || '').includes('待')
+        ).length
+        document.getElementById('statOpenJobs').textContent = store.jobs.filter((j) =>
+          String(j.status || '').includes('开放')
+        ).length
+        document.getElementById('statMatches').textContent = store.candidates.reduce(
+          (sum, c) => sum + store.jobs.filter((j) => score(c, j).total >= 80).length,
+          0
+        )
+
+        const companiesWithJobCount = store.companies.map((company) => ({
+          ...company,
+          jobCount: store.jobs.filter(
+            (job) => job.companyId === company.id || job.companyName === company.name
+          ).length,
+        }))
+        renderTable(
+          'companyTable',
+          companiesWithJobCount,
+          [
+            { key: 'name', label: '企业名称' },
+            { key: 'industry', label: '行业' },
+            { key: 'city', label: '城市' },
+            { key: 'source', label: '来源' },
+            { key: 'status', label: '合作状态' },
+            {
+              key: 'jobCount',
+              label: '关联岗位数',
+              render: (row) =>
+                `<button class="link-number" type="button" onclick="openCompanyJobs('${row.id}')">${escapeHtml(row.jobCount)}</button>`,
+            },
+            { key: 'note', label: '备注' },
+          ],
+          'companies'
+        )
+        renderTable(
+          'jobTable',
+          store.jobs,
+          [
+            { key: 'companyName', label: '企业' },
+            { key: 'title', label: '岗位' },
+            { key: 'city', label: '城市' },
+            { key: 'salary', label: '薪资' },
+            { key: 'guarantee', label: '保证期' },
+            { key: 'commission', label: '佣金' },
+            { key: 'education', label: '学历' },
+            { key: 'age', label: '年龄' },
+            { key: 'experience', label: '经验' },
+            { key: 'industry', label: '行业' },
+            { key: 'skills', label: '技能' },
+            { key: 'status', label: '状态' },
+          ],
+          'jobs'
+        )
+        renderTable(
+          'candidateTable',
+          store.candidates,
+          [
+            { key: 'name', label: '姓名' },
+            { key: 'title', label: '当前职位' },
+            { key: 'company', label: '当前公司' },
+            { key: 'city', label: '城市' },
+            { key: 'education', label: '学历' },
+            { key: 'age', label: '年龄' },
+            { key: 'experience', label: '年限' },
+            { key: 'skills', label: '技能' },
+            { key: 'industry', label: '行业' },
+            { key: 'communication', label: '沟通状态' },
+          ],
+          'candidates'
+        )
+        renderCompanyOptions(document.getElementById('jobCompanySelect')?.value || '')
+        renderMatches()
+      }
+
+      document.querySelectorAll('nav button').forEach((button) => {
+        button.addEventListener('click', () => {
+          document.querySelectorAll('nav button').forEach((item) => item.classList.remove('active'))
+          document.querySelectorAll('.view').forEach((view) => view.classList.remove('active'))
+          button.classList.add('active')
+          document.getElementById(button.dataset.view).classList.add('active')
+          history.replaceState(null, '', location.pathname)
+        })
+      })
+
+      document.getElementById('companyForm').addEventListener('submit', (event) => {
+        event.preventDefault()
+        updateOrInsert('companies', editing.companies, formObject(event.target))
+        event.target.reset()
+        refreshCheckSummary('city', 'citySummary', '请选择城市')
+        refreshCheckSummary('status', 'statusSummary', '请选择合作状态')
+        document.getElementById('companyModal').classList.remove('open')
+        editing.companies = null
+        save()
+        render()
+      })
+      document.getElementById('jobForm').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const data = formObject(event.target)
+        const company = store.companies.find((item) => item.id === data.companyId)
+        if (!company) {
+          alert('请先选择企业，或在岗位页快速新增企业。')
+          return
+        }
+        updateOrInsert('jobs', editing.jobs, {
+          ...data,
+          companyName: company.name,
+        })
+        event.target.reset()
+        event.target.status.value = '开放'
+        document.getElementById('jobModal').classList.remove('open')
+        editing.jobs = null
+        save()
+        render()
+      })
+      document.getElementById('candidateForm').addEventListener('submit', (event) => {
+        event.preventDefault()
+        updateOrInsert('candidates', editing.candidates, formObject(event.target))
+        event.target.reset()
+        event.target.communication.value = '待跟进'
+        document.getElementById('candidateModal').classList.remove('open')
+        editing.candidates = null
+        save()
+        render()
+      })
+      document.getElementById('matchCandidate').addEventListener('change', renderMatches)
+      document.querySelectorAll('[data-stat-list]').forEach((card) => {
+        card.addEventListener('click', () => openDashboardList(card.dataset.statList))
+      })
+      document.getElementById('closeDashboardListModal').addEventListener('click', () => {
+        document.getElementById('dashboardListModal').classList.remove('open')
+      })
+      document.getElementById('dashboardListModal').addEventListener('click', (event) => {
+        if (event.target.id === 'dashboardListModal') {
+          document.getElementById('dashboardListModal').classList.remove('open')
+        }
+      })
+      document.getElementById('openCompanyModal').addEventListener('click', () => {
+        resetCompanyForm()
+        document.getElementById('companyModal').classList.add('open')
+      })
+      document.getElementById('closeCompanyModal').addEventListener('click', () => {
+        document.getElementById('companyModal').classList.remove('open')
+        editing.companies = null
+      })
+      document.getElementById('companyModal').addEventListener('click', (event) => {
+        if (event.target.id === 'companyModal') {
+          document.getElementById('companyModal').classList.remove('open')
+          editing.companies = null
+        }
+      })
+      document.getElementById('openJobModal').addEventListener('click', () => {
+        resetJobForm()
+        document.getElementById('jobModal').classList.add('open')
+      })
+      document.getElementById('closeJobModal').addEventListener('click', () => {
+        document.getElementById('jobModal').classList.remove('open')
+        editing.jobs = null
+      })
+      document.getElementById('jobModal').addEventListener('click', (event) => {
+        if (event.target.id === 'jobModal') {
+          document.getElementById('jobModal').classList.remove('open')
+          editing.jobs = null
+        }
+      })
+      document.getElementById('openCandidateModal').addEventListener('click', () => {
+        resetCandidateForm()
+        document.getElementById('candidateModal').classList.add('open')
+      })
+      document.getElementById('closeCandidateModal').addEventListener('click', () => {
+        document.getElementById('candidateModal').classList.remove('open')
+        editing.candidates = null
+      })
+      document.getElementById('candidateModal').addEventListener('click', (event) => {
+        if (event.target.id === 'candidateModal') {
+          document.getElementById('candidateModal').classList.remove('open')
+          editing.candidates = null
+        }
+      })
+      bindCheckMenus()
+      renderCustomCities()
+      document.getElementById('addCityButton').addEventListener('click', addCityFromInput)
+      document.getElementById('newCityInput').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault()
+          addCityFromInput()
+        }
+      })
+
+      updateClock()
+      setInterval(updateClock, 1000)
+      render()
+    </script>
+  </body>
+</html>

@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI超级猎头工作台 V0.2</title>
+    <style>
+      :root {
+        --bg: #f5f7fb;
+        --panel: #ffffff;
+        --text: #111827;
+        --muted: #667085;
+        --line: #e5e7eb;
+        --brand: #2563eb;
+        --brand-soft: #eff6ff;
+        --green: #059669;
+        --orange: #d97706;
+        --red: #dc2626;
+        --purple: #7c3aed;
+        --sidebar: #0f172a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Microsoft YaHei', Arial, sans-serif;
+        margin: 0;
+      }
+      .shell {
+        display: grid;
+        grid-template-columns: 232px 1fr;
+        min-height: 100vh;
+      }
+      .sidebar {
+        background: var(--sidebar);
+        color: #dbe4f0;
+        display: flex;
+        flex-direction: column;
+        padding: 22px 14px;
+      }
+      .brand {
+        align-items: center;
+        color: #fff;
+        display: flex;
+        font-size: 18px;
+        font-weight: 900;
+        gap: 8px;
+        margin-bottom: 28px;
+        padding: 0 4px;
+      }
+      .version {
+        background: var(--brand);
+        border-radius: 999px;
+        font-size: 11px;
+        padding: 2px 6px;
+      }
+      nav {
+        display: grid;
+        gap: 8px;
+      }
+      nav a {
+        border-radius: 8px;
+        color: #cbd5e1;
+        font-weight: 700;
+        padding: 13px 14px;
+        text-decoration: none;
+      }
+      nav a.active,
+      nav a:hover {
+        background: var(--brand);
+        color: #fff;
+      }
+      .sidebar-foot {
+        background: #172554;
+        border-radius: 10px;
+        margin-top: auto;
+        padding: 14px;
+      }
+      .sidebar-foot strong {
+        color: #fff;
+        display: block;
+        margin-bottom: 8px;
+      }
+      .main {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-width: 0;
+      }
+      .topbar {
+        align-items: center;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 14px;
+        justify-content: space-between;
+        padding: 16px 24px;
+      }
+      .search {
+        align-items: center;
+        display: flex;
+        gap: 10px;
+        min-width: 320px;
+      }
+      input,
+      select {
+        border: 1px solid #cfd7e3;
+        border-radius: 8px;
+        font: inherit;
+        min-width: 0;
+        padding: 10px 12px;
+        width: 100%;
+      }
+      input:focus,
+      select:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px rgb(37 99 235 / 12%);
+        outline: none;
+      }
+      .top-actions,
+      .actions {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      button {
+        background: var(--brand);
+        border: 0;
+        border-radius: 8px;
+        color: #fff;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 800;
+        padding: 10px 14px;
+      }
+      button.secondary {
+        background: #fff;
+        border: 1px solid var(--line);
+        color: #374151;
+      }
+      button.ghost {
+        background: var(--brand-soft);
+        color: var(--brand);
+      }
+      .content {
+        padding: 24px;
+      }
+      .view-hidden {
+        display: none !important;
+      }
+      .hero {
+        align-items: flex-start;
+        display: flex;
+        gap: 16px;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+      h1 {
+        font-size: 30px;
+        margin-bottom: 8px;
+      }
+      h2 {
+        font-size: 20px;
+        margin-bottom: 14px;
+      }
+      h3 {
+        font-size: 16px;
+        margin-bottom: 6px;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 14px;
+        margin: 0;
+      }
+      .home-grid {
+        align-items: start;
+        display: grid;
+        gap: 18px;
+        grid-template-columns: minmax(0, 1fr) 320px;
+      }
+      .left-stack {
+        display: grid;
+        gap: 18px;
+      }
+      .panel,
+      .card,
+      .module-card,
+      .step-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        box-shadow: 0 14px 34px rgb(15 23 42 / 7%);
+      }
+      .panel {
+        padding: 18px;
+      }
+      .workflow {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+      .step-card {
+        cursor: pointer;
+        min-height: 118px;
+        padding: 16px;
+      }
+      .step-card:hover,
+      .module-card:hover,
+      .quick-button:hover {
+        border-color: #bfdbfe;
+        box-shadow: 0 18px 38px rgb(37 99 235 / 12%);
+      }
+      .step-icon,
+      .module-icon {
+        align-items: center;
+        background: var(--brand-soft);
+        border-radius: 10px;
+        color: var(--brand);
+        display: inline-flex;
+        font-size: 20px;
+        font-weight: 900;
+        height: 38px;
+        justify-content: center;
+        margin-bottom: 12px;
+        width: 38px;
+      }
+      .module-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .module-card {
+        display: grid;
+        gap: 14px;
+        padding: 18px;
+      }
+      .metric-row {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .metric {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 10px;
+      }
+      .metric span {
+        color: var(--muted);
+        display: block;
+        font-size: 12px;
+      }
+      .metric strong {
+        display: block;
+        font-size: 22px;
+        margin-top: 4px;
+      }
+      .assistant-panel {
+        display: grid;
+        gap: 14px;
+        position: sticky;
+        top: 16px;
+      }
+      .tip {
+        border-left: 4px solid var(--brand);
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 12px;
+      }
+      .tip.risk {
+        border-left-color: var(--red);
+      }
+      .tip.chance {
+        border-left-color: var(--green);
+      }
+      .quick-grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+      .quick-button {
+        align-items: center;
+        background: #f8fafc;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        color: var(--text);
+        display: flex;
+        font-weight: 900;
+        gap: 12px;
+        justify-content: center;
+        min-height: 58px;
+        text-decoration: none;
+      }
+      .table-wrap {
+        overflow: auto;
+      }
+      table {
+        border-collapse: collapse;
+        min-width: 860px;
+        width: 100%;
+      }
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        font-size: 14px;
+        padding: 12px;
+        text-align: left;
+      }
+      th {
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 900;
+      }
+      form {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-bottom: 16px;
+      }
+      label {
+        color: #475569;
+        display: grid;
+        font-size: 13px;
+        gap: 6px;
+      }
+      .full {
+        grid-column: 1 / -1;
+      }
+      .badge {
+        border-radius: 999px;
+        display: inline-flex;
+        font-size: 12px;
+        font-weight: 900;
+        padding: 5px 9px;
+      }
+      .badge.blue {
+        background: #eff6ff;
+        color: var(--brand);
+      }
+      .badge.green {
+        background: #ecfdf5;
+        color: var(--green);
+      }
+      .badge.orange {
+        background: #fffbeb;
+        color: var(--orange);
+      }
+      .badge.red {
+        background: #fef2f2;
+        color: var(--red);
+      }
+      .toast {
+        background: #0f172a;
+        border-radius: 999px;
+        bottom: 22px;
+        color: #fff;
+        display: none;
+        left: 50%;
+        padding: 10px 16px;
+        position: fixed;
+        transform: translateX(-50%);
+        z-index: 9;
+      }
+      @media (max-width: 1180px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+        .sidebar {
+          position: static;
+        }
+        nav {
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        }
+        .home-grid,
+        .module-grid,
+        .workflow,
+        .quick-grid,
+        form {
+          grid-template-columns: 1fr;
+        }
+        .topbar,
+        .hero {
+          align-items: stretch;
+          flex-direction: column;
+        }
+        .search {
+          min-width: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">AI超级猎头工作台 <span class="version">V0.2</span></div>
+        <nav>
+          <a class="active" href="#" data-target="home">首页看板</a>
+          <a href="#" data-target="companies">企业库</a>
+          <a href="#" data-target="jobs">岗位库</a>
+          <a href="#" data-target="candidates">人才库</a>
+          <a href="#" data-target="match">匹配中心</a>
+        </nav>
+        <div class="sidebar-foot">
+          <strong>一人猎头操作系统</strong>
+          <p class="muted">聚焦找岗位、找人才、匹配、推荐与跟进。</p>
+        </div>
+      </aside>
+
+      <div class="main">
+        <header class="topbar">
+          <div class="search">
+            <input id="globalSearch" placeholder="搜索企业、人才、岗位" />
+            <button class="secondary" id="searchButton" type="button">搜索</button>
+          </div>
+          <div class="top-actions">
+            <button class="ghost" data-open="candidates">新增候选人</button>
+            <button class="ghost" data-open="jobs">新增岗位</button>
+            <button data-open="match">开始匹配</button>
+          </div>
+        </header>
+
+        <main class="content">
+          <section class="view" data-view="home">
+            <div class="hero">
+              <div>
+                <h1>欢迎回来，猎头顾问</h1>
+                <p class="muted">
+                  从这里开始处理今日招聘工作流：找岗位、找人才、匹配、沟通、跟进。
+                </p>
+              </div>
+              <button class="secondary" id="customBoard" type="button">自定义看板</button>
+            </div>
+
+            <div class="home-grid">
+              <div class="left-stack">
+                <section class="panel">
+                  <h2>核心工作流</h2>
+                  <div class="workflow" id="workflowCards"></div>
+                </section>
+
+                <section class="module-grid" id="moduleCards"></section>
+
+                <section class="panel">
+                  <h2>快捷操作</h2>
+                  <div class="quick-grid">
+                    <a class="quick-button" href="#" data-open="candidates">＋ 新增候选人</a>
+                    <a class="quick-button" href="#" data-open="jobs">＋ 新增岗位</a>
+                    <a class="quick-button" href="#" data-open="match">◎ 开始匹配</a>
+                    <a class="quick-button" href="#" data-action="touch">批量触达</a>
+                    <a class="quick-button" href="#" data-action="report">生成报告</a>
+                  </div>
+                </section>
+              </div>
+
+              <aside class="panel assistant-panel">
+                <div>
+                  <h2>AI助手提示</h2>
+                  <p class="muted">提示系统，不包含聊天和生成内容。</p>
+                </div>
+                <div class="tip">
+                  <h3>今日建议</h3>
+                  <p class="muted" id="todayTip">优先处理高匹配候选人。</p>
+                </div>
+                <div class="tip risk">
+                  <h3>风险提示</h3>
+                  <p class="muted" id="riskTip">部分岗位开放中但尚未推荐候选人。</p>
+                </div>
+                <div class="tip chance">
+                  <h3>机会提示</h3>
+                  <p class="muted" id="chanceTip">已有多个 80 分以上匹配机会。</p>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="view view-hidden" data-view="companies">
+            <div class="hero">
+              <div>
+                <h1>企业库</h1>
+                <p class="muted">维护企业资源、城市、来源和合作状态。</p>
+              </div>
+            </div>
+            <section class="panel">
+              <h2>新增企业</h2>
+              <form id="companyForm">
+                <label
+                  >企业名称<input name="name" required placeholder="例如：深圳道通航空有限公司"
+                /></label>
+                <label>行业<input name="industry" placeholder="例如：无人机" /></label>
+                <label>城市<input name="city" placeholder="例如：深圳、北京" /></label>
+                <label
+                  >来源
+                  <select name="source">
+                    <option>人力聚合平台</option>
+                    <option>禾蛙网</option>
+                    <option>手工录入</option>
+                  </select>
+                </label>
+                <label>合作状态<input name="status" placeholder="例如：合作中" /></label>
+                <label>备注<input name="note" placeholder="合作情况、联系人等" /></label>
+                <button type="submit">新增企业</button>
+                <button class="secondary" id="resetCompanies" type="button">恢复示例企业</button>
+              </form>
+              <div class="table-wrap" id="companyTable"></div>
+            </section>
+          </section>
+
+          <section class="view view-hidden" data-view="jobs">
+            <div class="hero">
+              <div>
+                <h1>岗位库</h1>
+                <p class="muted">查看岗位资源池，后续用于匹配和推荐。</p>
+              </div>
+            </div>
+            <section class="panel"><div class="table-wrap" id="jobTable"></div></section>
+          </section>
+
+          <section class="view view-hidden" data-view="candidates">
+            <div class="hero">
+              <div>
+                <h1>人才库</h1>
+                <p class="muted">维护候选人信息和推进状态。</p>
+              </div>
+            </div>
+            <section class="panel">
+              <h2>新增候选人</h2>
+              <form id="candidateForm">
+                <label>姓名<input name="name" required placeholder="例如：李明" /></label>
+                <label>当前职位<input name="title" placeholder="例如：Java后端开发工程师" /></label>
+                <label>城市<input name="city" placeholder="例如：杭州" /></label>
+                <label
+                  >状态
+                  <select name="status">
+                    <option>新建</option>
+                    <option>已沟通</option>
+                    <option>已推荐</option>
+                    <option>面试中</option>
+                    <option>Offer</option>
+                    <option>入职</option>
+                    <option>淘汰</option>
+                  </select>
+                </label>
+                <label class="full"
+                  >技能标签<input name="skills" placeholder="例如：Java, Spring, MySQL"
+                /></label>
+                <button type="submit">新增候选人</button>
+                <button class="secondary" id="resetCandidates" type="button">恢复示例候选人</button>
+              </form>
+              <div class="table-wrap" id="candidateTable"></div>
+            </section>
+          </section>
+
+          <section class="view view-hidden" data-view="match">
+            <div class="hero">
+              <div>
+                <h1>匹配中心</h1>
+                <p class="muted">查看候选人和岗位的规则匹配结果。</p>
+              </div>
+            </div>
+            <section class="panel"><div class="table-wrap" id="matchTable"></div></section>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      const defaultCompanies = [
+        [
+          '深圳道通航空有限公司',
+          '无人机',
+          '深圳、北京',
+          '禾蛙网',
+          '合作中',
+          '无人机研发与智能硬件企业',
+        ],
+        [
+          '杭州云脉科技有限公司',
+          '人工智能',
+          '杭州、上海',
+          '人力聚合平台',
+          '合作中',
+          'AI 数据平台与企业应用',
+        ],
+        [
+          '苏州精工智造有限公司',
+          '智能制造',
+          '苏州、南京',
+          '手工录入',
+          '待沟通',
+          '自动化设备与精密制造',
+        ],
+        [
+          '广州新零售科技有限公司',
+          '电商零售',
+          '广州、深圳',
+          '人力聚合平台',
+          '合作中',
+          '新零售运营与会员增长',
+        ],
+        [
+          '成都启航企业服务有限公司',
+          '企业服务',
+          '成都、重庆',
+          '手工录入',
+          '初步接触',
+          'B2B 企业服务与销售团队',
+        ],
+        [
+          '上海智链金融科技有限公司',
+          '金融科技',
+          '上海、杭州',
+          '禾蛙网',
+          '合作中',
+          '支付、风控与数据产品',
+        ],
+      ]
+      const defaultCandidates = [
+        ['李明', '嵌入式软件工程师', '深圳', '已沟通', 'C++, 嵌入式, Linux, 无人机'],
+        ['王芳', 'Java后端开发工程师', '杭州', '新建', 'Java, Spring, MySQL, Redis'],
+        ['陈杰', 'AI产品经理', '上海', '已推荐', '产品经理, AI, 数据产品'],
+        ['赵强', '机械结构工程师', '苏州', '新建', '机械, 结构, SolidWorks'],
+        ['刘洋', '电气自动化工程师', '南京', '已沟通', 'PLC, 电气, 自动化'],
+        ['周倩', '电商运营经理', '广州', '新建', '电商运营, 数据分析'],
+        ['吴晨', 'UI视觉设计师', '深圳', '新建', 'UI, 视觉, Figma'],
+        ['郑涛', '大客户销售经理', '成都', '面试中', '销售, 大客户, BD'],
+        ['孙悦', '风控数据分析师', '上海', '新建', 'SQL, Python, 风控'],
+        ['何敏', '行政文员', '深圳', '新建', '文员, 行政, 资料录入'],
+      ]
+      const jobs = [
+        [
+          '深圳道通航空有限公司',
+          '嵌入式软件工程师',
+          '深圳',
+          '25-40K',
+          '开放',
+          'C++, 嵌入式, Linux',
+        ],
+        [
+          '深圳道通航空有限公司',
+          '无人机测试工程师',
+          '深圳',
+          '18-28K',
+          '开放',
+          '测试, QA, 自动化测试',
+        ],
+        [
+          '杭州云脉科技有限公司',
+          'Java后端开发工程师',
+          '杭州',
+          '22-35K',
+          '开放',
+          'Java, Spring, MySQL',
+        ],
+        [
+          '杭州云脉科技有限公司',
+          'AI产品经理',
+          '上海',
+          '25-45K',
+          '推荐中',
+          '产品经理, AI, 数据产品',
+        ],
+        [
+          '苏州精工智造有限公司',
+          '机械结构工程师',
+          '苏州',
+          '18-30K',
+          '开放',
+          '机械, 结构, SolidWorks',
+        ],
+        ['苏州精工智造有限公司', '电气自动化工程师', '南京', '20-32K', '开放', 'PLC, 电气, 自动化'],
+        ['广州新零售科技有限公司', '电商运营经理', '广州', '18-30K', '开放', '电商运营, 数据分析'],
+        ['广州新零售科技有限公司', 'UI视觉设计师', '深圳', '15-25K', '开放', 'UI, 视觉, Figma'],
+        [
+          '成都启航企业服务有限公司',
+          '大客户销售经理',
+          '成都',
+          '15-35K',
+          '开放',
+          '销售, 大客户, BD',
+        ],
+        [
+          '上海智链金融科技有限公司',
+          '风控数据分析师',
+          '上海',
+          '20-35K',
+          '开放',
+          'SQL, Python, 风控',
+        ],
+      ]
+      const matches = [
+        ['李明', '嵌入式软件工程师', '深圳道通航空有限公司', 95, '优先推荐'],
+        ['王芳', 'Java后端开发工程师', '杭州云脉科技有限公司', 95, '优先推荐'],
+        ['陈杰', 'AI产品经理', '杭州云脉科技有限公司', 95, '优先推荐'],
+        ['赵强', '机械结构工程师', '苏州精工智造有限公司', 95, '优先推荐'],
+        ['刘洋', '电气自动化工程师', '苏州精工智造有限公司', 95, '优先推荐'],
+        ['周倩', '电商运营经理', '广州新零售科技有限公司', 95, '优先推荐'],
+        ['吴晨', 'UI视觉设计师', '广州新零售科技有限公司', 95, '优先推荐'],
+        ['郑涛', '大客户销售经理', '成都启航企业服务有限公司', 92, '优先推荐'],
+        ['孙悦', '风控数据分析师', '上海智链金融科技有限公司', 95, '优先推荐'],
+        ['何敏', '嵌入式软件工程师', '深圳道通航空有限公司', 35, '暂不优先推荐'],
+      ]
+
+      let companies = loadData('companies', defaultCompanies)
+      let candidates = loadData('candidates', defaultCandidates)
+
+      function loadData(key, fallback) {
+        try {
+          return JSON.parse(localStorage.getItem(`headhunter-v02-${key}`)) || fallback.slice()
+        } catch {
+          return fallback.slice()
+        }
+      }
+      function saveData(key, rows) {
+        localStorage.setItem(`headhunter-v02-${key}`, JSON.stringify(rows))
+      }
+      function table(headers, rows) {
+        return `<table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join('')}</tr>`).join('')}</tbody></table>`
+      }
+      function badge(text, type) {
+        return `<span class="badge ${type}">${text}</span>`
+      }
+      function toast(text) {
+        const node = document.getElementById('toast')
+        node.textContent = text
+        node.style.display = 'block'
+        setTimeout(() => (node.style.display = 'none'), 1700)
+      }
+      function openView(name) {
+        document.querySelectorAll('[data-view]').forEach((section) => {
+          section.classList.toggle('view-hidden', section.dataset.view !== name)
+        })
+        document.querySelectorAll('nav a').forEach((item) => {
+          item.classList.toggle('active', item.dataset.target === name)
+        })
+        if (location.hash) history.replaceState(null, '', location.pathname)
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      }
+      function render() {
+        const highMatches = matches.filter((item) => item[3] >= 80)
+        const openJobs = jobs.filter((item) => item[4] === '开放')
+        const todayCandidates = candidates.slice(0, 2).length
+
+        document.getElementById('workflowCards').innerHTML = [
+          ['找岗位', '查看开放岗位', 'jobs', '1'],
+          ['找人才', '录入和筛选候选人', 'candidates', '2'],
+          ['人岗匹配', '查看高分匹配机会', 'match', '3'],
+          ['候选沟通', '推进待跟进对象', 'candidates', '4'],
+          ['Offer跟进', '跟踪面试和成交', 'match', '5'],
+        ]
+          .map(
+            (step) => `
+          <article class="step-card" data-open="${step[2]}">
+            <div class="step-icon">${step[3]}</div>
+            <h3>${step[0]}</h3>
+            <p class="muted">${step[1]}</p>
+          </article>
+        `
+          )
+          .join('')
+
+        document.getElementById('moduleCards').innerHTML = [
+          [
+            '人才池',
+            candidates.length,
+            todayCandidates,
+            candidates.filter((c) => ['新建', '已沟通'].includes(c[3])).length,
+            'candidates',
+            '人',
+          ],
+          ['岗位池', jobs.length, 2, openJobs.length, 'jobs', '岗'],
+          ['匹配引擎', highMatches.length, 0, highMatches.length, 'match', '配'],
+        ]
+          .map(
+            (card) => `
+          <article class="module-card">
+            <div><div class="module-icon">${card[5]}</div><h2>${card[0]}</h2></div>
+            <div class="metric-row">
+              <div class="metric"><span>总量</span><strong>${card[1]}</strong></div>
+              <div class="metric"><span>今日新增</span><strong>${card[2]}</strong></div>
+              <div class="metric"><span>待处理</span><strong>${card[3]}</strong></div>
+            </div>
+            <button data-open="${card[4]}">进入${card[0]}</button>
+          </article>
+        `
+          )
+          .join('')
+
+        document.getElementById('todayTip').textContent =
+          `今天优先处理 ${highMatches.length} 个高匹配机会。`
+        document.getElementById('riskTip').textContent =
+          `${openJobs.length} 个岗位仍处于开放状态，需要补充候选人。`
+        document.getElementById('chanceTip').textContent =
+          `人才池已有 ${candidates.length} 人，可继续扩大匹配覆盖。`
+
+        document.getElementById('companyTable').innerHTML = table(
+          ['企业名称', '行业', '城市', '来源', '合作状态', '备注'],
+          companies
+        )
+        document.getElementById('candidateTable').innerHTML = table(
+          ['姓名', '当前职位', '城市', '状态', '技能'],
+          candidates
+        )
+        document.getElementById('jobTable').innerHTML = table(
+          ['企业', '岗位', '城市', '薪资', '状态', '技能'],
+          jobs
+        )
+        document.getElementById('matchTable').innerHTML = table(
+          ['候选人', '岗位', '企业', '匹配分', '建议'],
+          matches.map((row) => [
+            row[0],
+            row[1],
+            row[2],
+            badge(`${row[3]}分`, row[3] >= 80 ? 'green' : 'red'),
+            row[4],
+          ])
+        )
+
+        document.querySelectorAll('[data-open]').forEach((node) => {
+          node.onclick = (event) => {
+            event.preventDefault()
+            openView(node.dataset.open || 'home')
+          }
+        })
+      }
+
+      document.querySelectorAll('nav a').forEach((link) => {
+        link.addEventListener('click', (event) => {
+          event.preventDefault()
+          openView(link.dataset.target || 'home')
+        })
+      })
+      document.getElementById('companyForm').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const data = new FormData(event.currentTarget)
+        companies.unshift([
+          data.get('name') || '',
+          data.get('industry') || '',
+          data.get('city') || '',
+          data.get('source') || '',
+          data.get('status') || '待沟通',
+          data.get('note') || '',
+        ])
+        saveData('companies', companies)
+        event.currentTarget.reset()
+        render()
+        toast('企业已新增')
+      })
+      document.getElementById('candidateForm').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const data = new FormData(event.currentTarget)
+        candidates.unshift([
+          data.get('name') || '',
+          data.get('title') || '',
+          data.get('city') || '',
+          data.get('status') || '新建',
+          data.get('skills') || '',
+        ])
+        saveData('candidates', candidates)
+        event.currentTarget.reset()
+        render()
+        toast('候选人已新增')
+      })
+      document.getElementById('resetCompanies').addEventListener('click', () => {
+        companies = defaultCompanies.slice()
+        saveData('companies', companies)
+        render()
+        toast('企业示例已恢复')
+      })
+      document.getElementById('resetCandidates').addEventListener('click', () => {
+        candidates = defaultCandidates.slice()
+        saveData('candidates', candidates)
+        render()
+        toast('候选人示例已恢复')
+      })
+      document.getElementById('searchButton').addEventListener('click', () => {
+        const keyword = document.getElementById('globalSearch').value.trim()
+        toast(keyword ? `已搜索：${keyword}` : '请输入搜索关键词')
+      })
+      document
+        .getElementById('customBoard')
+        .addEventListener('click', () => toast('看板已是工作流模式'))
+      document.querySelectorAll('[data-action]').forEach((node) => {
+        node.addEventListener('click', (event) => {
+          event.preventDefault()
+          toast(node.dataset.action === 'report' ? '报告入口已预留' : '批量触达入口已预留')
+        })
+      })
+
+      render()
+      const initial = location.hash ? location.hash.replace('#', '') : 'home'
+      openView(
+        ['home', 'companies', 'jobs', 'candidates', 'match'].includes(initial) ? initial : 'home'
+      )
+    </script>
+  </body>
+</html>

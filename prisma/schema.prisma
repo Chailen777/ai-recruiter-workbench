@@ -1,0 +1,366 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id                Int      @id @default(autoincrement())
+  name              String
+  industry          String?
+  city              String?
+  source            String?
+  cooperationStatus String?
+  address           String?
+  companyContactName String?
+  companyContactPhone String?
+  projectContactName String?
+  projectContactPhone String?
+  projectContactWechat String?
+  link              String?
+  attachments       String?
+  avatar            String?
+  note              String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  importedAt        DateTime @default(now())
+  jobs              Job[]
+
+  @@map("company")
+}
+
+model Job {
+  id                    Int      @id @default(autoincrement())
+  companyId             Int?
+  companyName           String
+  title                 String
+  city                  String?
+  salaryRange           String?
+  guaranteePeriod       String?
+  commission            String?
+  educationRequirement  String?
+  ageRequirement        String?
+  experienceRequirement String?
+  jobCategory           String?
+  skillKeywords         String?
+  mustHave              String?
+  niceToHave            String?
+  exclusions            String?
+  jdRaw                 String?
+  highlights            String?
+  responsibilities      String?
+  requirements          String?
+  headcount             Int?
+  workLocation          String?
+  orderNotes            String?
+  commissionRules       String?
+  deliveryMode          String?
+  status                String   @default("待发布")
+  link                  String?
+  website               String?
+  industry              String?
+  tags                  String?
+  source                String?
+  attachments           String?
+  avatar                String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  importedAt            DateTime @default(now())
+  company               Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  matches               Match[]
+
+  @@map("job")
+}
+
+model Candidate {
+  id               Int      @id @default(autoincrement())
+  name              String
+  gender            String?
+  phone             String?
+  currentTitle      String?
+  currentCompany    String?
+  city              String?
+  schoolName        String?
+  schoolType        String?
+  major             String?
+  education         String?
+  age               Int?
+  yearsOfWork       Int?
+  jobSearchStatus   String?
+  desiredPosition   String?
+  expectedSalary    String?
+  skillTags         String?
+  industryBg     String?
+  selfIntro        String?
+  resumeRaw        String?
+  strengths        String?
+  workExperience   String?
+  educationDetail  String?
+  languages        String?
+  certificates     String?
+  projects         String?
+  awards           String?
+  otherAbilities   String?
+  link             String?
+  resumeFile       String?
+  attachments      String?
+  avatar           String?
+  communication    String   @default("待跟进")
+  status         String   @default("新建")
+  tags           String?
+  note           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  importedAt     DateTime @default(now())
+  matches        Match[]
+
+  @@map("candidate")
+}
+
+model Match {
+  id          Int       @id @default(autoincrement())
+  candidateId Int
+  jobId       Int
+  score       Int
+  reasons     String
+  gaps        String
+  suggestion  String
+  status      String    @default("已生成")
+  createdAt   DateTime  @default(now())
+  importedAt  DateTime  @default(now())
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, jobId])
+  @@map("match")
+}
+
+model Knowledge {
+  id               Int      @id @default(autoincrement())
+  title            String
+  author           String?
+  category         String?
+  content          String?
+  source           String?
+  url              String?
+  tags             String?
+  publicStatus     String?  // 公开/内部可见/私密
+  reviewStatus     String?  @default("待审核")
+  docFormat        String?  // 图文/表格/视频/附件
+  targetAudience   String?  // 学生/职场/企业管理
+  cover            String?
+  attachments      String?
+  note             String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  importedAt       DateTime @default(now())
+
+  @@map("knowledge")
+}
+
+model School {
+  id                    Int      @id @default(autoincrement())
+  name                  String
+  schoolType            String?  // 985/211/普通
+  city                  String?
+  address               String?
+  foundedYear           String?
+  mainMajors           String?
+  campusCount           String?
+  studentCount          String?
+  schoolNature          String?  // 公办/民办/中外合作/军校
+  schoolCategory        String?  // 综合类/理工类/师范类/医药类/财经类/农林类/艺术类
+  educationLevel        String?  // 本科/高职专科/本硕博一体
+  doubleFirstClass      String?  // A类/B类/双一流学科
+  graduatePrograms      String?  // 硕士点/博士点：有无、一级学科数量
+  gradRecommendation    String?  // 有/无
+  keyDisciplinesCount  String?
+  academicianCount      String?
+  content              String?  // 学校介绍与详情内容
+  link                  String?
+  cover                 String?
+  attachments           String?
+  note                  String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  importedAt            DateTime @default(now())
+
+  @@map("school")
+}
+
+model Chart {
+  id               Int      @id @default(autoincrement())
+  title            String
+  dataDeadline     DateTime?
+  statPeriod       String?  // 日/周/季/年
+  statDimension    String?  // 金额/人数/订单/销量
+  comparePeriod    String?  // 同比/环比/无对比
+  creator          String?
+  dataSource       String?  // 业务系统/手动录入/第三方导出
+  indicatorTotal   String?
+  statUnit         String?
+  dataSourceNote  String?
+  content            String?  // 图表描述与数据说明
+  link              String?
+  cover            String?
+  attachments      String?
+  note             String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  importedAt       DateTime @default(now())
+
+  @@map("chart")
+}
+
+model Info {
+  id             Int      @id @default(autoincrement())
+  infoTime       DateTime?
+  title          String
+  category       String?  // 每日新闻/行业资讯/沟通记录/安全提醒/机会提示
+  content        String?
+  creator        String?
+  pinStatus      String?  @default("普通")  // 置顶/普通
+  infoSource     String?  // 官网/媒体/内部沟通/客户反馈/线下会议
+  urgency        String?  @default("普通")  // 普通/重要/紧急
+  relatedBusiness String?  // 市场/运营/风控/项目
+  viewCount      Int      @default(0)
+  likeCount      Int      @default(0)
+  shareCount     Int      @default(0)
+  purchaseCount  Int      @default(0)
+  amount         String?
+  link            String?
+  cover          String?
+  attachments    String?
+  note           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  importedAt     DateTime @default(now())
+
+  @@map("info")
+}
+
+// ── 人脉库 ────────────────────────────────────
+model Contact {
+  id               Int      @id @default(autoincrement())
+  // 基础信息
+  name             String
+  gender           String?
+  phone            String?
+  wechat           String?
+  email            String?
+  // 个人信息
+  age              Int?
+  birthday         DateTime?
+  birthdayType     String?  // 阳历 / 阴历
+  maritalStatus    String?  // 已婚/未婚/离异/其他
+  childrenInfo     String?  // 孩子情况（几孩/年龄等）
+  religion         String?
+  // 工作信息
+  company          String?
+  position         String?
+  industry         String?
+  workAddress      String?
+  // 家庭与地址
+  homeAddress      String?
+  city             String?
+  // 教育背景
+  school           String?
+  major            String?
+  education        String?
+  // 关系信息
+  firstMetEvent    String?  // 第一次认识的事件
+  firstMetDate     DateTime? // 第一次认识时间
+  introducedBy     String?  // 中间介绍人
+  source           String?  // 认识渠道：行业会议/朋友介绍/线上社交...
+  relationshipStrength String? // 关系强度：一面之缘/偶尔联系/经常沟通/深度合作/老朋友
+  lastContactDate  DateTime? // 最近沟通日期
+  contactFrequency String?  // 建议沟通频率：每周/每月/每季度
+  nextAction       String?  // 下一步行动
+  // 价值评估
+  coreResources    String?  // 核心资源（逗号分隔标签）
+  influenceRating  String?  // 影响力评级：A/B/C/D
+  cooperationRecord String?  // 合作记录简述
+  // 其他
+  tags             String?
+  avatar           String?
+  attachments      String?
+  note             String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  importedAt       DateTime @default(now())
+
+  @@map("contact")
+}
+
+// ── 项目库 ────────────────────────────────────
+model Project {
+  id               Int      @id @default(autoincrement())
+  // 基础信息
+  name             String   // 项目名称
+  code             String?  // 项目编号 PRJ-2026-001
+  clientCompany    String?  // 客户公司
+  clientContact    String?  // 客户方对接人（可选关联人脉ID或名称）
+  projectType      String?  // 项目类型：高端猎头/RPO/背景调查/咨询...
+  industry         String?
+  priority         String?  // P0-紧急/P1-高/P2-中/P3-低
+  status           String   @default("洽谈中") // 洽谈中/已签约/进行中/暂停/已完成/已终止
+  // 时间
+  startDate        DateTime?
+  expectedEndDate  DateTime?
+  actualEndDate    DateTime?
+  // 财务
+  contractAmount   String?
+  chargingModel    String?  // 按年薪比例/固定服务费/分期/其他
+  paymentStatus    String?  // 未开票/已开票待回款/部分回款/已结清
+  paidAmount       String?
+  // 岗位与进展
+  relatedJobs      String?  // 关联岗位ID（逗号分隔）
+  totalHeadcount   Int?
+  recommendedCount Int?
+  interviewedCount Int?
+  hiredCount       Int?
+  completionRate   String?  // 项目完成度百分比
+  // 沟通与文档
+  lastReportDate   DateTime?
+  nextReportDate   DateTime?
+  painPoints       String?
+  competitorInfo   String?
+  tags             String?
+  attachments      String?
+  note             String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  importedAt       DateTime @default(now())
+
+  @@map("project")
+}
+
+// 统一备忘录 / 待办 / 沟通记录表
+model Note {
+  id         Int      @id @default(autoincrement())
+  // 内容
+  content    String
+  // 类型: todo | log | note | appointment
+  type       String   @default("note")
+  // 归属实体类型: global | job | candidate | company | match
+  entityType String   @default("global")
+  // 归属实体 ID (global 时为 0)
+  entityId   Int      @default(0)
+  // 是否置顶
+  pinned     Boolean  @default(false)
+  // 是否完成 (todo 专用)
+  done       Boolean  @default(false)
+  // 预约字段 (appointment 专用)
+  appointmentTime     DateTime? // 预约时间
+  appointmentLocation String?   // 预约地点
+  appointmentType     String?   // 预约类型: interview | business | other
+  appointmentPerson   String?   // 预约人物（面试官/联系人等）
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([entityType, entityId])
+  @@map("note")
+}

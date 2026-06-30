@@ -1,0 +1,11 @@
+ ⚠ Attempted to load @next/swc-win32-x64-msvc, but an error occurred: \\?\F:\00 陈成\AI猎头\AI超级猎头工作�?V1\node_modules\@next\swc-win32-x64-msvc\next-swc.win32-x64-msvc.node is not a valid Win32 application.
+\\?\F:\00 陈成\AI猎头\AI超级猎头工作台 V1\node_modules\@next\swc-win32-x64-msvc\next-swc.win32-x64-msvc.node
+AI超级猎头工作台已启动: http://127.0.0.1:3000
+ ○ Compiling / ...
+ ✓ Compiled / in 25.6s (599 modules)
+ HEAD / 200 in 27829ms
+ GET / 200 in 13136ms
+ ○ Compiling /companies ...
+ ✓ Compiled /companies in 3.2s (609 modules)
+ HEAD /companies 200 in 4208ms
+ GET / 200 in 454ms

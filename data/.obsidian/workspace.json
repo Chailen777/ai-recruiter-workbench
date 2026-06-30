@@ -1,0 +1,219 @@
+{
+  "main": {
+    "id": "b221b514e5d46fa5",
+    "type": "split",
+    "children": [
+      {
+        "id": "f555cd67c137d25d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "6a6596e26027432f",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "notes/167-再做一个，就是快捷键，一键隐藏左右两边的.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "167-再做一个，就是快捷键，一键隐藏左右两边的"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "6b79e2b023ab1f88",
+    "type": "split",
+    "children": [
+      {
+        "id": "ddfb879622806d85",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "70b08d5b21f68700",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "cfe2e3fc787bd30d",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "918928e2d394a52f",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "c1e77d2f60708f27",
+    "type": "split",
+    "children": [
+      {
+        "id": "c76961d683537f8e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a406627dcab052a9",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "companies/0013-北京百思特捷迅信息科技有限公司上海分公司.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "0013-北京百思特捷迅信息科技有限公司上海分公司 的反向链接列表"
+            }
+          },
+          {
+            "id": "139997a4ccd5d562",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "companies/0013-北京百思特捷迅信息科技有限公司上海分公司.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "0013-北京百思特捷迅信息科技有限公司上海分公司 的出链列表"
+            }
+          },
+          {
+            "id": "07b418fef2c1630e",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "ea5673ace14f1a75",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "添加笔记属性"
+            }
+          },
+          {
+            "id": "05b38376defdb0a5",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "companies/0013-北京百思特捷迅信息科技有限公司上海分公司.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "0013-北京百思特捷迅信息科技有限公司上海分公司 的大纲"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:新建数据库": false
+    }
+  },
+  "active": "70b08d5b21f68700",
+  "lastOpenFiles": [
+    "notes/285-首页：上面就是柴伦世家三个家徽，中间就是.md",
+    "notes/284-今天要发7月5日的儿主总结的PPT。.md",
+    "notes/283-我想移动端首页就是一个快速新建随笔的窗口.md",
+    "notes/154-通过快捷键创建新笔记，感觉就上了，这就有.md",
+    "notes/149-键盘快捷键高频操作加几个快捷键效率会大幅.md",
+    "notes/222-今天AI猎头工作台V02版正式完成了。.md",
+    "notes/264-这个版本已经做得非常好了，也很实用。.md",
+    "notes/263-对工作台，不能追求完美，以后只是在业务方.md",
+    "notes/262-关于网站的开发就到这里了，不能一直开发，.md",
+    "notes/261-今天晚上来一人最终版，接下来一心去做业务.md",
+    "notes/260-希望这个AI工作台，给自己创造很大的商业.md",
+    "notes/259-今天将桌面笔记代码删除了，不想一个平台有.md",
+    "notes/258-工作站能不能做一个一个快捷键，可以直接调.md",
+    "notes/251-今天晚上很快把桌面端的卡片笔记做出来，而.md",
+    "notes/250-怎么感觉晚上的开始速度比白天快多了，而且.md",
+    "notes/245-一起学习查经.md",
+    "notes/246-这个好，实时同步到OBSIDIAN.md",
+    "notes/244-桌面笔记111.md",
+    "notes/243-可以可以的.md",
+    "notes/242-待办好象显示不出来.md",
+    "notes/241-测试一下待办怎么样.md",
+    "notes/240-看看待办怎么样.md",
+    "notes/239-反应快.md",
+    "notes/238-现在这里是实时显示的.md",
+    "notes/237-测试笔记.md",
+    "notes/236-我现在发一下看看是不是时时的.md",
+    "matches",
+    "notes",
+    "info",
+    "charts"
+  ]
+}
