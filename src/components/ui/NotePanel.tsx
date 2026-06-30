@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState, useTransition, useMemo, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { addNote, deleteNote, editNote, togglePinNote, toggleDoneNote } from '@/app/actions'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useToast } from '@/components/providers/ToastProvider'
@@ -125,6 +126,27 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   const [draftVersion, setDraftVersion] = useState(0)
   const DRAFT_KEY = 'note-diary-draft'
 
+  // ── 日记全屏模式 ──
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const fullscreenEditorRef = useRef<HTMLDivElement>(null)
+  const fullscreenContentRef = useRef('')
+  // ── 字数统计（纯文本字符数）──
+  const [diaryCharCount, setDiaryCharCount] = useState(0)
+  const MAX_DIARY_CHARS = 10000
+
+  /** 获取当前活动编辑器（全屏或内联）的纯文本字数 */
+  const getDiaryText = useCallback(() => {
+    const ref = isFullscreen ? fullscreenEditorRef : diaryEditorRef
+    return (ref.current?.innerText ?? '').trim()
+  }, [isFullscreen])
+
+  /** 更新字数统计 */
+  const updateDiaryCharCount = useCallback(() => {
+    const ref = isFullscreen ? fullscreenEditorRef : diaryEditorRef
+    const text = (ref.current?.innerText ?? '').trim()
+    setDiaryCharCount(text.length)
+  }, [isFullscreen])
+
   // 挂载时恢复草稿
   useEffect(() => {
     if (inputType !== 'diary') return
@@ -141,11 +163,19 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
     } catch { /* ignore */ }
   }, [inputType])
 
+  // 切换到日记类型时初始化字数统计
+  useEffect(() => {
+    if (inputType === 'diary') {
+      requestAnimationFrame(() => updateDiaryCharCount())
+    }
+  }, [inputType, updateDiaryCharCount])
+
   // 输入时自动保存草稿（debounce 2s）
   useEffect(() => {
     if (inputType !== 'diary') return
     const timer = setTimeout(() => {
-      const html = diaryEditorRef.current?.innerHTML ?? ''
+      const ref = isFullscreen ? fullscreenEditorRef : diaryEditorRef
+      const html = ref.current?.innerHTML ?? ''
       if (!html.trim()) return
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify({
@@ -158,13 +188,14 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       } catch { /* ignore */ }
     }, 2000)
     return () => clearTimeout(timer)
-  }, [inputType, articleType, articlePerson, draftVersion])
+  }, [inputType, articleType, articlePerson, draftVersion, isFullscreen])
 
   function handleSubmit() {
     // 日记类型从 contentEditable 获取内容
     let content = inputValue.trim()
     if (inputType === 'diary') {
-      content = (diaryEditorRef.current?.innerHTML ?? '').trim()
+      const ref = isFullscreen ? fullscreenEditorRef : diaryEditorRef
+      content = (ref.current?.innerHTML ?? '').trim()
     }
     if (!content) return
 
@@ -201,6 +232,9 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         setArticleType('diary')
         setArticlePerson('')
         if (diaryEditorRef.current) diaryEditorRef.current.innerHTML = ''
+        if (fullscreenEditorRef.current) fullscreenEditorRef.current.innerHTML = ''
+        setIsFullscreen(false)
+        setDiaryCharCount(0)
         try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
         setDraftSavedAt('')
         success('笔记已保存')
@@ -319,8 +353,38 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   // ── 富文本工具栏命令 ──
   const execCmd = useCallback((command: string, value?: string) => {
     document.execCommand(command, false, value)
-    diaryEditorRef.current?.focus()
+    const ref = isFullscreen ? fullscreenEditorRef : diaryEditorRef
+    ref.current?.focus()
+  }, [isFullscreen])
+
+  // ── 全屏切换 ──
+  const enterFullscreen = useCallback(() => {
+    fullscreenContentRef.current = diaryEditorRef.current?.innerHTML ?? ''
+    setIsFullscreen(true)
   }, [])
+
+  const exitFullscreen = useCallback(() => {
+    fullscreenContentRef.current = fullscreenEditorRef.current?.innerHTML ?? ''
+    setIsFullscreen(false)
+  }, [])
+
+  // 全屏模式挂载/卸载时同步内容
+  useEffect(() => {
+    if (isFullscreen) {
+      // 进入全屏：设置内容到全屏编辑器
+      if (fullscreenEditorRef.current) {
+        fullscreenEditorRef.current.innerHTML = fullscreenContentRef.current
+        fullscreenEditorRef.current.focus()
+      }
+      updateDiaryCharCount()
+    } else {
+      // 退出全屏：恢复内容到内联编辑器
+      if (diaryEditorRef.current && fullscreenContentRef.current) {
+        diaryEditorRef.current.innerHTML = fullscreenContentRef.current
+      }
+      updateDiaryCharCount()
+    }
+  }, [isFullscreen, updateDiaryCharCount])
 
   return (
     <div className="note-panel">
@@ -555,6 +619,14 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
               >
                 {isPending ? '保存中…' : '💾 保存'}
               </button>
+              <button
+                type="button"
+                className="note-diary-tool-btn note-diary-fullscreen-btn"
+                onClick={(e) => { e.preventDefault(); enterFullscreen() }}
+                title="全屏写作模式"
+              >
+                ⛶ 全屏
+              </button>
             </div>
           </div>
         )}
@@ -567,7 +639,13 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
             contentEditable
             suppressContentEditableWarning
             data-placeholder="写下日记或文章…支持加粗、斜体、标题、列表等排版…"
-            onInput={() => setDraftVersion(v => v + 1)}
+            onInput={() => { setDraftVersion(v => v + 1); updateDiaryCharCount() }}
+            onBeforeInput={(e) => {
+              const text = (e.currentTarget as HTMLDivElement).innerText
+              if (text.length >= MAX_DIARY_CHARS && e.nativeEvent.inputType.startsWith('insert')) {
+                e.preventDefault()
+              }
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault()
@@ -590,9 +668,14 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
 
         <div className="note-input-footer">
           {inputType === 'diary' ? (
-            <span className="note-char-count note-draft-status">
-              {draftSavedAt ? `✓ 草稿已自动保存 ${draftSavedAt}` : '输入时自动保存草稿…'}
-            </span>
+            <>
+              <span className={`note-diary-char-count ${diaryCharCount >= MAX_DIARY_CHARS ? 'is-max' : ''} ${diaryCharCount >= MAX_DIARY_CHARS * 0.8 ? 'is-warning' : ''}`}>
+                {diaryCharCount.toLocaleString()} / {MAX_DIARY_CHARS.toLocaleString()} 字
+              </span>
+              <span className="note-char-count note-draft-status">
+                {draftSavedAt ? `✓ 草稿已自动保存 ${draftSavedAt}` : '输入时自动保存草稿…'}
+              </span>
+            </>
           ) : (
             <span className="note-char-count">{inputValue.length}/500</span>
           )}
@@ -605,6 +688,121 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
           </button>
         </div>
       </form>
+
+      {/* ── 日记全屏写作模式 ── */}
+      {isFullscreen && inputType === 'diary' && typeof document !== 'undefined' && createPortal(
+        <div className="note-diary-fullscreen-overlay" role="dialog" aria-modal="true" aria-label="全屏写作模式">
+          {/* 顶部栏：标题 + 文章类型/人物 + 字数 + 退出 */}
+          <div className="note-diary-fs-header">
+            <div className="note-diary-fs-header-left">
+              <span className="note-diary-fs-title">✍️ 创作模式</span>
+              <select
+                className="note-diary-fs-select"
+                value={articleType}
+                onChange={(e) => setArticleType(e.target.value)}
+              >
+                <option value="diary">日记</option>
+                <option value="study">学习笔记</option>
+                <option value="report">报告内容</option>
+                <option value="web">网络</option>
+                <option value="reading">读书笔记</option>
+                <option value="lecture">讲座笔记</option>
+              </select>
+              <input
+                type="text"
+                className="note-diary-fs-input"
+                value={articlePerson}
+                onChange={(e) => setArticlePerson(e.target.value)}
+                placeholder="相关人物…"
+                maxLength={50}
+              />
+            </div>
+            <div className="note-diary-fs-header-right">
+              <span className={`note-diary-char-count ${diaryCharCount >= MAX_DIARY_CHARS ? 'is-max' : ''} ${diaryCharCount >= MAX_DIARY_CHARS * 0.8 ? 'is-warning' : ''}`}>
+                {diaryCharCount.toLocaleString()} / {MAX_DIARY_CHARS.toLocaleString()} 字
+              </span>
+              <button
+                type="button"
+                className="note-diary-fs-exit-btn"
+                onClick={() => exitFullscreen()}
+                title="退出全屏 (ESC)"
+              >
+                退出全屏 ✕
+              </button>
+            </div>
+          </div>
+
+          {/* 工具栏 */}
+          <div className="note-diary-toolbar note-diary-fs-toolbar">
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('bold') }} title="粗体" className="note-diary-tool-btn"><b>B</b></button>
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('italic') }} title="斜体" className="note-diary-tool-btn"><i>I</i></button>
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('underline') }} title="下划线" className="note-diary-tool-btn"><u>U</u></button>
+            <span className="note-diary-tool-divider" />
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('formatBlock', '<h3>') }} title="大标题" className="note-diary-tool-btn">H1</button>
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('formatBlock', '<h4>') }} title="小标题" className="note-diary-tool-btn">H2</button>
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('formatBlock', '<p>') }} title="正文" className="note-diary-tool-btn">P</button>
+            <span className="note-diary-tool-divider" />
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('insertUnorderedList') }} title="无序列表" className="note-diary-tool-btn">• 列表</button>
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('insertOrderedList') }} title="有序列表" className="note-diary-tool-btn">1. 列表</button>
+            <span className="note-diary-tool-divider" />
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('formatBlock', '<blockquote>') }} title="引用" className="note-diary-tool-btn">❝</button>
+            <label className="note-diary-tool-btn note-diary-color-btn" title="文字颜色">
+              <span className="note-diary-color-icon">A</span>
+              <input
+                type="color"
+                onMouseDown={(e) => e.preventDefault()}
+                onChange={(e) => execCmd('foreColor', e.target.value)}
+                className="note-diary-color-input"
+              />
+            </label>
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('removeFormat') }} title="清除格式" className="note-diary-tool-btn">✕格式</button>
+            <button
+              type="button"
+              className="note-diary-tool-btn note-diary-save-btn"
+              disabled={isPending}
+              onClick={(e) => { e.preventDefault(); handleSubmit() }}
+              title="保存日记"
+            >
+              {isPending ? '保存中…' : '💾 保存'}
+            </button>
+          </div>
+
+          {/* 全屏编辑器 */}
+          <div
+            ref={fullscreenEditorRef}
+            className="note-diary-editor note-diary-fs-editor"
+            contentEditable
+            suppressContentEditableWarning
+            data-placeholder="在此安心创作…支持加粗、斜体、标题、列表、引用等排版…"
+            onInput={() => { setDraftVersion(v => v + 1); updateDiaryCharCount() }}
+            onBeforeInput={(e) => {
+              const text = (e.currentTarget as HTMLDivElement).innerText
+              if (text.length >= MAX_DIARY_CHARS && e.nativeEvent.inputType.startsWith('insert')) {
+                e.preventDefault()
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault()
+                handleSubmit()
+              }
+              if (e.key === 'Escape') {
+                e.preventDefault()
+                exitFullscreen()
+              }
+            }}
+          />
+
+          {/* 底部状态栏 */}
+          <div className="note-diary-fs-footer">
+            <span className="note-draft-status">
+              {draftSavedAt ? `✓ 草稿已自动保存 ${draftSavedAt}` : '输入时自动保存草稿…'}
+            </span>
+            <span className="note-diary-fs-hint">ESC 退出全屏 · Ctrl+Enter 保存</span>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* ── 日期筛选提示条 ── */}
       {filterDate && (
@@ -905,6 +1103,44 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
     : 0
   const diaryIsLong = diaryPlainLength > 120
 
+  // ── 编辑模式全屏 ──
+  const [isEditFullscreen, setIsEditFullscreen] = useState(false)
+  const editFullscreenRef = useRef<HTMLDivElement>(null)
+  const editFullscreenContentRef = useRef('')
+  const [editCharCount, setEditCharCount] = useState(0)
+  const MAX_EDIT_DIARY_CHARS = 10000
+
+  const updateEditCharCount = useCallback(() => {
+    const ref = isEditFullscreen ? editFullscreenRef : editDiaryRef
+    const text = (ref.current?.innerText ?? '').trim()
+    setEditCharCount(text.length)
+  }, [isEditFullscreen])
+
+  const enterEditFullscreen = useCallback(() => {
+    editFullscreenContentRef.current = editDiaryRef.current?.innerHTML ?? ''
+    setIsEditFullscreen(true)
+  }, [])
+
+  const exitEditFullscreen = useCallback(() => {
+    editFullscreenContentRef.current = editFullscreenRef.current?.innerHTML ?? ''
+    setIsEditFullscreen(false)
+  }, [])
+
+  useEffect(() => {
+    if (isEditFullscreen) {
+      if (editFullscreenRef.current) {
+        editFullscreenRef.current.innerHTML = editFullscreenContentRef.current
+        editFullscreenRef.current.focus()
+      }
+      updateEditCharCount()
+    } else {
+      if (editDiaryRef.current && editFullscreenContentRef.current) {
+        editDiaryRef.current.innerHTML = editFullscreenContentRef.current
+      }
+      updateEditCharCount()
+    }
+  }, [isEditFullscreen, updateEditCharCount])
+
   // ── 日记编辑自动保存 ──
   const [autoSavedAt, setAutoSavedAt] = useState<string>('')
   const [autoSaving, setAutoSaving] = useState(false)
@@ -914,7 +1150,8 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
   /** 自动保存到服务器（静默，不关闭编辑模式） */
   const autoSaveDiary = useCallback(async () => {
     if (note.type !== 'diary' || !isEditing) return
-    const html = (editDiaryRef.current?.innerHTML ?? '').trim()
+    const ref = isEditFullscreen ? editFullscreenRef : editDiaryRef
+    const html = (ref.current?.innerHTML ?? '').trim()
     if (!html || html === lastSavedHtmlRef.current) return
     setAutoSaving(true)
     try {
@@ -931,7 +1168,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
     } finally {
       setAutoSaving(false)
     }
-  }, [note.id, note.type, isEditing, editArticleType, editArticlePerson])
+  }, [note.id, note.type, isEditing, editArticleType, editArticlePerson, isEditFullscreen])
 
   // 编辑模式下，内容变化后 4 秒自动保存
   useEffect(() => {
@@ -961,7 +1198,8 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
     // 日记类型从 contentEditable 获取内容
     let content = editContent.trim()
     if (note.type === 'diary') {
-      content = (editDiaryRef.current?.innerHTML ?? '').trim()
+      const ref = isEditFullscreen ? editFullscreenRef : editDiaryRef
+      content = (ref.current?.innerHTML ?? '').trim()
     }
     if (!content) return
     startTransition(async () => {
@@ -981,6 +1219,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
         }
         await editNote(fd)
         setIsEditing(false)
+        setIsEditFullscreen(false)
         onChanged?.()
       } catch (err) {
         console.error('编辑笔记异常:', err)
@@ -999,13 +1238,23 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
     setEditArticleType(note.articleType ?? 'diary')
     setEditArticlePerson(note.articlePerson ?? '')
     setIsEditing(false)
+    setIsEditFullscreen(false)
   }
 
   // ── 编辑模式富文本工具栏 ──
   const execEditCmd = useCallback((command: string, value?: string) => {
     document.execCommand(command, false, value)
-    editDiaryRef.current?.focus()
-  }, [])
+    const ref = isEditFullscreen ? editFullscreenRef : editDiaryRef
+    ref.current?.focus()
+  }, [isEditFullscreen])
+
+  // 进入编辑模式时初始化字数统计
+  useEffect(() => {
+    if (isEditing && note.type === 'diary') {
+      // 延迟一帧确保 editDiaryRef 已挂载
+      requestAnimationFrame(() => updateEditCharCount())
+    }
+  }, [isEditing, note.type, updateEditCharCount])
 
   return (
     <article
@@ -1146,6 +1395,14 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                 >
                   {isPending || autoSaving ? '保存中…' : '💾 保存'}
                 </button>
+                <button
+                  type="button"
+                  className="note-diary-tool-btn note-diary-fullscreen-btn"
+                  onClick={(e) => { e.preventDefault(); enterEditFullscreen() }}
+                  title="全屏写作模式"
+                >
+                  ⛶ 全屏
+                </button>
               </div>
               <div
                 ref={editDiaryRef}
@@ -1154,7 +1411,13 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                 suppressContentEditableWarning
                 data-placeholder="编辑日记内容…"
                 dangerouslySetInnerHTML={{ __html: note.content }}
-                onInput={() => setContentVersion(v => v + 1)}
+                onInput={() => { setContentVersion(v => v + 1); updateEditCharCount() }}
+                onBeforeInput={(e) => {
+                  const text = (e.currentTarget as HTMLDivElement).innerText
+                  if (text.length >= MAX_EDIT_DIARY_CHARS && e.nativeEvent.inputType.startsWith('insert')) {
+                    e.preventDefault()
+                  }
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault()
@@ -1162,9 +1425,14 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                   }
                 }}
               />
-              {/* 自动保存状态提示 */}
+              {/* 字数统计 + 自动保存状态提示 */}
               <div className="note-diary-autosave-status">
-                {autoSaving ? '⏳ 正在自动保存…' : autoSavedAt ? `✓ 已自动保存 ${autoSavedAt}` : '✏️ 编辑时自动保存…'}
+                <span className={`note-diary-char-count ${editCharCount >= MAX_EDIT_DIARY_CHARS ? 'is-max' : ''} ${editCharCount >= MAX_EDIT_DIARY_CHARS * 0.8 ? 'is-warning' : ''}`}>
+                  {editCharCount.toLocaleString()} / {MAX_EDIT_DIARY_CHARS.toLocaleString()} 字
+                </span>
+                <span style={{ marginLeft: '8px' }}>
+                  {autoSaving ? '⏳ 正在自动保存…' : autoSavedAt ? `✓ 已自动保存 ${autoSavedAt}` : '✏️ 编辑时自动保存…'}
+                </span>
               </div>
             </>
           ) : (
@@ -1348,6 +1616,117 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
         confirmLabel="删除"
         variant="danger"
       />
+
+      {/* ── 编辑模式全屏写作 ── */}
+      {isEditFullscreen && note.type === 'diary' && typeof document !== 'undefined' && createPortal(
+        <div className="note-diary-fullscreen-overlay" role="dialog" aria-modal="true" aria-label="全屏编辑模式">
+          <div className="note-diary-fs-header">
+            <div className="note-diary-fs-header-left">
+              <span className="note-diary-fs-title">✍️ 编辑模式</span>
+              <select
+                className="note-diary-fs-select"
+                value={editArticleType}
+                onChange={(e) => setEditArticleType(e.target.value)}
+              >
+                <option value="diary">日记</option>
+                <option value="study">学习笔记</option>
+                <option value="report">报告内容</option>
+                <option value="web">网络</option>
+                <option value="reading">读书笔记</option>
+                <option value="lecture">讲座笔记</option>
+              </select>
+              <input
+                type="text"
+                className="note-diary-fs-input"
+                value={editArticlePerson}
+                onChange={(e) => setEditArticlePerson(e.target.value)}
+                placeholder="相关人物…"
+                maxLength={50}
+              />
+            </div>
+            <div className="note-diary-fs-header-right">
+              <span className={`note-diary-char-count ${editCharCount >= MAX_EDIT_DIARY_CHARS ? 'is-max' : ''} ${editCharCount >= MAX_EDIT_DIARY_CHARS * 0.8 ? 'is-warning' : ''}`}>
+                {editCharCount.toLocaleString()} / {MAX_EDIT_DIARY_CHARS.toLocaleString()} 字
+              </span>
+              <button
+                type="button"
+                className="note-diary-fs-exit-btn"
+                onClick={() => exitEditFullscreen()}
+                title="退出全屏 (ESC)"
+              >
+                退出全屏 ✕
+              </button>
+            </div>
+          </div>
+
+          <div className="note-diary-toolbar note-diary-fs-toolbar">
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('bold') }} title="粗体" className="note-diary-tool-btn"><b>B</b></button>
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('italic') }} title="斜体" className="note-diary-tool-btn"><i>I</i></button>
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('underline') }} title="下划线" className="note-diary-tool-btn"><u>U</u></button>
+            <span className="note-diary-tool-divider" />
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('formatBlock', '<h3>') }} title="大标题" className="note-diary-tool-btn">H1</button>
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('formatBlock', '<h4>') }} title="小标题" className="note-diary-tool-btn">H2</button>
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('formatBlock', '<p>') }} title="正文" className="note-diary-tool-btn">P</button>
+            <span className="note-diary-tool-divider" />
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('insertUnorderedList') }} title="无序列表" className="note-diary-tool-btn">• 列表</button>
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('insertOrderedList') }} title="有序列表" className="note-diary-tool-btn">1. 列表</button>
+            <span className="note-diary-tool-divider" />
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('formatBlock', '<blockquote>') }} title="引用" className="note-diary-tool-btn">❝</button>
+            <label className="note-diary-tool-btn note-diary-color-btn" title="文字颜色">
+              <span className="note-diary-color-icon">A</span>
+              <input
+                type="color"
+                onMouseDown={(e) => e.preventDefault()}
+                onChange={(e) => execEditCmd('foreColor', e.target.value)}
+                className="note-diary-color-input"
+              />
+            </label>
+            <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('removeFormat') }} title="清除格式" className="note-diary-tool-btn">✕格式</button>
+            <button
+              type="button"
+              className="note-diary-tool-btn note-diary-save-btn"
+              disabled={isPending || autoSaving}
+              onClick={(e) => { e.preventDefault(); handleEditSave() }}
+              title="保存"
+            >
+              {isPending || autoSaving ? '保存中…' : '💾 保存'}
+            </button>
+          </div>
+
+          <div
+            ref={editFullscreenRef}
+            className="note-diary-editor note-diary-fs-editor"
+            contentEditable
+            suppressContentEditableWarning
+            data-placeholder="编辑日记内容…"
+            onInput={() => { setContentVersion(v => v + 1); updateEditCharCount() }}
+            onBeforeInput={(e) => {
+              const text = (e.currentTarget as HTMLDivElement).innerText
+              if (text.length >= MAX_EDIT_DIARY_CHARS && e.nativeEvent.inputType.startsWith('insert')) {
+                e.preventDefault()
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault()
+                handleEditSave()
+              }
+              if (e.key === 'Escape') {
+                e.preventDefault()
+                exitEditFullscreen()
+              }
+            }}
+          />
+
+          <div className="note-diary-fs-footer">
+            <span>
+              {autoSaving ? '⏳ 正在自动保存…' : autoSavedAt ? `✓ 已自动保存 ${autoSavedAt}` : '✏️ 编辑时自动保存…'}
+            </span>
+            <span className="note-diary-fs-hint">ESC 退出全屏 · Ctrl+Enter 保存</span>
+          </div>
+        </div>,
+        document.body
+      )}
     </article>
   )
 }

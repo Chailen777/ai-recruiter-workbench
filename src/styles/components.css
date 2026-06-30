@@ -4263,6 +4263,159 @@
   pointer-events: none;
 }
 
+/* ── 全屏按钮 ── */
+.note-diary-fullscreen-btn {
+  background: var(--ds-color-surface, #ffffff) !important;
+  border-color: var(--ds-color-border, #e5e7eb) !important;
+  color: var(--ds-color-text-secondary, #6b7280) !important;
+  font-weight: 500;
+}
+
+.note-diary-fullscreen-btn:hover {
+  background: #ECFDF5 !important;
+  border-color: #14b8a6 !important;
+  color: #0d9488 !important;
+}
+
+/* ── 字数统计 ── */
+.note-diary-char-count {
+  color: var(--ds-color-text-tertiary, #9ca3af);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.note-diary-char-count.is-warning {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.note-diary-char-count.is-max {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* ── 全屏写作模式覆盖层 ── */
+.note-diary-fullscreen-overlay {
+  background: var(--ds-color-surface, #ffffff);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  inset: 0;
+  padding: 0;
+  position: fixed;
+  width: 100vw;
+  z-index: 99999;
+}
+
+.note-diary-fs-header {
+  align-items: center;
+  background: var(--ds-color-surface, #ffffff);
+  border-bottom: 1px solid var(--ds-color-border-light, #f0f0f0);
+  display: flex;
+  flex-shrink: 0;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 24px;
+}
+
+.note-diary-fs-header-left {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.note-diary-fs-title {
+  color: #14b8a6;
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.note-diary-fs-select {
+  background: var(--ds-color-surface, #ffffff);
+  border: 1px solid var(--ds-color-border, #e5e7eb);
+  border-radius: 6px;
+  color: var(--ds-color-text-primary, #111827);
+  font-size: 13px;
+  padding: 4px 8px;
+}
+
+.note-diary-fs-input {
+  background: var(--ds-color-surface, #ffffff);
+  border: 1px solid var(--ds-color-border, #e5e7eb);
+  border-radius: 6px;
+  color: var(--ds-color-text-primary, #111827);
+  font-size: 13px;
+  padding: 4px 8px;
+  width: 160px;
+}
+
+.note-diary-fs-header-right {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.note-diary-fs-exit-btn {
+  background: #ef4444;
+  border: none;
+  border-radius: 6px;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.note-diary-fs-exit-btn:hover {
+  background: #dc2626;
+}
+
+.note-diary-fs-toolbar {
+  background: var(--ds-color-surface-secondary, #f9fafb);
+  border-bottom: 1px solid var(--ds-color-border-light, #f0f0f0);
+  flex-shrink: 0;
+  padding: 8px 24px;
+}
+
+.note-diary-fs-editor {
+  border: none;
+  border-radius: 0;
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.8;
+  max-height: none;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 32px 48px;
+  width: 100%;
+}
+
+.note-diary-fs-editor:focus {
+  outline: none;
+}
+
+.note-diary-fs-footer {
+  align-items: center;
+  background: var(--ds-color-surface, #ffffff);
+  border-top: 1px solid var(--ds-color-border-light, #f0f0f0);
+  color: var(--ds-color-text-tertiary, #9ca3af);
+  display: flex;
+  flex-shrink: 0;
+  font-size: 12px;
+  justify-content: space-between;
+  padding: 8px 24px;
+}
+
+.note-diary-fs-hint {
+  color: var(--ds-color-text-tertiary, #9ca3af);
+  font-size: 11px;
+}
+
 /* 富文本内容渲染 */
 .note-diary-content-wrap {
   position: relative;
@@ -4452,6 +4605,56 @@
 
 [data-theme='dark'] .note-diary-type-tag {
   background: #14b8a6;
+}
+
+/* ── 全屏模式暗色主题 ── */
+[data-theme='dark'] .note-diary-fullscreen-overlay {
+  background: #1a1a2e;
+}
+
+[data-theme='dark'] .note-diary-fs-header {
+  background: #1a1a2e;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='dark'] .note-diary-fs-select,
+[data-theme='dark'] .note-diary-fs-input {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f3f4f6;
+}
+
+[data-theme='dark'] .note-diary-fs-toolbar {
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='dark'] .note-diary-fs-editor {
+  background: #1a1a2e;
+  border: none;
+  color: #f3f4f6;
+}
+
+[data-theme='dark'] .note-diary-fs-footer {
+  background: #1a1a2e;
+  border-top-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+[data-theme='dark'] .note-diary-fullscreen-btn {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme='dark'] .note-diary-fullscreen-btn:hover {
+  background: rgba(20, 184, 166, 0.15) !important;
+  border-color: #14b8a6 !important;
+  color: #5eead4 !important;
+}
+
+[data-theme='dark'] .note-diary-char-count {
+  color: rgba(255, 255, 255, 0.4);
 }
 
 [data-theme='dark'] .note-diary-person-tag {
