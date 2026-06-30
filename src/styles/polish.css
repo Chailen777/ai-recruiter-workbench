@@ -28,7 +28,7 @@ body {
   align-items: center;
   border-bottom: 1px solid var(--sidebar-border);
   display: flex;
-  gap: 0;
+  gap: 10px;
   justify-content: space-between;
   padding-bottom: 18px;
 }
