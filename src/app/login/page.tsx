@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { login } from '@/lib/auth'
 
@@ -12,13 +12,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [, startTransition] = useTransition()
 
   useEffect(() => {
     // 自动聚焦密码输入框
     passwordRef.current?.focus()
   }, [])
 
-  async function handleSubmit(e: React.FormEvent) {
+  /* 使用 startTransition 避免 INP 阻塞 */
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!password) {
       setError('请输入密码')
@@ -28,14 +30,24 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
-    const result = await login(password)
-
-    if (result.success) {
-      router.push('/home')
-    } else {
-      setError(result.error || '登录失败')
-      setLoading(false)
-    }
+    startTransition(async () => {
+      try {
+        const result = await login(password)
+        if (result.success) {
+          router.push('/home')
+        } else {
+          startTransition(() => {
+            setError(result.error || '登录失败')
+            setLoading(false)
+          })
+        }
+      } catch {
+        startTransition(() => {
+          setError('网络异常，请重试')
+          setLoading(false)
+        })
+      }
+    })
   }
 
   return (

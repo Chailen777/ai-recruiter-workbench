@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode, useState, useEffect, useCallback, useRef } from 'react'
+import { ReactNode, useState, useEffect, useCallback, useRef, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 
@@ -31,6 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [lockPassword, setLockPassword] = useState('')
   const [lockError, setLockError] = useState('')
   const [lockLoading, setLockLoading] = useState(false)
+  const [, startTransition] = useTransition()
   const lockInputRef = useRef<HTMLInputElement>(null)
 
   /* ── 认证守卫：非 /login 路径检查登录状态 ── */
@@ -113,22 +114,37 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [pathname, authChecked, locked])
 
-  /* ── 锁屏解锁 ── */
-  const handleUnlock = useCallback(async () => {
+  /* ── 锁屏解锁（使用 startTransition 避免 INP 阻塞） ── */
+  const handleUnlock = useCallback(() => {
+    if (lockLoading || !lockPassword) return
     setLockLoading(true)
     setLockError('')
-    const result = await login(lockPassword)
-    if (result.success) {
-      unlockScreen()          // 清除锁屏标记
-      setLocked(false)
-      setLockPassword('')
-    } else {
-      setLockError(result.error || '密码错误')
-      setLockPassword('')
-    }
-    setLockLoading(false)
-    lockInputRef.current?.focus()
-  }, [lockPassword])
+    startTransition(async () => {
+      try {
+        const result = await login(lockPassword)
+        if (result.success) {
+          startTransition(() => {
+            unlockScreen()
+            setLocked(false)
+            setLockPassword('')
+          })
+        } else {
+          startTransition(() => {
+            setLockError(result.error || '密码错误')
+            setLockPassword('')
+          })
+        }
+      } catch {
+        startTransition(() => {
+          setLockError('网络异常，请重试')
+          setLockPassword('')
+        })
+      } finally {
+        setLockLoading(false)
+        lockInputRef.current?.focus()
+      }
+    })
+  }, [lockPassword, lockLoading])
 
   // 登录页面：直接渲染 children，不包裹 AppShell
   if (pathname === '/login') {
