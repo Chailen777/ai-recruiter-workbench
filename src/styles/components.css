@@ -2811,6 +2811,12 @@
   justify-content: space-between;
 }
 
+.note-input-footer-btns {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
 .note-char-count {
   color: var(--ds-color-text-muted, #9ca3af);
   font-size: 11px;
@@ -4203,24 +4209,48 @@
   width: 100%;
 }
 
-/* 浮动保存按钮 */
+/* 保存按钮（保存但不退出编辑） */
 .note-diary-save-btn {
-  background: #14b8a6 !important;
-  border-color: #14b8a6 !important;
-  color: #ffffff !important;
+  background: transparent;
+  border: 1px solid #14b8a6;
+  border-radius: 6px;
+  color: #14b8a6;
+  cursor: pointer;
+  font-size: 13px;
   font-weight: 600;
-  margin-left: auto;
+  padding: 5px 16px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
 }
 
-.note-diary-save-btn:hover {
-  background: #0d9488 !important;
-  border-color: #0d9488 !important;
-  color: #ffffff !important;
+.note-diary-save-btn:hover:not(:disabled) {
+  background: #14b8a6;
+  color: #fff;
 }
 
 .note-diary-save-btn:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.5;
+}
+
+/* 工具栏下拉选择器（标题/字号） */
+.note-diary-tool-select {
+  background: var(--ds-color-surface, #ffffff);
+  border: 1px solid var(--ds-color-border, #e5e7eb);
+  border-radius: 4px;
+  color: var(--ds-color-text-secondary, #6b7280);
+  cursor: pointer;
+  font-size: 12px;
+  height: 24px;
+  outline: none;
+  padding: 0 4px;
+  transition: all 0.15s;
+}
+
+.note-diary-tool-select:hover {
+  background: #ECFDF5;
+  border-color: #14b8a6;
+  color: #065f46;
 }
 
 /* 自动保存状态提示 */
@@ -4517,6 +4547,12 @@
   font-size: 11px;
 }
 
+.note-diary-fs-footer-right {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
 /* 富文本内容渲染 */
 .note-diary-content-wrap {
   position: relative;
@@ -4573,6 +4609,12 @@
   text-decoration: underline;
 }
 
+.note-diary-content h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 10px 0 6px;
+}
+
 .note-diary-content h3 {
   font-size: 15px;
   font-weight: 700;
@@ -4587,6 +4629,35 @@
 
 .note-diary-content p {
   margin: 4px 0;
+}
+
+/* 编辑器内标题样式 */
+.note-diary-editor h2,
+.note-diary-fs-editor h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 10px 0 6px;
+}
+
+.note-diary-editor h3,
+.note-diary-fs-editor h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 8px 0 4px;
+}
+
+.note-diary-editor h4,
+.note-diary-fs-editor h4 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 6px 0 3px;
+}
+
+/* 编辑器内字号样式（execCommand fontSize 生成 font 标签） */
+.note-diary-editor font,
+.note-diary-fs-editor font,
+.note-diary-content font {
+  line-height: inherit;
 }
 
 .note-diary-content ul,
@@ -4674,14 +4745,30 @@
 }
 
 [data-theme='dark'] .note-diary-save-btn {
-  background: #14b8a6 !important;
-  border-color: #14b8a6 !important;
-  color: #ffffff !important;
+  border-color: #14b8a6;
+  color: #5eead4;
 }
 
-[data-theme='dark'] .note-diary-save-btn:hover {
-  background: #0d9488 !important;
-  border-color: #0d9488 !important;
+[data-theme='dark'] .note-diary-save-btn:hover:not(:disabled) {
+  background: #14b8a6;
+  color: #fff;
+}
+
+[data-theme='dark'] .note-diary-tool-select {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--ds-color-border-dark, #374151);
+  color: var(--ds-color-text-secondary-dark, #9ca3af);
+}
+
+[data-theme='dark'] .note-diary-tool-select:hover {
+  background: rgba(20, 184, 166, 0.15);
+  border-color: #14b8a6;
+  color: #5eead4;
+}
+
+[data-theme='dark'] .note-diary-tool-select option {
+  background: #1f2937;
+  color: #f3f4f6;
 }
 
 [data-theme='dark'] .note-diary-autosave-status,

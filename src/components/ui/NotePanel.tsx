@@ -351,6 +351,50 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
     ref.current?.focus()
   }, [isFullscreen])
 
+  // ── 富文本选区保存/恢复（用于 select 下拉不丢失光标）──
+  const savedSelectionRef = useRef<Range | null>(null)
+  const saveSelection = useCallback(() => {
+    const sel = window.getSelection()
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0)
+      const ref = isFullscreen ? fullscreenEditorRef : diaryEditorRef
+      if (ref.current && ref.current.contains(range.commonAncestorContainer)) {
+        savedSelectionRef.current = range.cloneRange()
+      }
+    }
+  }, [isFullscreen])
+  const execCmdWithRestore = useCallback((command: string, value?: string) => {
+    if (savedSelectionRef.current) {
+      const sel = window.getSelection()
+      if (sel) {
+        sel.removeAllRanges()
+        sel.addRange(savedSelectionRef.current)
+      }
+    }
+    const ref = isFullscreen ? fullscreenEditorRef : diaryEditorRef
+    ref.current?.focus()
+    document.execCommand(command, false, value)
+    setDraftVersion(v => v + 1)
+    updateDiaryCharCount()
+  }, [isFullscreen, updateDiaryCharCount])
+
+  /** 手动保存草稿（不退出编辑，给用户安全感） */
+  function handleManualSaveDraft() {
+    const ref = isFullscreen ? fullscreenEditorRef : diaryEditorRef
+    const html = ref.current?.innerHTML ?? ''
+    if (!html.trim()) return
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        html,
+        articleType,
+        articlePerson,
+        ts: Date.now(),
+      }))
+      setDraftSavedAt(new Date().toLocaleTimeString('zh-CN', { hour12: false }))
+      success('草稿已保存')
+    } catch { /* ignore */ }
+  }
+
   // ── 全屏切换 ──
   const enterFullscreen = useCallback(() => {
     fullscreenContentRef.current = diaryEditorRef.current?.innerHTML ?? ''
@@ -586,9 +630,31 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
               <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('italic') }} title="斜体" className="note-diary-tool-btn"><i>I</i></button>
               <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('underline') }} title="下划线" className="note-diary-tool-btn"><u>U</u></button>
               <span className="note-diary-tool-divider" />
-              <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('formatBlock', '<h3>') }} title="大标题" className="note-diary-tool-btn">H1</button>
-              <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('formatBlock', '<h4>') }} title="小标题" className="note-diary-tool-btn">H2</button>
-              <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('formatBlock', '<p>') }} title="正文" className="note-diary-tool-btn">P</button>
+              <select
+                className="note-diary-tool-select"
+                onMouseDown={() => saveSelection()}
+                onChange={(e) => { const v = e.target.value; if (v) execCmdWithRestore('formatBlock', `<${v}>`); e.target.selectedIndex = 0 }}
+                title="标题格式"
+              >
+                <option value="">标题</option>
+                <option value="h2">标题一</option>
+                <option value="h3">标题二</option>
+                <option value="h4">标题三</option>
+                <option value="p">正文</option>
+              </select>
+              <select
+                className="note-diary-tool-select"
+                onMouseDown={() => saveSelection()}
+                onChange={(e) => { const v = e.target.value; if (v) execCmdWithRestore('fontSize', v); e.target.selectedIndex = 0 }}
+                title="字号"
+              >
+                <option value="">字号</option>
+                <option value="2">小</option>
+                <option value="3">正常</option>
+                <option value="4">大</option>
+                <option value="5">特大</option>
+                <option value="6">超大</option>
+              </select>
               <span className="note-diary-tool-divider" />
               <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('insertUnorderedList') }} title="无序列表" className="note-diary-tool-btn">• 列表</button>
               <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('insertOrderedList') }} title="有序列表" className="note-diary-tool-btn">1. 列表</button>
@@ -664,13 +730,25 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
           ) : (
             <span className="note-char-count">{inputValue.length}/500</span>
           )}
-          <button
-            type="submit"
-            className="note-add-btn"
-            disabled={isPending}
-          >
-            {isPending ? '保存中…' : '添加'}
-          </button>
+          <div className="note-input-footer-btns">
+            {inputType === 'diary' && (
+              <button
+                type="button"
+                className="note-diary-save-btn"
+                onClick={handleManualSaveDraft}
+                disabled={isPending}
+              >
+                保存
+              </button>
+            )}
+            <button
+              type="submit"
+              className="note-add-btn"
+              disabled={isPending}
+            >
+              {isPending ? '保存中…' : '添加'}
+            </button>
+          </div>
         </div>
       </form>
 
@@ -732,9 +810,31 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
             <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('italic') }} title="斜体" className="note-diary-tool-btn"><i>I</i></button>
             <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('underline') }} title="下划线" className="note-diary-tool-btn"><u>U</u></button>
             <span className="note-diary-tool-divider" />
-            <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('formatBlock', '<h3>') }} title="大标题" className="note-diary-tool-btn">H1</button>
-            <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('formatBlock', '<h4>') }} title="小标题" className="note-diary-tool-btn">H2</button>
-            <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('formatBlock', '<p>') }} title="正文" className="note-diary-tool-btn">P</button>
+            <select
+              className="note-diary-tool-select"
+              onMouseDown={() => saveSelection()}
+              onChange={(e) => { const v = e.target.value; if (v) execCmdWithRestore('formatBlock', `<${v}>`); e.target.selectedIndex = 0 }}
+              title="标题格式"
+            >
+              <option value="">标题</option>
+              <option value="h2">标题一</option>
+              <option value="h3">标题二</option>
+              <option value="h4">标题三</option>
+              <option value="p">正文</option>
+            </select>
+            <select
+              className="note-diary-tool-select"
+              onMouseDown={() => saveSelection()}
+              onChange={(e) => { const v = e.target.value; if (v) execCmdWithRestore('fontSize', v); e.target.selectedIndex = 0 }}
+              title="字号"
+            >
+              <option value="">字号</option>
+              <option value="2">小</option>
+              <option value="3">正常</option>
+              <option value="4">大</option>
+              <option value="5">特大</option>
+              <option value="6">超大</option>
+            </select>
             <span className="note-diary-tool-divider" />
             <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('insertUnorderedList') }} title="无序列表" className="note-diary-tool-btn">• 列表</button>
             <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('insertOrderedList') }} title="有序列表" className="note-diary-tool-btn">1. 列表</button>
@@ -783,7 +883,17 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
             <span className="note-draft-status">
               {draftSavedAt ? `✓ 草稿已自动保存 ${draftSavedAt}` : '输入时自动保存草稿…'}
             </span>
-            <span className="note-diary-fs-hint">ESC 退出全屏 · Ctrl+Enter 保存</span>
+            <div className="note-diary-fs-footer-right">
+              <span className="note-diary-fs-hint">ESC 退出全屏 · Ctrl+Enter 添加</span>
+              <button
+                type="button"
+                className="note-diary-save-btn"
+                onClick={handleManualSaveDraft}
+                disabled={isPending}
+              >
+                保存
+              </button>
+            </div>
           </div>
         </div>,
         document.body
@@ -1233,6 +1343,55 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
     ref.current?.focus()
   }, [isEditFullscreen])
 
+  // ── 编辑模式选区保存/恢复（用于 select 下拉不丢失光标）──
+  const savedEditSelectionRef = useRef<Range | null>(null)
+  const saveEditSelection = useCallback(() => {
+    const sel = window.getSelection()
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0)
+      const ref = isEditFullscreen ? editFullscreenRef : editDiaryRef
+      if (ref.current && ref.current.contains(range.commonAncestorContainer)) {
+        savedEditSelectionRef.current = range.cloneRange()
+      }
+    }
+  }, [isEditFullscreen])
+  const execEditCmdWithRestore = useCallback((command: string, value?: string) => {
+    if (savedEditSelectionRef.current) {
+      const sel = window.getSelection()
+      if (sel) {
+        sel.removeAllRanges()
+        sel.addRange(savedEditSelectionRef.current)
+      }
+    }
+    const ref = isEditFullscreen ? editFullscreenRef : editDiaryRef
+    ref.current?.focus()
+    document.execCommand(command, false, value)
+    setContentVersion(v => v + 1)
+    updateEditCharCount()
+  }, [isEditFullscreen, updateEditCharCount])
+
+  /** 手动保存到服务器（不退出编辑，给用户安全感） */
+  function handleManualSaveDiary() {
+    if (note.type !== 'diary') return
+    const ref = isEditFullscreen ? editFullscreenRef : editDiaryRef
+    const html = (ref.current?.innerHTML ?? '').trim()
+    if (!html) return
+    startTransition(async () => {
+      try {
+        const fd = new FormData()
+        fd.set('id', String(note.id))
+        fd.set('content', html)
+        fd.set('articleType', editArticleType)
+        if (editArticlePerson.trim()) fd.set('articlePerson', editArticlePerson.trim())
+        await editNote(fd)
+        lastSavedHtmlRef.current = html
+        setAutoSavedAt(new Date().toLocaleTimeString('zh-CN', { hour12: false }))
+      } catch (err) {
+        console.error('手动保存失败:', err)
+      }
+    })
+  }
+
   // 进入编辑模式时初始化日记内容和字数统计
   useEffect(() => {
     if (isEditing && note.type === 'diary') {
@@ -1361,9 +1520,31 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                 <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('italic') }} title="斜体" className="note-diary-tool-btn"><i>I</i></button>
                 <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('underline') }} title="下划线" className="note-diary-tool-btn"><u>U</u></button>
                 <span className="note-diary-tool-divider" />
-                <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('formatBlock', '<h3>') }} title="大标题" className="note-diary-tool-btn">H1</button>
-                <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('formatBlock', '<h4>') }} title="小标题" className="note-diary-tool-btn">H2</button>
-                <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('formatBlock', '<p>') }} title="正文" className="note-diary-tool-btn">P</button>
+                <select
+                  className="note-diary-tool-select"
+                  onMouseDown={() => saveEditSelection()}
+                  onChange={(e) => { const v = e.target.value; if (v) execEditCmdWithRestore('formatBlock', `<${v}>`); e.target.selectedIndex = 0 }}
+                  title="标题格式"
+                >
+                  <option value="">标题</option>
+                  <option value="h2">标题一</option>
+                  <option value="h3">标题二</option>
+                  <option value="h4">标题三</option>
+                  <option value="p">正文</option>
+                </select>
+                <select
+                  className="note-diary-tool-select"
+                  onMouseDown={() => saveEditSelection()}
+                  onChange={(e) => { const v = e.target.value; if (v) execEditCmdWithRestore('fontSize', v); e.target.selectedIndex = 0 }}
+                  title="字号"
+                >
+                  <option value="">字号</option>
+                  <option value="2">小</option>
+                  <option value="3">正常</option>
+                  <option value="4">大</option>
+                  <option value="5">特大</option>
+                  <option value="6">超大</option>
+                </select>
                 <span className="note-diary-tool-divider" />
                 <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('insertUnorderedList') }} title="无序列表" className="note-diary-tool-btn">• 列表</button>
                 <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('insertOrderedList') }} title="有序列表" className="note-diary-tool-btn">1. 列表</button>
@@ -1430,13 +1611,23 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
           )}
           <div className="note-edit-actions">
             <span className="note-edit-char-count">{note.type === 'diary' ? '' : `${editContent.length}/500`}</span>
+            {note.type === 'diary' && (
+              <button
+                type="button"
+                className="note-edit-btn"
+                disabled={isPending}
+                onClick={handleManualSaveDiary}
+              >
+                {isPending ? '保存中…' : '保存'}
+              </button>
+            )}
             <button
               type="button"
               className="note-edit-btn note-edit-save"
               disabled={isPending}
               onClick={handleEditSave}
             >
-              {isPending ? '保存中…' : '保存'}
+              完成
             </button>
             <button
               type="button"
@@ -1656,9 +1847,31 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
             <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('italic') }} title="斜体" className="note-diary-tool-btn"><i>I</i></button>
             <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('underline') }} title="下划线" className="note-diary-tool-btn"><u>U</u></button>
             <span className="note-diary-tool-divider" />
-            <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('formatBlock', '<h3>') }} title="大标题" className="note-diary-tool-btn">H1</button>
-            <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('formatBlock', '<h4>') }} title="小标题" className="note-diary-tool-btn">H2</button>
-            <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('formatBlock', '<p>') }} title="正文" className="note-diary-tool-btn">P</button>
+            <select
+              className="note-diary-tool-select"
+              onMouseDown={() => saveEditSelection()}
+              onChange={(e) => { const v = e.target.value; if (v) execEditCmdWithRestore('formatBlock', `<${v}>`); e.target.selectedIndex = 0 }}
+              title="标题格式"
+            >
+              <option value="">标题</option>
+              <option value="h2">标题一</option>
+              <option value="h3">标题二</option>
+              <option value="h4">标题三</option>
+              <option value="p">正文</option>
+            </select>
+            <select
+              className="note-diary-tool-select"
+              onMouseDown={() => saveEditSelection()}
+              onChange={(e) => { const v = e.target.value; if (v) execEditCmdWithRestore('fontSize', v); e.target.selectedIndex = 0 }}
+              title="字号"
+            >
+              <option value="">字号</option>
+              <option value="2">小</option>
+              <option value="3">正常</option>
+              <option value="4">大</option>
+              <option value="5">特大</option>
+              <option value="6">超大</option>
+            </select>
             <span className="note-diary-tool-divider" />
             <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('insertUnorderedList') }} title="无序列表" className="note-diary-tool-btn">• 列表</button>
             <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('insertOrderedList') }} title="有序列表" className="note-diary-tool-btn">1. 列表</button>
@@ -1705,7 +1918,17 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
             <span>
               {autoSaving ? '⏳ 正在自动保存…' : autoSavedAt ? `✓ 已自动保存 ${autoSavedAt}` : '✏️ 编辑时自动保存…'}
             </span>
-            <span className="note-diary-fs-hint">ESC 退出全屏 · Ctrl+Enter 保存</span>
+            <div className="note-diary-fs-footer-right">
+              <span className="note-diary-fs-hint">ESC 退出全屏 · Ctrl+Enter 完成</span>
+              <button
+                type="button"
+                className="note-diary-save-btn"
+                onClick={handleManualSaveDiary}
+                disabled={isPending}
+              >
+                保存
+              </button>
+            </div>
           </div>
         </div>,
         document.body
