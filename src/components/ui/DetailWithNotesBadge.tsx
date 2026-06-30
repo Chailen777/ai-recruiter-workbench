@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, cloneElement, isValidElement } from 'react'
+import { useState, useCallback, useRef, cloneElement, isValidElement } from 'react'
 import type { ReactElement } from 'react'
 import { DetailTabView } from './DetailTabView'
 import { NotesCalendar } from './NotesCalendar'
@@ -29,9 +29,30 @@ export function DetailWithNotesBadge({
   const [todoCount, setTodoCount] = useState(0)
   const [filterDate, setFilterDate] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [inputValue, setInputValue] = useState('')
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleDateSelect = useCallback((dateStr: string | null) => {
     setFilterDate(dateStr)
+  }, [])
+
+  // 带 debounce 的搜索输入处理
+  const handleSearchChange = useCallback((value: string) => {
+    setInputValue(value)
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current)
+    }
+    debounceTimer.current = setTimeout(() => {
+      setSearchTerm(value)
+    }, 200)
+  }, [])
+
+  const handleClearSearch = useCallback(() => {
+    setInputValue('')
+    setSearchTerm('')
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current)
+    }
   }, [])
 
   const notesWithBadge = isValidElement(notesContent)
@@ -61,15 +82,15 @@ export function DetailWithNotesBadge({
           type="text"
           className="note-search-input"
           placeholder="搜索笔记…"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={inputValue}
+          onChange={(e) => handleSearchChange(e.target.value)}
           aria-label="搜索笔记"
         />
-        {searchTerm && (
+        {inputValue && (
           <button
             type="button"
             className="note-search-clear"
-            onClick={() => setSearchTerm('')}
+            onClick={handleClearSearch}
             title="清除搜索"
             aria-label="清除搜索"
           >

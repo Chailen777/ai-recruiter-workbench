@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useDeferredValue } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   quickMatch,
@@ -84,6 +84,20 @@ export function QuickMatchModal({ open, onClose }: { open: boolean; onClose: () 
   // ── Data state ──
   const [sources, setSources] = useState<QuickSourceItem[]>([])
   const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const deferredSearch = useDeferredValue(search)
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // 带 debounce 的搜索输入
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchInput(value)
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current)
+    }
+    searchDebounceRef.current = setTimeout(() => {
+      setSearch(value)
+    }, 150)
+  }, [])
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [result, setResult] = useState<QuickMatchResult | null>(null)
@@ -94,12 +108,12 @@ export function QuickMatchModal({ open, onClose }: { open: boolean; onClose: () 
 
   // ── Filtered sources ──
   const filteredSources = useMemo(() => {
-    const q = search.trim().toLowerCase()
+    const q = deferredSearch.trim().toLowerCase()
     if (!q) return sources
     return sources.filter(
       (s) => s.name.toLowerCase().includes(q) || s.subtitle.toLowerCase().includes(q),
     )
-  }, [sources, search])
+  }, [sources, deferredSearch])
 
   // ── Load sources ──
   const loadSources = useCallback(async () => {
@@ -498,12 +512,12 @@ export function QuickMatchModal({ open, onClose }: { open: boolean; onClose: () 
             type="text"
             className="quick-match-input"
             placeholder={mode === 'candidate-to-job' ? '🔍 搜索候选人姓名或职位…' : '🔍 搜索公司或岗位名称…'}
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setDropdownOpen(true) }}
+            value={searchInput}
+            onChange={(e) => { handleSearchChange(e.target.value); setDropdownOpen(true) }}
             onFocus={() => setDropdownOpen(true)}
           />
-          {search && (
-            <button className="quick-match-input-clear" onClick={() => { setSearch(''); setSelectedId(null); setPreviewData(null) }}>
+          {searchInput && (
+            <button className="quick-match-input-clear" onClick={() => { setSearchInput(''); setSearch(''); setSelectedId(null); setPreviewData(null) }}>
               ✕
             </button>
           )}
