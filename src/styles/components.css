@@ -4383,26 +4383,27 @@
   align-items: center;
   background: #ef4444;
   border: none;
-  border-radius: 50%;
+  border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   color: #ffffff;
   cursor: pointer;
   display: flex;
-  font-size: 20px;
-  font-weight: 700;
-  height: 40px;
+  font-size: 13px;
+  font-weight: 600;
+  height: 36px;
   justify-content: center;
+  padding: 0 14px;
   position: fixed;
   right: 12px;
   top: 12px;
   transition: all 0.15s;
-  width: 40px;
+  white-space: nowrap;
   z-index: 100000;
 }
 
 .note-diary-fs-float-exit:hover {
   background: #dc2626;
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .note-diary-fs-float-exit:active {
@@ -4411,10 +4412,16 @@
 
 /* 手机端：顶部栏自适应换行 */
 @media (max-width: 768px) {
+  .note-diary-fs-float-exit {
+    font-size: 12px;
+    height: 32px;
+    padding: 0 10px;
+  }
+
   .note-diary-fs-header {
     flex-wrap: wrap;
     gap: 8px;
-    padding: 8px 56px 8px 12px;
+    padding: 8px 90px 8px 12px;
   }
 
   .note-diary-fs-header-left {

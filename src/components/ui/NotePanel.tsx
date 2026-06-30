@@ -684,7 +684,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
             onClick={() => exitFullscreen()}
             title="退出全屏 (ESC)"
           >
-            ✕
+            退出全屏
           </button>
           {/* 顶部栏：标题 + 文章类型/人物 + 字数 */}
           <div className="note-diary-fs-header">
@@ -1610,7 +1610,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
             onClick={() => exitEditFullscreen()}
             title="退出全屏 (ESC)"
           >
-            ✕
+            退出全屏
           </button>
           <div className="note-diary-fs-header">
             <div className="note-diary-fs-header-left">
