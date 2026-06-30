@@ -178,35 +178,38 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
     }),
   ])
 
-  // 7-day trend — optimized from 21 individual count queries to 3 groupBy queries
+  // 7-day trend — 用 Prisma ORM 替代 $queryRaw 避免 Vercel 兼容性问题
   const trendStartDate = new Date(today)
   trendStartDate.setDate(trendStartDate.getDate() - 6)
 
-  const [companyTrendRows, jobTrendRows, candidateTrendRows] = await Promise.all([
-    prisma.$queryRaw<Array<{ date: string; count: number }>>`
-      SELECT date("createdAt") as date, COUNT(*) as count
-      FROM company
-      WHERE "createdAt" >= ${trendStartDate}
-      GROUP BY date("createdAt")
-    `,
-    prisma.$queryRaw<Array<{ date: string; count: number }>>`
-      SELECT date("createdAt") as date, COUNT(*) as count
-      FROM job
-      WHERE "createdAt" >= ${trendStartDate}
-      GROUP BY date("createdAt")
-    `,
-    prisma.$queryRaw<Array<{ date: string; count: number }>>`
-      SELECT date("createdAt") as date, COUNT(*) as count
-      FROM candidate
-      WHERE "createdAt" >= ${trendStartDate}
-      GROUP BY date("createdAt")
-    `,
+  const [companyTrendData, jobTrendData, candidateTrendData] = await Promise.all([
+    prisma.company.findMany({
+      where: { createdAt: { gte: trendStartDate } },
+      select: { createdAt: true },
+    }),
+    prisma.job.findMany({
+      where: { createdAt: { gte: trendStartDate } },
+      select: { createdAt: true },
+    }),
+    prisma.candidate.findMany({
+      where: { createdAt: { gte: trendStartDate } },
+      select: { createdAt: true },
+    }),
   ])
 
   // Build lookup maps: { "2026-06-20": count }
-  const companyMap = new Map(companyTrendRows.map((r) => [r.date, Number(r.count)]))
-  const jobMap = new Map(jobTrendRows.map((r) => [r.date, Number(r.count)]))
-  const candidateMap = new Map(candidateTrendRows.map((r) => [r.date, Number(r.count)]))
+  function groupByDate(rows: Array<{ createdAt: Date }>): Map<string, number> {
+    const map = new Map<string, number>()
+    for (const row of rows) {
+      const dateStr = row.createdAt.toISOString().slice(0, 10)
+      map.set(dateStr, (map.get(dateStr) ?? 0) + 1)
+    }
+    return map
+  }
+
+  const companyMap = groupByDate(companyTrendData)
+  const jobMap = groupByDate(jobTrendData)
+  const candidateMap = groupByDate(candidateTrendData)
 
   const trend: TrendPoint[] = []
   for (let i = 6; i >= 0; i--) {
