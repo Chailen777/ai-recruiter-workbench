@@ -143,7 +143,7 @@ export async function GET(request: Request) {
     },
   ]
 
-  /* ── 各表独立搜索（可并行），notes 单独处理 ── */
+  /* ── 各表独立搜索（可并行），每个表独立容错 ── */
   const searchPromises = tableDefs
     .filter((d) => d.kind !== 'note')
     .map((d) =>
@@ -152,15 +152,22 @@ export async function GET(request: Request) {
         d.fields,
         tokens,
         d.select,
-      ).then((rows) => ({ kind: d.kind, rows })),
+      ).then((rows) => ({ kind: d.kind, rows }))
+        .catch((err) => {
+          console.error(`[search] table "${d.table}" query failed:`, err)
+          return { kind: d.kind, rows: [] as { id: number; name?: string; title?: string; subtitle1?: string; subtitle2?: string }[] }
+        }),
     )
 
   const notesPromise = searchTable<{ id: number; content: string; type: string }>(
-    'Note',
+    'note',
     ['content'],
     tokens,
     'id, content, type',
-  )
+  ).catch((err) => {
+    console.error('[search] notes table query failed:', err)
+    return [] as { id: number; content: string; type: string }[]
+  })
 
   const [searchResults, notesRows] = await Promise.all([
     Promise.all(searchPromises),
