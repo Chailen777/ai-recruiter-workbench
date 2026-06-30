@@ -1,5 +1,6 @@
 'use server'
 
+import { randomUUID } from 'crypto'
 import { revalidatePath } from 'next/cache'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
@@ -237,12 +238,12 @@ export async function addNote(formData: FormData): Promise<AddNoteResult> {
     if (isTodo && scheduledDateStr && repeatType) {
       const startDate = new Date(scheduledDateStr)
       const endDate = repeatEndDateStr ? new Date(repeatEndDateStr + 'T23:59:59') : null
-      const groupId = crypto.randomUUID()
+      const groupId = randomUUID()
       const frequency = repeatFrequency || 1
 
       // 计算所有重复日期
       const dates: Date[] = []
-      let current = new Date(startDate)
+      const current = new Date(startDate)
       let safetyCount = 0
       while (safetyCount < 365) { // 最多365次重复
         if (endDate && current > endDate) break
