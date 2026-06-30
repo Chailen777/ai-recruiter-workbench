@@ -4248,6 +4248,9 @@
   max-height: 300px;
   min-height: 80px;
   overflow-y: auto;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
   padding: 10px 12px;
   width: 100%;
 }
@@ -4391,6 +4394,9 @@
   max-height: none;
   min-height: 0;
   overflow-y: auto;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
   padding: 32px 48px;
   width: 100%;
 }
@@ -4423,6 +4429,9 @@
 
 .note-diary-content {
   line-height: 1.7;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
   transition: max-height 0.3s ease;
 }
 

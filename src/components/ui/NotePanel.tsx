@@ -606,15 +606,6 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
               <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('removeFormat') }} title="清除格式" className="note-diary-tool-btn">✕格式</button>
               <button
                 type="button"
-                className="note-diary-tool-btn note-diary-save-btn"
-                disabled={isPending}
-                onClick={(e) => { e.preventDefault(); handleSubmit() }}
-                title="保存日记"
-              >
-                {isPending ? '保存中…' : '💾 保存'}
-              </button>
-              <button
-                type="button"
                 className="note-diary-tool-btn note-diary-fullscreen-btn"
                 onClick={(e) => { e.preventDefault(); enterFullscreen() }}
                 title="全屏写作模式"
@@ -750,15 +741,6 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
               />
             </label>
             <button type="button" onMouseDown={(e) => { e.preventDefault(); execCmd('removeFormat') }} title="清除格式" className="note-diary-tool-btn">✕格式</button>
-            <button
-              type="button"
-              className="note-diary-tool-btn note-diary-save-btn"
-              disabled={isPending}
-              onClick={(e) => { e.preventDefault(); handleSubmit() }}
-              title="保存日记"
-            >
-              {isPending ? '保存中…' : '💾 保存'}
-            </button>
           </div>
 
           {/* 全屏编辑器 */}
@@ -1242,11 +1224,19 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
     ref.current?.focus()
   }, [isEditFullscreen])
 
-  // 进入编辑模式时初始化字数统计
+  // 进入编辑模式时初始化日记内容和字数统计
   useEffect(() => {
     if (isEditing && note.type === 'diary') {
-      // 延迟一帧确保 editDiaryRef 已挂载
-      requestAnimationFrame(() => updateEditCharCount())
+      // 延迟一帧确保 editDiaryRef 已挂载，手动设置 innerHTML
+      // 不能用 dangerouslySetInnerHTML，否则每次重渲染 React 都会覆盖用户输入
+      requestAnimationFrame(() => {
+        if (editDiaryRef.current) {
+          editDiaryRef.current.innerHTML = note.content
+          // 重置自动保存的基准内容
+          lastSavedHtmlRef.current = note.content
+        }
+        updateEditCharCount()
+      })
     }
   }, [isEditing, note.type, updateEditCharCount])
 
@@ -1382,15 +1372,6 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                 <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('removeFormat') }} title="清除格式" className="note-diary-tool-btn">✕格式</button>
                 <button
                   type="button"
-                  className="note-diary-tool-btn note-diary-save-btn"
-                  disabled={isPending || autoSaving}
-                  onClick={(e) => { e.preventDefault(); handleEditSave() }}
-                  title="保存"
-                >
-                  {isPending || autoSaving ? '保存中…' : '💾 保存'}
-                </button>
-                <button
-                  type="button"
                   className="note-diary-tool-btn note-diary-fullscreen-btn"
                   onClick={(e) => { e.preventDefault(); enterEditFullscreen() }}
                   title="全屏写作模式"
@@ -1404,7 +1385,6 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                 contentEditable
                 suppressContentEditableWarning
                 data-placeholder="编辑日记内容…"
-                dangerouslySetInnerHTML={{ __html: note.content }}
                 onInput={() => { setContentVersion(v => v + 1); updateEditCharCount() }}
                 onBeforeInput={(e) => {
                   const text = (e.currentTarget as HTMLDivElement).innerText
@@ -1676,15 +1656,6 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
               />
             </label>
             <button type="button" onMouseDown={(e) => { e.preventDefault(); execEditCmd('removeFormat') }} title="清除格式" className="note-diary-tool-btn">✕格式</button>
-            <button
-              type="button"
-              className="note-diary-tool-btn note-diary-save-btn"
-              disabled={isPending || autoSaving}
-              onClick={(e) => { e.preventDefault(); handleEditSave() }}
-              title="保存"
-            >
-              {isPending || autoSaving ? '保存中…' : '💾 保存'}
-            </button>
           </div>
 
           <div
