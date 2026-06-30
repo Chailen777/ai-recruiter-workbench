@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition, useMemo } from 'react'
 import { addNote, deleteNote, togglePinNote, toggleDoneNote } from '@/app/actions'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { useToast } from '@/components/providers/ToastProvider'
 
 export type NoteItem = {
   id: number
@@ -85,6 +86,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   const [inputValue, setInputValue] = useState('')
   const [isPending, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
+  const { success, error } = useToast()
 
   // ── 过滤状态 ──
   const [filterType, setFilterType] = useState<'all' | 'todo' | 'log' | 'note' | 'appointment'>('all')
@@ -116,21 +118,22 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
     startTransition(async () => {
       try {
         const result = await addNote(fd)
-        // result 可能是 { success: boolean } 或 undefined（旧版兼容）
-        if (result && !result.success) {
-          alert(result.error ?? '添加失败，请重试')
+        if (!result.success) {
+          error('保存失败', result.message)
           return
         }
+
         setInputValue('')
         setApptTime('')
         setApptLocation('')
         setApptType('interview')
         setApptPerson('')
+        success('笔记已保存')
         onNotesChanged?.()
       } catch (err) {
         // 最终兜底：防止未处理错误穿透到 global-error.tsx
         console.error('添加笔记异常:', err)
-        alert('添加笔记失败，请稍后重试。')
+        error('保存失败', '网络请求异常，请稍后重试')
       }
     })
   }

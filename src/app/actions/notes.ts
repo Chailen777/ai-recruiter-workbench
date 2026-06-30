@@ -1,11 +1,45 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { syncNotesToMd } from '@/lib/notes-md'
 import { writeNoteMd, deleteNoteMd, type NoteData } from '@/lib/notes-data-md'
 
 type EntityType = 'global' | 'job' | 'candidate' | 'company' | 'match' | 'knowledge' | 'school' | 'chart' | 'info' | 'contact' | 'project'
+
+export type AddNoteResult =
+  | { success: true; noteId: number }
+  | { success: false; code: 'INVALID_CONTENT' | 'DATABASE_UNAVAILABLE' | 'SAVE_FAILED'; message: string }
+
+const TRANSIENT_DATABASE_CODES = new Set(['P1001', 'P2024'])
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function getPrismaErrorCode(error: unknown) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) return error.code
+  if (error instanceof Prisma.PrismaClientInitializationError) return error.errorCode ?? 'PRISMA_INIT'
+  return null
+}
+
+function isTransientDatabaseError(error: unknown) {
+  const code = getPrismaErrorCode(error)
+  return code ? TRANSIENT_DATABASE_CODES.has(code) : false
+}
+
+async function createNoteWithRetry(data: Prisma.NoteCreateInput) {
+  try {
+    return await prisma.note.create({ data })
+  } catch (error) {
+    if (!isTransientDatabaseError(error)) throw error
+
+    // 仅对“连接未建立/连接池无可用连接”重试一次，避免重复写入。
+    await delay(350)
+    return prisma.note.create({ data })
+  }
+}
 
 // ── 辅助：根据 entityType + entityId 查询实体名称 ──
 async function getEntityName(entityType: string, entityId: number): Promise<string | null> {
@@ -150,25 +184,29 @@ export async function getNotes(entityType: EntityType, entityId: number) {
 }
 
 // ── 新增笔记 ───────────────────────────────────
-export async function addNote(formData: FormData) {
+export async function addNote(formData: FormData): Promise<AddNoteResult> {
   const content = (formData.get('content') as string)?.trim()
   const type = (formData.get('type') as string) || 'note'
   const entityType = (formData.get('entityType') as EntityType) || 'global'
   const entityId = Number(formData.get('entityId') ?? 0)
 
-  if (!content) return { success: false, error: '内容不能为空' }
+  if (!content) {
+    return { success: false, code: 'INVALID_CONTENT', message: '请输入笔记内容' }
+  }
 
   try {
-    const note = await prisma.note.create({
-      data: {
-        content, type, entityType, entityId,
-        ...(type === 'appointment' ? {
-          ...(formData.get('appointmentTime') ? { appointmentTime: new Date(formData.get('appointmentTime') as string) } : {}),
-          ...(formData.get('appointmentLocation') ? { appointmentLocation: (formData.get('appointmentLocation') as string).trim() } : {}),
-          ...(formData.get('appointmentType') ? { appointmentType: formData.get('appointmentType') as string } : {}),
-          ...(formData.get('appointmentPerson') ? { appointmentPerson: (formData.get('appointmentPerson') as string).trim() } : {}),
-        } : {}),
-      },
+    // 预约字段
+    const appointmentTime = type === 'appointment' ? (formData.get('appointmentTime') as string) || null : null
+    const appointmentLocation = type === 'appointment' ? (formData.get('appointmentLocation') as string)?.trim() || null : null
+    const appointmentType = type === 'appointment' ? (formData.get('appointmentType') as string) || null : null
+    const appointmentPerson = type === 'appointment' ? (formData.get('appointmentPerson') as string)?.trim() || null : null
+
+    const note = await createNoteWithRetry({
+      content, type, entityType, entityId,
+      ...(appointmentTime ? { appointmentTime: new Date(appointmentTime) } : {}),
+      ...(appointmentLocation ? { appointmentLocation } : {}),
+      ...(appointmentType ? { appointmentType } : {}),
+      ...(appointmentPerson ? { appointmentPerson } : {}),
     })
 
     // MD 文件同步（Vercel 只读文件系统会静默失败，不影响核心功能）
@@ -176,11 +214,30 @@ export async function addNote(formData: FormData) {
     try { await writeNoteMd(await toNoteData(note)) } catch { /* Vercel 文件系统不可写 */ }
 
     revalidateForEntity(entityType, entityId)
-
-    return { success: true }
+    return { success: true, noteId: note.id }
   } catch (error) {
-    console.error('[addNote] 数据库写入失败:', error instanceof Error ? error.message : error)
-    return { success: false, error: '数据库暂不可用，请稍后重试' }
+    const prismaCode = getPrismaErrorCode(error)
+    console.error('[notes.addNote] 保存笔记失败', {
+      prismaCode,
+      entityType,
+      entityId,
+      type,
+      error: error instanceof Error ? error.message : String(error),
+    })
+
+    if (isTransientDatabaseError(error)) {
+      return {
+        success: false,
+        code: 'DATABASE_UNAVAILABLE',
+        message: '数据库连接暂时繁忙，请稍后重试',
+      }
+    }
+
+    return {
+      success: false,
+      code: 'SAVE_FAILED',
+      message: '笔记保存失败，请重试',
+    }
   }
 }
 

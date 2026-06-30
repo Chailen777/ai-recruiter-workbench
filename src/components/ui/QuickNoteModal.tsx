@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { addNote } from '@/app/actions/notes'
+import { useToast } from '@/components/providers/ToastProvider'
 
 export type QuickNoteType = 'note' | 'todo'
 
@@ -24,6 +25,7 @@ export function QuickNoteModal({ open, onClose, noteType = 'note' }: Props) {
   const [closing, setClosing] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const label = LABELS[noteType]
+  const { success, error } = useToast()
 
   // ── 入场动画 ──
   useEffect(() => {
@@ -59,16 +61,22 @@ export function QuickNoteModal({ open, onClose, noteType = 'note' }: Props) {
       fd.append('type', noteType)
       fd.append('entityType', 'global')
       fd.append('entityId', '0')
-      await addNote(fd)
+      const result = await addNote(fd)
+      if (!result.success) {
+        error('创建失败', result.message)
+        return
+      }
+
       // 通知全局刷新笔记列表
       window.dispatchEvent(new CustomEvent('note-created'))
+      success(`${label.title}已创建`)
       handleClose()
     } catch {
-      // 静默失败，用户可重试
+      error('创建失败', '网络请求异常，请稍后重试')
     } finally {
       setSubmitting(false)
     }
-  }, [content, submitting, handleClose, noteType])
+  }, [content, submitting, handleClose, noteType, label.title, success, error])
 
   // ── 键盘处理 ──
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
