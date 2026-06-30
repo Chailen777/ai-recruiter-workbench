@@ -834,6 +834,13 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
   const [editArticleType, setEditArticleType] = useState(note.articleType ?? 'diary')
   const [editArticlePerson, setEditArticlePerson] = useState(note.articlePerson ?? '')
   const editDiaryRef = useRef<HTMLDivElement>(null)
+  // 日记折叠状态
+  const [diaryExpanded, setDiaryExpanded] = useState(false)
+  // 判断日记是否够长需要折叠（纯文本 > 120 字）
+  const diaryPlainLength = note.type === 'diary'
+    ? note.content.replace(/<[^>]+>/g, '').trim().length
+    : 0
+  const diaryIsLong = diaryPlainLength > 120
 
   /** 通用：构造 FormData → startTransition 调用 server action → 通知刷新 */
   function runAction(fn: (fd: FormData) => Promise<void>) {
@@ -1080,7 +1087,21 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
               </button>
             )}
             {note.type === 'diary' ? (
-              <div className="note-content note-diary-content" dangerouslySetInnerHTML={{ __html: note.content }} />
+              <div className="note-diary-content-wrap">
+                <div
+                  className={`note-content note-diary-content${diaryIsLong && !diaryExpanded ? ' collapsed' : ''}`}
+                  dangerouslySetInnerHTML={{ __html: note.content }}
+                />
+                {diaryIsLong && (
+                  <button
+                    type="button"
+                    className="note-diary-toggle"
+                    onClick={() => setDiaryExpanded(v => !v)}
+                  >
+                    {diaryExpanded ? '收起 ↑' : '展开全文 ↓'}
+                  </button>
+                )}
+              </div>
             ) : (
               <p className="note-content">{note.content}</p>
             )}
