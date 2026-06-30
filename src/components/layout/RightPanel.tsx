@@ -65,7 +65,8 @@ export function RightPanel() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
-      setCollapsed(saved === 'true')
+      // 首次访问保持折叠，避免手机端加载后被全屏笔记面板遮住
+      setCollapsed(saved === null ? true : saved === 'true')
     } catch { /* localStorage 不可用 */ }
   }, [])
 
@@ -117,6 +118,7 @@ export function RightPanel() {
       aria-label="全局备忘录面板"
       className={`app-right-panel${collapsed ? ' is-collapsed' : ''}`}
       data-collapsed={collapsed ? 'true' : 'false'}
+      id="global-note-panel"
     >
       {/* ── 折叠切换按钮 + 标题（始终可见） ── */}
       <div className="app-right-panel-header">

@@ -11,7 +11,7 @@ import { memo } from 'react'
 
 type Tab = {
   id: string
-  href: string
+  href?: string
   label: string
   icon: string   // SVG path d
 }
@@ -19,7 +19,6 @@ type Tab = {
 const tabs: Tab[] = [
   {
     id: 'notes',
-    href: '/desk-note',
     label: '笔记',
     icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
   },
@@ -49,8 +48,8 @@ const tabs: Tab[] = [
   },
 ]
 
-function isActive(pathname: string | null, href: string) {
-  if (!pathname) return false
+function isActive(pathname: string | null, href?: string) {
+  if (!pathname || !href) return false
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
@@ -61,12 +60,8 @@ const TabButton = memo(function TabButton({
   tab: Tab
   active: boolean
 }) {
-  return (
-    <Link
-      href={tab.href}
-      className={`btb-tab${active ? ' is-active' : ''}`}
-      aria-current={active ? 'page' : undefined}
-    >
+  const content = (
+    <>
       <svg
         aria-hidden="true"
         className="btb-icon"
@@ -80,6 +75,30 @@ const TabButton = memo(function TabButton({
         <path d={tab.icon} />
       </svg>
       <span className="btb-label">{tab.label}</span>
+    </>
+  )
+
+  if (!tab.href) {
+    return (
+      <button
+        aria-controls="global-note-panel"
+        aria-label="打开卡片笔记"
+        className="btb-tab"
+        onClick={() => window.dispatchEvent(new CustomEvent('open-desk-note'))}
+        type="button"
+      >
+        {content}
+      </button>
+    )
+  }
+
+  return (
+    <Link
+      href={tab.href}
+      className={`btb-tab${active ? ' is-active' : ''}`}
+      aria-current={active ? 'page' : undefined}
+    >
+      {content}
     </Link>
   )
 })

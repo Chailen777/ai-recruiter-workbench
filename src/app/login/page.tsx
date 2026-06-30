@@ -15,8 +15,10 @@ export default function LoginPage() {
   const [, startTransition] = useTransition()
 
   useEffect(() => {
-    // 自动聚焦密码输入框
-    passwordRef.current?.focus()
+    // 桌面端自动聚焦；手机端避免页面打开时键盘立即弹出
+    if (!window.matchMedia('(pointer: coarse)').matches) {
+      passwordRef.current?.focus()
+    }
   }, [])
 
   /* 使用 startTransition 避免 INP 阻塞 */
@@ -96,7 +98,6 @@ export default function LoginPage() {
                 type="button"
                 className="login-toggle-password"
                 onClick={() => setShowPassword((v) => !v)}
-                tabIndex={-1}
                 aria-label={showPassword ? '隐藏密码' : '显示密码'}
               >
                 {showPassword ? '🙈' : '👁️'}

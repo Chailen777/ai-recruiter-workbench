@@ -95,6 +95,7 @@ export function TableList<Row>({
                   return (
                     <td
                       className={column.align ? `is-${column.align}` : undefined}
+                      data-label={column.label}
                       key={String(column.key)}
                     >
                       {href ? (

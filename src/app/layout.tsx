@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
 
 import { AppShell } from '@/components/layout/AppShell'
@@ -16,6 +16,16 @@ ensureWAL()
 export const metadata: Metadata = {
   description: '一人猎头工作流操作系统',
   title: 'AI超级猎头工作台 V0.2',
+}
+
+export const viewport: Viewport = {
+  initialScale: 1,
+  themeColor: [
+    { color: '#f8fafc', media: '(prefers-color-scheme: light)' },
+    { color: '#0f172a', media: '(prefers-color-scheme: dark)' },
+  ],
+  viewportFit: 'cover',
+  width: 'device-width',
 }
 
 const themeScript = `

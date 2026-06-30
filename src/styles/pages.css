@@ -988,6 +988,7 @@ body {
    ===================================================== */
 .login-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1145,7 +1146,12 @@ body {
   border: none;
   cursor: pointer;
   font-size: 18px;
-  padding: 4px;
+  align-items: center;
+  display: inline-flex;
+  height: 44px;
+  justify-content: center;
+  padding: 0;
+  width: 44px;
   line-height: 1;
   opacity: 0.6;
   transition: opacity var(--transition-fast);
@@ -1354,7 +1360,40 @@ body {
   position: absolute;
   right: 8px; top: 50%; transform: translateY(-50%);
   border: none; background: transparent;
-  cursor: pointer; font-size: 18px; padding: 4px;
+  align-items: center; cursor: pointer; display: inline-flex;
+  font-size: 18px; height: 44px; justify-content: center;
+  padding: 0; width: 44px;
+}
+
+@media (max-width: 480px) {
+  .login-page {
+    padding:
+      max(16px, env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right))
+      max(16px, env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
+  }
+
+  .login-input,
+  .lock-input {
+    font-size: 16px;
+    min-height: 52px;
+  }
+
+  .login-input {
+    padding-right: 54px;
+  }
+
+  .login-toggle-password {
+    right: 5px;
+  }
+}
+
+@media (max-height: 650px) and (max-width: 900px) {
+  .login-page {
+    align-items: flex-start;
+    overflow-y: auto;
+  }
 }
 
 .lock-error {
