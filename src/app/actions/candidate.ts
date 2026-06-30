@@ -54,7 +54,7 @@ export async function createCandidate(formData: FormData): Promise<ActionResult>
       },
     })
     try { syncCandidateMd(candidate) } catch {}
-    revalidatePath('/candidates')
+    try { revalidatePath('/candidates') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -115,9 +115,9 @@ export async function updateCandidate(formData: FormData): Promise<ActionResult>
     })
     try { syncCandidateMd(candidate) } catch {}
     await applyCandidateStatusEffects(prisma, id, status)
-    revalidatePath('/candidates')
-    revalidatePath('/match')
-    revalidatePath('/home')
+    try { revalidatePath('/candidates') } catch {}
+    try { revalidatePath('/match') } catch {}
+    try { revalidatePath('/home') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -137,5 +137,5 @@ export async function deleteCandidate(formData: FormData): Promise<void> {
   }
   await prisma.candidate.delete({ where: { id } })
   try { deleteCandidateMd(id) } catch {}
-  revalidatePath('/candidates')
+  try { revalidatePath('/candidates') } catch {}
 }

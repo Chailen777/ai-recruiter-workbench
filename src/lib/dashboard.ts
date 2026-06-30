@@ -97,107 +97,59 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
   try {
   const today = startOfToday()
 
+  // 分批执行以减少 Neon 连接池压力（每批最多 5 个并行查询）
   const [
     companiesCount,
     jobsCount,
     candidatesCount,
     todayCompanies,
     todayJobs,
-    todayCandidates,
-    highMatches,
-    followCandidates,
-    pendingJobs,
-    totalMatches,
-    hiredMatches,
-    jobStatusGroups,
-    candidateStatusGroups,
-    recentCandidates,
-    topJobsByMatches,
-    followUpCandidates,
-    highScoreUnrecommendedMatches,
-    draftJobs,
-    kanbanCandidatesRaw,
   ] = await Promise.all([
     prisma.company.count(),
     prisma.job.count(),
     prisma.candidate.count(),
     prisma.company.count({ where: { createdAt: { gte: today } } }),
     prisma.job.count({ where: { createdAt: { gte: today } } }),
+  ])
+
+  const [
+    todayCandidates,
+    highMatches,
+    followCandidates,
+    pendingJobs,
+    totalMatches,
+  ] = await Promise.all([
     prisma.candidate.count({ where: { createdAt: { gte: today } } }),
     prisma.match.count({ where: { score: { gte: 80 } } }),
-    prisma.candidate.count({
-      where: { OR: [{ status: '待跟进' }, { communication: '待跟进' }] },
-    }),
+    prisma.candidate.count({ where: { OR: [{ status: '待跟进' }, { communication: '待跟进' }] } }),
     prisma.job.count({ where: { status: { in: ['待发布', '招聘中'] } } }),
     prisma.match.count(),
+  ])
+
+  const [
+    hiredMatches,
+    jobStatusGroups,
+    candidateStatusGroups,
+    recentCandidates,
+    topJobsByMatches,
+  ] = await Promise.all([
     prisma.match.count({ where: { status: '已入职' } }),
-    prisma.job.groupBy({
-      by: [Prisma.JobScalarFieldEnum.status],
-      _count: { status: true },
-    }),
-    prisma.candidate.groupBy({
-      by: [Prisma.CandidateScalarFieldEnum.status],
-      _count: { status: true },
-    }),
-    prisma.candidate.findMany({
-      orderBy: { createdAt: 'desc' },
-      select: { id: true, name: true, status: true, currentTitle: true },
-      take: 5,
-    }),
-    prisma.match.groupBy({
-      by: ['jobId'],
-      _count: { jobId: true },
-      orderBy: { _count: { jobId: 'desc' } },
-      take: 5,
-    }),
-    prisma.candidate.findMany({
-      orderBy: { updatedAt: 'desc' },
-      select: { id: true, currentTitle: true, name: true, status: true, updatedAt: true },
-      take: 3,
-      where: { OR: [{ status: '待跟进' }, { communication: '待跟进' }] },
-    }),
-    prisma.match.findMany({
-      include: { candidate: true, job: true },
-      orderBy: { score: 'desc' },
-      take: 2,
-      where: {
-        AND: [{ score: { gte: 80 } }, { status: { notIn: ['已推荐', '已入职', '已拒绝'] } }],
-      },
-    }),
-    prisma.job.findMany({
-      orderBy: { createdAt: 'desc' },
-      select: { companyName: true, id: true, title: true },
-      take: 2,
-      where: { status: '待发布' },
-    }),
-    // Real candidates for the Kanban board (up to 30, with best match score)
-    prisma.candidate.findMany({
-      select: {
-        id: true,
-        name: true,
-        currentTitle: true,
-        status: true,
-        matches: {
-          select: { score: true },
-          orderBy: { score: 'desc' },
-          take: 1,
-        },
-      },
-      where: {
-        status: {
-          in: [
-            '待沟通', '初筛', '待联系', '新建',
-            '面试中', '已沟通',
-            '已推荐', 'Offer',
-            '入职', '已入职',
-            '淘汰', '不合适',
-            '过期', '已过期',
-          ],
-        },
-      },
-      orderBy: { updatedAt: 'desc' },
-      take: 30,
-    }),
+    prisma.job.groupBy({ by: [Prisma.JobScalarFieldEnum.status], _count: { status: true } }),
+    prisma.candidate.groupBy({ by: [Prisma.CandidateScalarFieldEnum.status], _count: { status: true } }),
+    prisma.candidate.findMany({ orderBy: { createdAt: 'desc' }, select: { id: true, name: true, status: true, currentTitle: true }, take: 5 }),
+    prisma.match.groupBy({ by: ['jobId'], _count: { jobId: true }, orderBy: { _count: { jobId: 'desc' } }, take: 5 }),
+  ])
+
+  const [
+    followUpCandidates,
+    highScoreUnrecommendedMatches,
+    draftJobs,
+    kanbanCandidatesRaw,
+  ] = await Promise.all([
+    prisma.candidate.findMany({ orderBy: { updatedAt: 'desc' }, select: { id: true, currentTitle: true, name: true, status: true, updatedAt: true }, take: 3, where: { OR: [{ status: '待跟进' }, { communication: '待跟进' }] } }),
+    prisma.match.findMany({ include: { candidate: true, job: true }, orderBy: { score: 'desc' }, take: 2, where: { AND: [{ score: { gte: 80 } }, { status: { notIn: ['已推荐', '已入职', '已拒绝'] } }] } }),
+    prisma.job.findMany({ orderBy: { createdAt: 'desc' }, select: { companyName: true, id: true, title: true }, take: 2, where: { status: '待发布' } }),
+    prisma.candidate.findMany({ select: { id: true, name: true, currentTitle: true, status: true, matches: { select: { score: true }, orderBy: { score: 'desc' }, take: 1 } }, where: { status: { in: ['待沟通', '初筛', '待联系', '新建', '面试中', '已沟通', '已推荐', 'Offer', '入职', '已入职', '淘汰', '不合适', '过期', '已过期'] } }, orderBy: { updatedAt: 'desc' }, take: 30 }),
   ])
 
   // 7-day trend — 用 Prisma ORM 替代 $queryRaw 避免 Vercel 兼容性问题

@@ -52,7 +52,7 @@ export async function createContact(formData: FormData): Promise<ActionResult> {
         note: value(formData, 'note'),
       },
     })
-    revalidatePath('/contacts')
+    try { revalidatePath('/contacts') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -107,7 +107,7 @@ export async function updateContact(formData: FormData): Promise<ActionResult> {
         note: value(formData, 'note'),
       },
     })
-    revalidatePath('/contacts')
+    try { revalidatePath('/contacts') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -124,5 +124,5 @@ export async function deleteContact(formData: FormData): Promise<void> {
     await deleteAllAttachments(item.attachments)
   }
   await prisma.contact.delete({ where: { id } })
-  revalidatePath('/contacts')
+  try { revalidatePath('/contacts') } catch {}
 }

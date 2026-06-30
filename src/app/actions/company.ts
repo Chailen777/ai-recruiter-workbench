@@ -33,7 +33,7 @@ export async function createCompany(formData: FormData): Promise<ActionResult> {
       },
     })
     try { syncCompanyMd(company) } catch {}
-    revalidatePath('/companies')
+    try { revalidatePath('/companies') } catch {}
     return actionSuccess()
   } catch (error) {
     return actionError('保存企业失败，请稍后重试', collectErrors(error))
@@ -70,7 +70,7 @@ export async function updateCompany(formData: FormData): Promise<ActionResult> {
       },
     })
     try { syncCompanyMd(company) } catch {}
-    revalidatePath('/companies')
+    try { revalidatePath('/companies') } catch {}
     return actionSuccess()
   } catch (error) {
     return actionError('更新企业失败，请稍后重试', collectErrors(error))
@@ -88,5 +88,5 @@ export async function deleteCompany(formData: FormData): Promise<void> {
   }
   await prisma.company.delete({ where: { id } })
   try { deleteCompanyMd(id) } catch {}
-  revalidatePath('/companies')
+  try { revalidatePath('/companies') } catch {}
 }

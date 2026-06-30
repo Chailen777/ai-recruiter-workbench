@@ -45,7 +45,7 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
         note: value(formData, 'note'),
       },
     })
-    revalidatePath('/projects')
+    try { revalidatePath('/projects') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -93,7 +93,7 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
         note: value(formData, 'note'),
       },
     })
-    revalidatePath('/projects')
+    try { revalidatePath('/projects') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -110,5 +110,5 @@ export async function deleteProject(formData: FormData): Promise<void> {
     await deleteAllAttachments(item.attachments)
   }
   await prisma.project.delete({ where: { id } })
-  revalidatePath('/projects')
+  try { revalidatePath('/projects') } catch {}
 }

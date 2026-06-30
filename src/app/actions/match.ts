@@ -8,6 +8,13 @@ import { requiredValue, jsonListValue } from './shared'
 import { scoreCandidateForJobs, scoreJobForCandidates, passesDimensionFilter } from '@/lib/matching'
 import type { MatchCandidate, MatchJob, MatchDimensionKey, MatchDimension } from '@/lib/matching'
 
+/* ─── 安全地 revalidate 多个路径（Neon 连接池限制下非关键操作不崩溃） ─── */
+function safeRevalidate(...paths: string[]) {
+  for (const p of paths) {
+    try { revalidatePath(p) } catch { /* revalidation 失败不影响核心操作 */ }
+  }
+}
+
 /* ─── Quick Match Types ─── */
 
 export type QuickMatchMode = 'candidate-to-job' | 'job-to-candidate'
@@ -130,10 +137,7 @@ async function saveMatchWithStatus(formData: FormData, status: string) {
     // 状态联动失败不影响核心流程
   }
 
-  revalidatePath('/match')
-  revalidatePath('/candidates')
-  revalidatePath('/jobs')
-  revalidatePath('/home')
+  safeRevalidate('/match', '/candidates', '/jobs', '/home')
 }
 
 export async function recommendMatch(formData: FormData) {
@@ -164,10 +168,7 @@ export async function resetMatch(formData: FormData) {
     // 记录不存在则忽略
   }
 
-  revalidatePath('/match')
-  revalidatePath('/candidates')
-  revalidatePath('/jobs')
-  revalidatePath('/home')
+  safeRevalidate('/match', '/candidates', '/jobs', '/home')
 }
 
 export async function quickMatch(
@@ -370,10 +371,7 @@ export async function quickRecommend(
     // 状态联动失败不影响核心流程
   }
 
-  revalidatePath('/match')
-  revalidatePath('/candidates')
-  revalidatePath('/jobs')
-  revalidatePath('/home')
+  safeRevalidate('/match', '/candidates', '/jobs', '/home')
 
   return { success: true }
 }
@@ -433,10 +431,7 @@ export async function quickIgnore(
     // 状态联动失败不影响核心流程
   }
 
-  revalidatePath('/match')
-  revalidatePath('/candidates')
-  revalidatePath('/jobs')
-  revalidatePath('/home')
+  safeRevalidate('/match', '/candidates', '/jobs', '/home')
 
   return { success: true }
 }
@@ -490,10 +485,7 @@ export async function quickEliminate(
     // Markdown 同步失败不影响核心流程
   }
 
-  revalidatePath('/match')
-  revalidatePath('/candidates')
-  revalidatePath('/jobs')
-  revalidatePath('/home')
+  safeRevalidate('/match', '/candidates', '/jobs', '/home')
 
   return { success: true }
 }
@@ -547,10 +539,7 @@ export async function quickAbandon(
     // Markdown 同步失败不影响核心流程
   }
 
-  revalidatePath('/match')
-  revalidatePath('/candidates')
-  revalidatePath('/jobs')
-  revalidatePath('/home')
+  safeRevalidate('/match', '/candidates', '/jobs', '/home')
 
   return { success: true }
 }
@@ -566,10 +555,7 @@ export async function quickReset(
   } catch {
     // 记录不存在则忽略
   }
-  revalidatePath('/match')
-  revalidatePath('/candidates')
-  revalidatePath('/jobs')
-  revalidatePath('/home')
+  safeRevalidate('/match', '/candidates', '/jobs', '/home')
 
   return { success: true }
 }

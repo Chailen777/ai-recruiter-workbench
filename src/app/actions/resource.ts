@@ -38,7 +38,7 @@ export async function createKnowledge(formData: FormData): Promise<ActionResult>
       },
     })
     try { syncKnowledgeMd(knowledge) } catch {}
-    revalidatePath('/knowledge')
+    try { revalidatePath('/knowledge') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -74,7 +74,7 @@ export async function updateKnowledge(formData: FormData): Promise<ActionResult>
       },
     })
     try { syncKnowledgeMd(knowledge) } catch {}
-    revalidatePath('/knowledge')
+    try { revalidatePath('/knowledge') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -93,7 +93,7 @@ export async function deleteKnowledge(formData: FormData): Promise<void> {
   }
   await prisma.knowledge.delete({ where: { id } })
   try { deleteKnowledgeMd(id) } catch {}
-  revalidatePath('/knowledge')
+  try { revalidatePath('/knowledge') } catch {}
 }
 
 /* ─── School ─── */
@@ -128,7 +128,7 @@ export async function createSchool(formData: FormData): Promise<ActionResult> {
       },
     })
     try { syncSchoolMd(school) } catch {}
-    revalidatePath('/schools')
+    try { revalidatePath('/schools') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -171,7 +171,7 @@ export async function updateSchool(formData: FormData): Promise<ActionResult> {
       },
     })
     try { syncSchoolMd(school) } catch {}
-    revalidatePath('/schools')
+    try { revalidatePath('/schools') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -190,7 +190,7 @@ export async function deleteSchool(formData: FormData): Promise<void> {
   }
   await prisma.school.delete({ where: { id } })
   try { deleteSchoolMd(id) } catch {}
-  revalidatePath('/schools')
+  try { revalidatePath('/schools') } catch {}
 }
 
 /* ─── Chart ─── */
@@ -219,7 +219,7 @@ export async function createChart(formData: FormData): Promise<ActionResult> {
       },
     })
     try { syncChartMd(chart) } catch {}
-    revalidatePath('/charts')
+    try { revalidatePath('/charts') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -256,7 +256,7 @@ export async function updateChart(formData: FormData): Promise<ActionResult> {
       },
     })
     try { syncChartMd(chart) } catch {}
-    revalidatePath('/charts')
+    try { revalidatePath('/charts') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -275,7 +275,7 @@ export async function deleteChart(formData: FormData): Promise<void> {
   }
   await prisma.chart.delete({ where: { id } })
   try { deleteChartMd(id) } catch {}
-  revalidatePath('/charts')
+  try { revalidatePath('/charts') } catch {}
 }
 
 /* ─── Info ─── */
@@ -307,7 +307,7 @@ export async function createInfo(formData: FormData): Promise<ActionResult> {
       },
     })
     try { syncInfoMd(info) } catch {}
-    revalidatePath('/info')
+    try { revalidatePath('/info') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -347,7 +347,7 @@ export async function updateInfo(formData: FormData): Promise<ActionResult> {
       },
     })
     try { syncInfoMd(info) } catch {}
-    revalidatePath('/info')
+    try { revalidatePath('/info') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -366,5 +366,5 @@ export async function deleteInfo(formData: FormData): Promise<void> {
   }
   await prisma.info.delete({ where: { id } })
   try { deleteInfoMd(id) } catch {}
-  revalidatePath('/info')
+  try { revalidatePath('/info') } catch {}
 }

@@ -63,7 +63,7 @@ export async function createJob(formData: FormData): Promise<ActionResult> {
       },
     })
     try { syncJobMd(job) } catch {}
-    revalidatePath('/jobs')
+    try { revalidatePath('/jobs') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -86,7 +86,7 @@ export async function quickCreateCompanyFromJob(formData: FormData): Promise<Act
         cooperationStatus: '待沟通',
       },
     })
-    revalidatePath('/jobs')
+    try { revalidatePath('/jobs') } catch {}
     redirect(`/jobs?companyId=${company.id}`)
   } catch (error) {
     return actionError('快速创建企业失败', collectErrors(error))
@@ -105,7 +105,7 @@ export async function updateJob(formData: FormData): Promise<ActionResult> {
       matchedCompany = await prisma.company.create({
         data: { name: companyName, source: '岗位录入', cooperationStatus: '待沟通' },
       })
-      revalidatePath('/companies')
+      try { revalidatePath('/companies') } catch {}
     }
   }
 
@@ -154,9 +154,9 @@ export async function updateJob(formData: FormData): Promise<ActionResult> {
     })
     try { syncJobMd(job) } catch {}
     await applyJobStatusEffects(prisma, id, status)
-    revalidatePath('/jobs')
-    revalidatePath('/match')
-    revalidatePath('/home')
+    try { revalidatePath('/jobs') } catch {}
+    try { revalidatePath('/match') } catch {}
+    try { revalidatePath('/home') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -176,5 +176,5 @@ export async function deleteJob(formData: FormData): Promise<void> {
   }
   await prisma.job.delete({ where: { id } })
   try { deleteJobMd(id) } catch {}
-  revalidatePath('/jobs')
+  try { revalidatePath('/jobs') } catch {}
 }
