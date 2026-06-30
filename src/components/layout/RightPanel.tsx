@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 
 import { useMounted } from '@/hooks/useMounted'
 import { NotePanel } from '@/components/ui/NotePanel'
@@ -56,8 +56,28 @@ export function RightPanel() {
   // ── 日历筛选 ──
   const [filterDate, setFilterDate] = useState<string | null>(null)
 
-  // ── 搜索 ──
+  // ── 搜索（带 debounce）──
   const [globalSearchTerm, setGlobalSearchTerm] = useState('')
+  const [searchInputValue, setSearchInputValue] = useState('')
+  const searchDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchInputValue(value)
+    if (searchDebounceTimer.current) {
+      clearTimeout(searchDebounceTimer.current)
+    }
+    searchDebounceTimer.current = setTimeout(() => {
+      setGlobalSearchTerm(value)
+    }, 200)
+  }, [])
+
+  const handleClearSearch = useCallback(() => {
+    setSearchInputValue('')
+    setGlobalSearchTerm('')
+    if (searchDebounceTimer.current) {
+      clearTimeout(searchDebounceTimer.current)
+    }
+  }, [])
 
   // ── Collapse state (persisted to localStorage) ──
   const [collapsed, setCollapsed] = useState(true) // 默认折叠
@@ -149,15 +169,15 @@ export function RightPanel() {
                 type="text"
                 className="note-search-input"
                 placeholder="搜索笔记…"
-                value={globalSearchTerm}
-                onChange={(e) => setGlobalSearchTerm(e.target.value)}
+                value={searchInputValue}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 aria-label="搜索笔记"
               />
-              {globalSearchTerm && (
+              {searchInputValue && (
                 <button
                   type="button"
                   className="note-search-clear"
-                  onClick={() => setGlobalSearchTerm('')}
+                  onClick={handleClearSearch}
                   title="清除搜索"
                   aria-label="清除搜索"
                 >

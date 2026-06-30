@@ -10,6 +10,28 @@ const COVER_DIR = join(process.cwd(), 'public', 'uploads', 'covers')
 /** 单文件最大允许上传大小：20MB */
 const MAX_FILE_SIZE = 20 * 1024 * 1024
 
+/** 允许上传的文件 MIME 类型白名单 */
+const ALLOWED_MIME_TYPES = [
+  // 图片
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/svg+xml',
+  // 文档
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  // 文本
+  'text/plain',
+  'text/csv',
+  'text/markdown',
+]
+
 /** Ensure upload directory exists */
 async function ensureDir() {
   if (!existsSync(UPLOAD_DIR)) {
@@ -23,6 +45,9 @@ async function ensureDir() {
 async function saveOneAttachment(file: File): Promise<AttachmentInfo> {
   if (file.size > MAX_FILE_SIZE) {
     throw new Error(`文件 "${file.name}" 超过 20MB 限制（实际：${(file.size / 1024 / 1024).toFixed(1)}MB）`)
+  }
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    throw new Error(`不支持的文件类型: ${file.type || '未知'}。支持的格式: 图片(JPG/PNG/GIF/WebP/SVG)、文档(PDF/Word/Excel/PPT)、文本(TXT/CSV/Markdown)`)
   }
   const timestamp = Date.now()
   const safeName = file.name.replace(/[^a-zA-Z0-9.\-_()\u4e00-\u9fff]/g, '_')

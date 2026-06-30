@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useTransition } from 'react'
+import { useRef, useState, useTransition, useMemo } from 'react'
 import { addNote, deleteNote, togglePinNote, toggleDoneNote } from '@/app/actions'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
@@ -124,50 +124,60 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
     })
   }
 
-  // 置顶优先，时间倒序
-  const sorted = [...notes].sort((a, b) => {
-    if (a.pinned && !b.pinned) return -1
-    if (!a.pinned && b.pinned) return 1
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  })
+  // ── 置顶优先，时间倒序（memoized）──
+  const sorted = useMemo(() => {
+    return [...notes].sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1
+      if (!a.pinned && b.pinned) return 1
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    })
+  }, [notes])
 
-  // ── 根据 filterType 过滤 ──
-  const filtered = sorted.filter((n) => {
-    if (filterType === 'all') return true
-    if ((filterType === 'todo' || filterType === 'appointment') && showOnlyUndone) return n.type === filterType && !n.done
-    return n.type === filterType
-  })
+  // ── 根据 filterType 过滤（memoized）──
+  const filtered = useMemo(() => {
+    return sorted.filter((n) => {
+      if (filterType === 'all') return true
+      if ((filterType === 'todo' || filterType === 'appointment') && showOnlyUndone) return n.type === filterType && !n.done
+      return n.type === filterType
+    })
+  }, [sorted, filterType, showOnlyUndone])
 
-  // ── 按日期筛选（预约用 appointmentTime，其余用 createdAt）──
-  const dateFiltered = filterDate
-    ? filtered.filter((n) => {
-        const targetDate = n.type === 'appointment' && n.appointmentTime
-          ? n.appointmentTime
-          : n.createdAt
-        return targetDate.slice(0, 10) === filterDate
-      })
-    : filtered
+  // ── 按日期筛选（memoized）──
+  const dateFiltered = useMemo(() => {
+    if (!filterDate) return filtered
+    return filtered.filter((n) => {
+      const targetDate = n.type === 'appointment' && n.appointmentTime
+        ? n.appointmentTime
+        : n.createdAt
+      return targetDate.slice(0, 10) === filterDate
+    })
+  }, [filtered, filterDate])
 
-  // ── 搜索过滤 ──
-  const searchFiltered = searchTerm
-    ? dateFiltered.filter((n) => {
-        const q = searchTerm.toLowerCase()
-        return (
-          n.content.toLowerCase().includes(q) ||
-          (n.entityName && n.entityName.toLowerCase().includes(q)) ||
-          (n.appointmentPerson && n.appointmentPerson.toLowerCase().includes(q)) ||
-          (n.appointmentLocation && n.appointmentLocation.toLowerCase().includes(q)) ||
-          (n.appointmentType && (APPT_TYPE_LABELS[n.appointmentType] ?? n.appointmentType).toLowerCase().includes(q)) ||
-          (TYPE_LABELS[n.type] && TYPE_LABELS[n.type].toLowerCase().includes(q))
-        )
-      })
-    : dateFiltered
+  // ── 搜索过滤（memoized）──
+  const searchFiltered = useMemo(() => {
+    if (!searchTerm) return dateFiltered
+    const q = searchTerm.toLowerCase()
+    return dateFiltered.filter((n) => {
+      return (
+        n.content.toLowerCase().includes(q) ||
+        (n.entityName && n.entityName.toLowerCase().includes(q)) ||
+        (n.appointmentPerson && n.appointmentPerson.toLowerCase().includes(q)) ||
+        (n.appointmentLocation && n.appointmentLocation.toLowerCase().includes(q)) ||
+        (n.appointmentType && (APPT_TYPE_LABELS[n.appointmentType] ?? n.appointmentType).toLowerCase().includes(q)) ||
+        (TYPE_LABELS[n.type] && TYPE_LABELS[n.type].toLowerCase().includes(q))
+      )
+    })
+  }, [dateFiltered, searchTerm])
 
-  // ── 未完成待办计数 ──
-  const undoneTodoCount = notes.filter((n) => n.type === 'todo' && !n.done).length
+  // ── 未完成待办计数（memoized）──
+  const undoneTodoCount = useMemo(() => {
+    return notes.filter((n) => n.type === 'todo' && !n.done).length
+  }, [notes])
 
-  // ── 未完成预约计数 ──
-  const undoneAppointmentCount = notes.filter((n) => n.type === 'appointment' && !n.done).length
+  // ── 未完成预约计数（memoized）──
+  const undoneAppointmentCount = useMemo(() => {
+    return notes.filter((n) => n.type === 'appointment' && !n.done).length
+  }, [notes])
 
   // ── 标签点击：设置过滤类型 + 输入类型 ──
   function handleTabClick(type: 'all' | 'todo' | 'log' | 'note' | 'appointment') {
