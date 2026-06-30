@@ -37,7 +37,7 @@ export async function createKnowledge(formData: FormData): Promise<ActionResult>
         note: value(formData, 'note'),
       },
     })
-    syncKnowledgeMd(knowledge)
+    try { syncKnowledgeMd(knowledge) } catch {}
     revalidatePath('/knowledge')
     return actionSuccess()
   } catch (error: unknown) {
@@ -73,7 +73,7 @@ export async function updateKnowledge(formData: FormData): Promise<ActionResult>
         note: value(formData, 'note'),
       },
     })
-    syncKnowledgeMd(knowledge)
+    try { syncKnowledgeMd(knowledge) } catch {}
     revalidatePath('/knowledge')
     return actionSuccess()
   } catch (error: unknown) {
@@ -92,7 +92,7 @@ export async function deleteKnowledge(formData: FormData): Promise<void> {
     await removeCover(item.cover)
   }
   await prisma.knowledge.delete({ where: { id } })
-  deleteKnowledgeMd(id)
+  try { deleteKnowledgeMd(id) } catch {}
   revalidatePath('/knowledge')
 }
 
@@ -127,7 +127,7 @@ export async function createSchool(formData: FormData): Promise<ActionResult> {
         note: value(formData, 'note'),
       },
     })
-    syncSchoolMd(school)
+    try { syncSchoolMd(school) } catch {}
     revalidatePath('/schools')
     return actionSuccess()
   } catch (error: unknown) {
@@ -170,7 +170,7 @@ export async function updateSchool(formData: FormData): Promise<ActionResult> {
         note: value(formData, 'note'),
       },
     })
-    syncSchoolMd(school)
+    try { syncSchoolMd(school) } catch {}
     revalidatePath('/schools')
     return actionSuccess()
   } catch (error: unknown) {
@@ -189,7 +189,7 @@ export async function deleteSchool(formData: FormData): Promise<void> {
     await removeCover(item.cover)
   }
   await prisma.school.delete({ where: { id } })
-  deleteSchoolMd(id)
+  try { deleteSchoolMd(id) } catch {}
   revalidatePath('/schools')
 }
 
@@ -218,7 +218,7 @@ export async function createChart(formData: FormData): Promise<ActionResult> {
         note: value(formData, 'note'),
       },
     })
-    syncChartMd(chart)
+    try { syncChartMd(chart) } catch {}
     revalidatePath('/charts')
     return actionSuccess()
   } catch (error: unknown) {
@@ -255,7 +255,7 @@ export async function updateChart(formData: FormData): Promise<ActionResult> {
         note: value(formData, 'note'),
       },
     })
-    syncChartMd(chart)
+    try { syncChartMd(chart) } catch {}
     revalidatePath('/charts')
     return actionSuccess()
   } catch (error: unknown) {
@@ -274,7 +274,7 @@ export async function deleteChart(formData: FormData): Promise<void> {
     await removeCover(item.cover)
   }
   await prisma.chart.delete({ where: { id } })
-  deleteChartMd(id)
+  try { deleteChartMd(id) } catch {}
   revalidatePath('/charts')
 }
 
@@ -306,7 +306,7 @@ export async function createInfo(formData: FormData): Promise<ActionResult> {
         note: value(formData, 'note'),
       },
     })
-    syncInfoMd(info)
+    try { syncInfoMd(info) } catch {}
     revalidatePath('/info')
     return actionSuccess()
   } catch (error: unknown) {
@@ -346,7 +346,7 @@ export async function updateInfo(formData: FormData): Promise<ActionResult> {
         note: value(formData, 'note'),
       },
     })
-    syncInfoMd(info)
+    try { syncInfoMd(info) } catch {}
     revalidatePath('/info')
     return actionSuccess()
   } catch (error: unknown) {
@@ -365,6 +365,6 @@ export async function deleteInfo(formData: FormData): Promise<void> {
     await removeCover(item.cover)
   }
   await prisma.info.delete({ where: { id } })
-  deleteInfoMd(id)
+  try { deleteInfoMd(id) } catch {}
   revalidatePath('/info')
 }

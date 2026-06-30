@@ -32,7 +32,7 @@ export async function createCompany(formData: FormData): Promise<ActionResult> {
         note: value(formData, 'note'),
       },
     })
-    syncCompanyMd(company)
+    try { syncCompanyMd(company) } catch {}
     revalidatePath('/companies')
     return actionSuccess()
   } catch (error) {
@@ -69,7 +69,7 @@ export async function updateCompany(formData: FormData): Promise<ActionResult> {
         note: value(formData, 'note'),
       },
     })
-    syncCompanyMd(company)
+    try { syncCompanyMd(company) } catch {}
     revalidatePath('/companies')
     return actionSuccess()
   } catch (error) {
@@ -87,6 +87,6 @@ export async function deleteCompany(formData: FormData): Promise<void> {
     await removeAvatar(company.avatar)
   }
   await prisma.company.delete({ where: { id } })
-  deleteCompanyMd(id)
+  try { deleteCompanyMd(id) } catch {}
   revalidatePath('/companies')
 }

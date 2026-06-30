@@ -53,7 +53,7 @@ export async function createCandidate(formData: FormData): Promise<ActionResult>
         note: value(formData, 'note'),
       },
     })
-    syncCandidateMd(candidate)
+    try { syncCandidateMd(candidate) } catch {}
     revalidatePath('/candidates')
     return actionSuccess()
   } catch (error: unknown) {
@@ -113,7 +113,7 @@ export async function updateCandidate(formData: FormData): Promise<ActionResult>
         note: value(formData, 'note'),
       },
     })
-    syncCandidateMd(candidate)
+    try { syncCandidateMd(candidate) } catch {}
     await applyCandidateStatusEffects(prisma, id, status)
     revalidatePath('/candidates')
     revalidatePath('/match')
@@ -136,6 +136,6 @@ export async function deleteCandidate(formData: FormData): Promise<void> {
     await removeAvatar(candidate.avatar)
   }
   await prisma.candidate.delete({ where: { id } })
-  deleteCandidateMd(id)
+  try { deleteCandidateMd(id) } catch {}
   revalidatePath('/candidates')
 }

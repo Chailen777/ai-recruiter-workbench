@@ -104,22 +104,31 @@ async function saveMatchWithStatus(formData: FormData, status: string) {
     },
     include: { candidate: true, job: true },
   })
-  syncMatchMd({
-    id: matchRecord.id,
-    candidateId,
-    jobId,
-    candidateName: matchRecord.candidate.name,
-    jobTitle: matchRecord.job.title,
-    companyName: matchRecord.job.companyName,
-    score: matchRecord.score,
-    reasons: matchRecord.reasons,
-    gaps: matchRecord.gaps,
-    suggestion: matchRecord.suggestion,
-    status: matchRecord.status,
-    createdAt: matchRecord.createdAt,
-    importedAt: matchRecord.importedAt,
-  })
-  await applyMatchStatusEffects(prisma, candidateId, jobId, workflowStatus)
+  try {
+    syncMatchMd({
+      id: matchRecord.id,
+      candidateId,
+      jobId,
+      candidateName: matchRecord.candidate.name,
+      jobTitle: matchRecord.job.title,
+      companyName: matchRecord.job.companyName,
+      score: matchRecord.score,
+      reasons: matchRecord.reasons,
+      gaps: matchRecord.gaps,
+      suggestion: matchRecord.suggestion,
+      status: matchRecord.status,
+      createdAt: matchRecord.createdAt,
+      importedAt: matchRecord.importedAt,
+    })
+  } catch {
+    // Markdown 同步失败不影响核心流程（Vercel 只读文件系统）
+  }
+
+  try {
+    await applyMatchStatusEffects(prisma, candidateId, jobId, workflowStatus)
+  } catch {
+    // 状态联动失败不影响核心流程
+  }
 
   revalidatePath('/match')
   revalidatePath('/candidates')
@@ -335,23 +344,31 @@ export async function quickRecommend(
     include: { candidate: true, job: true },
   })
 
-  syncMatchMd({
-    id: matchRecord.id,
-    candidateId,
-    jobId,
-    candidateName: matchRecord.candidate.name,
-    jobTitle: matchRecord.job.title,
-    companyName: matchRecord.job.companyName,
-    score: matchRecord.score,
-    reasons: matchRecord.reasons,
-    gaps: matchRecord.gaps,
-    suggestion: matchRecord.suggestion,
-    status: matchRecord.status,
-    createdAt: matchRecord.createdAt,
-    importedAt: matchRecord.importedAt,
-  })
+  try {
+    syncMatchMd({
+      id: matchRecord.id,
+      candidateId,
+      jobId,
+      candidateName: matchRecord.candidate.name,
+      jobTitle: matchRecord.job.title,
+      companyName: matchRecord.job.companyName,
+      score: matchRecord.score,
+      reasons: matchRecord.reasons,
+      gaps: matchRecord.gaps,
+      suggestion: matchRecord.suggestion,
+      status: matchRecord.status,
+      createdAt: matchRecord.createdAt,
+      importedAt: matchRecord.importedAt,
+    })
+  } catch {
+    // Markdown 同步失败不影响核心流程
+  }
 
-  await applyMatchStatusEffects(prisma, candidateId, jobId, '已推荐')
+  try {
+    await applyMatchStatusEffects(prisma, candidateId, jobId, '已推荐')
+  } catch {
+    // 状态联动失败不影响核心流程
+  }
 
   revalidatePath('/match')
   revalidatePath('/candidates')
@@ -390,23 +407,31 @@ export async function quickIgnore(
     include: { candidate: true, job: true },
   })
 
-  syncMatchMd({
-    id: matchRecord.id,
-    candidateId,
-    jobId,
-    candidateName: matchRecord.candidate.name,
-    jobTitle: matchRecord.job.title,
-    companyName: matchRecord.job.companyName,
-    score: matchRecord.score,
-    reasons: matchRecord.reasons,
-    gaps: matchRecord.gaps,
-    suggestion: matchRecord.suggestion,
-    status: matchRecord.status,
-    createdAt: matchRecord.createdAt,
-    importedAt: matchRecord.importedAt,
-  })
+  try {
+    syncMatchMd({
+      id: matchRecord.id,
+      candidateId,
+      jobId,
+      candidateName: matchRecord.candidate.name,
+      jobTitle: matchRecord.job.title,
+      companyName: matchRecord.job.companyName,
+      score: matchRecord.score,
+      reasons: matchRecord.reasons,
+      gaps: matchRecord.gaps,
+      suggestion: matchRecord.suggestion,
+      status: matchRecord.status,
+      createdAt: matchRecord.createdAt,
+      importedAt: matchRecord.importedAt,
+    })
+  } catch {
+    // Markdown 同步失败不影响核心流程
+  }
 
-  await applyMatchStatusEffects(prisma, candidateId, jobId, '已拒绝')
+  try {
+    await applyMatchStatusEffects(prisma, candidateId, jobId, '已拒绝')
+  } catch {
+    // 状态联动失败不影响核心流程
+  }
 
   revalidatePath('/match')
   revalidatePath('/candidates')
@@ -445,21 +470,25 @@ export async function quickEliminate(
     include: { candidate: true, job: true },
   })
 
-  syncMatchMd({
-    id: matchRecord.id,
-    candidateId,
-    jobId,
-    candidateName: matchRecord.candidate.name,
-    jobTitle: matchRecord.job.title,
-    companyName: matchRecord.job.companyName,
-    score: matchRecord.score,
-    reasons: matchRecord.reasons,
-    gaps: matchRecord.gaps,
-    suggestion: matchRecord.suggestion,
-    status: matchRecord.status,
-    createdAt: matchRecord.createdAt,
-    importedAt: matchRecord.importedAt,
-  })
+  try {
+    syncMatchMd({
+      id: matchRecord.id,
+      candidateId,
+      jobId,
+      candidateName: matchRecord.candidate.name,
+      jobTitle: matchRecord.job.title,
+      companyName: matchRecord.job.companyName,
+      score: matchRecord.score,
+      reasons: matchRecord.reasons,
+      gaps: matchRecord.gaps,
+      suggestion: matchRecord.suggestion,
+      status: matchRecord.status,
+      createdAt: matchRecord.createdAt,
+      importedAt: matchRecord.importedAt,
+    })
+  } catch {
+    // Markdown 同步失败不影响核心流程
+  }
 
   revalidatePath('/match')
   revalidatePath('/candidates')
@@ -498,21 +527,25 @@ export async function quickAbandon(
     include: { candidate: true, job: true },
   })
 
-  syncMatchMd({
-    id: matchRecord.id,
-    candidateId,
-    jobId,
-    candidateName: matchRecord.candidate.name,
-    jobTitle: matchRecord.job.title,
-    companyName: matchRecord.job.companyName,
-    score: matchRecord.score,
-    reasons: matchRecord.reasons,
-    gaps: matchRecord.gaps,
-    suggestion: matchRecord.suggestion,
-    status: matchRecord.status,
-    createdAt: matchRecord.createdAt,
-    importedAt: matchRecord.importedAt,
-  })
+  try {
+    syncMatchMd({
+      id: matchRecord.id,
+      candidateId,
+      jobId,
+      candidateName: matchRecord.candidate.name,
+      jobTitle: matchRecord.job.title,
+      companyName: matchRecord.job.companyName,
+      score: matchRecord.score,
+      reasons: matchRecord.reasons,
+      gaps: matchRecord.gaps,
+      suggestion: matchRecord.suggestion,
+      status: matchRecord.status,
+      createdAt: matchRecord.createdAt,
+      importedAt: matchRecord.importedAt,
+    })
+  } catch {
+    // Markdown 同步失败不影响核心流程
+  }
 
   revalidatePath('/match')
   revalidatePath('/candidates')

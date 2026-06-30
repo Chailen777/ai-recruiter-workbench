@@ -62,7 +62,7 @@ export async function createJob(formData: FormData): Promise<ActionResult> {
         avatar: await saveAvatar(formData),
       },
     })
-    syncJobMd(job)
+    try { syncJobMd(job) } catch {}
     revalidatePath('/jobs')
     return actionSuccess()
   } catch (error: unknown) {
@@ -152,7 +152,7 @@ export async function updateJob(formData: FormData): Promise<ActionResult> {
         avatar: await saveAvatar(formData, existing?.avatar),
       },
     })
-    syncJobMd(job)
+    try { syncJobMd(job) } catch {}
     await applyJobStatusEffects(prisma, id, status)
     revalidatePath('/jobs')
     revalidatePath('/match')
@@ -175,6 +175,6 @@ export async function deleteJob(formData: FormData): Promise<void> {
     await removeAvatar(job.avatar)
   }
   await prisma.job.delete({ where: { id } })
-  deleteJobMd(id)
+  try { deleteJobMd(id) } catch {}
   revalidatePath('/jobs')
 }
