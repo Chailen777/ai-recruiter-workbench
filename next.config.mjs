@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-import nextPWA from 'next-pwa'
+。import nextPWA from 'next-pwa'
 
 const nextConfig = {
   typescript: {
@@ -20,9 +20,11 @@ const nextConfig = {
     deviceSizes: [480, 768, 1024, 1440, 1920],
   },
 
-  /* ── 静态导出（Capacitor 需要） ── */
-  output: 'export',
-  distDir: 'out',
+  /* ── 静态导出（Capacitor 需要，Vercel 不需要） ── */
+  ...(process.env.CAPACITOR_BUILD === '1' ? {
+    output: 'export',
+    distDir: 'out',
+  } : {}),
 
   /* ── 压缩配置 ── */
   compress: true,
