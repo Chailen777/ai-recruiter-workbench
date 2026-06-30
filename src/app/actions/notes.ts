@@ -156,31 +156,23 @@ export async function addNote(formData: FormData) {
 
   if (!content) return
 
-  try {
-    // 预约字段
-    const appointmentTime = type === 'appointment' ? (formData.get('appointmentTime') as string) || null : null
-    const appointmentLocation = type === 'appointment' ? (formData.get('appointmentLocation') as string)?.trim() || null : null
-    const appointmentType = type === 'appointment' ? (formData.get('appointmentType') as string) || null : null
-    const appointmentPerson = type === 'appointment' ? (formData.get('appointmentPerson') as string)?.trim() || null : null
+  const note = await prisma.note.create({
+    data: {
+      content, type, entityType, entityId,
+      ...(type === 'appointment' ? {
+        ...(formData.get('appointmentTime') ? { appointmentTime: new Date(formData.get('appointmentTime') as string) } : {}),
+        ...(formData.get('appointmentLocation') ? { appointmentLocation: (formData.get('appointmentLocation') as string).trim() } : {}),
+        ...(formData.get('appointmentType') ? { appointmentType: formData.get('appointmentType') as string } : {}),
+        ...(formData.get('appointmentPerson') ? { appointmentPerson: (formData.get('appointmentPerson') as string).trim() } : {}),
+      } : {}),
+    },
+  })
 
-    const note = await prisma.note.create({
-      data: { 
-        content, type, entityType, entityId,
-        ...(appointmentTime ? { appointmentTime: new Date(appointmentTime) } : {}),
-        ...(appointmentLocation ? { appointmentLocation } : {}),
-        ...(appointmentType ? { appointmentType } : {}),
-        ...(appointmentPerson ? { appointmentPerson } : {}),
-      },
-    })
+  // MD 文件同步（Vercel 只读文件系统会静默失败，不影响核心功能）
+  try { await syncMd(entityType, entityId) } catch { /* Vercel 文件系统不可写 */ }
+  try { await writeNoteMd(await toNoteData(note)) } catch { /* Vercel 文件系统不可写 */ }
 
-    // 同步汇总 MD 文件（public/notes/）
-    await syncMd(entityType, entityId)
-
-    // 生成单条笔记 MD 文件（data/notes/）— 附带实体名称
-    await writeNoteMd(await toNoteData(note)).catch(() => {})
-
-    revalidateForEntity(entityType, entityId)
-  } catch { /* Note 表尚不存在 */ }
+  revalidateForEntity(entityType, entityId)
 }
 
 // ── 删除笔记 ───────────────────────────────────
@@ -188,20 +180,16 @@ export async function deleteNote(formData: FormData) {
   const id = Number(formData.get('id'))
   if (!id) return
 
-  try {
-    const note = await prisma.note.findUnique({ where: { id } })
-    if (!note) return
+  const note = await prisma.note.findUnique({ where: { id } })
+  if (!note) return
 
-    await prisma.note.delete({ where: { id } })
+  await prisma.note.delete({ where: { id } })
 
-    // 删除汇总 MD 文件同步
-    await syncMd(note.entityType as EntityType, note.entityId)
+  // MD 文件同步（Vercel 文件系统不可写时静默失败）
+  try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
+  try { await deleteNoteMd(note.id) } catch {}
 
-    // 删除单条笔记 MD 文件
-    await deleteNoteMd(note.id).catch(() => {})
-
-    revalidateForEntity(note.entityType as EntityType, note.entityId)
-  } catch { /* Note 表尚不存在 */ }
+  revalidateForEntity(note.entityType as EntityType, note.entityId)
 }
 
 // ── 切换置顶 ───────────────────────────────────
@@ -209,22 +197,19 @@ export async function togglePinNote(formData: FormData) {
   const id = Number(formData.get('id'))
   if (!id) return
 
-  try {
-    const note = await prisma.note.findUnique({ where: { id } })
-    if (!note) return
+  const note = await prisma.note.findUnique({ where: { id } })
+  if (!note) return
 
-    const updated = await prisma.note.update({
-      where: { id },
-      data: { pinned: !note.pinned },
-    })
+  const updated = await prisma.note.update({
+    where: { id },
+    data: { pinned: !note.pinned },
+  })
 
-    await syncMd(note.entityType as EntityType, note.entityId)
+  // MD 文件同步（Vercel 文件系统不可写时静默失败）
+  try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
+  try { await writeNoteMd(await toNoteData(updated)) } catch {}
 
-    // 更新单条笔记 MD 文件 — 附带实体名称
-    await writeNoteMd(await toNoteData(updated)).catch(() => {})
-
-    revalidateForEntity(note.entityType as EntityType, note.entityId)
-  } catch { /* Note 表尚不存在 */ }
+  revalidateForEntity(note.entityType as EntityType, note.entityId)
 }
 
 // ── 切换完成（todo / 预约 通用）────────────────
@@ -232,22 +217,19 @@ export async function toggleDoneNote(formData: FormData) {
   const id = Number(formData.get('id'))
   if (!id) return
 
-  try {
-    const note = await prisma.note.findUnique({ where: { id } })
-    if (!note) return
+  const note = await prisma.note.findUnique({ where: { id } })
+  if (!note) return
 
-    const updated = await prisma.note.update({
-      where: { id },
-      data: { done: !note.done },
-    })
+  const updated = await prisma.note.update({
+    where: { id },
+    data: { done: !note.done },
+  })
 
-    await syncMd(note.entityType as EntityType, note.entityId)
+  // MD 文件同步（Vercel 文件系统不可写时静默失败）
+  try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
+  try { await writeNoteMd(await toNoteData(updated)) } catch {}
 
-    // 更新单条笔记 MD 文件 — 附带实体名称
-    await writeNoteMd(await toNoteData(updated)).catch(() => {})
-
-    revalidateForEntity(note.entityType as EntityType, note.entityId)
-  } catch { /* Note 表尚不存在 */ }
+  revalidateForEntity(note.entityType as EntityType, note.entityId)
 }
 
 // ── 查询全部笔记（全局 + 所有实体），附带实体名称 ──
