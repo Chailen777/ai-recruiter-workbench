@@ -23,34 +23,44 @@ body {
     padding 0.26s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Brand row: logo + text + toggle button inline */
+/* Brand area: logo full-width on top, text + toggle below */
 .app-brand {
-  align-items: center;
   border-bottom: 1px solid var(--sidebar-border);
   display: flex;
-  gap: 0;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 10px;
   padding-bottom: 18px;
 }
 
-.app-brand-inner {
-  align-items: flex-start;
+.app-brand-logo-link {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 0;
+  align-items: flex-start;
   text-decoration: none;
+  width: 100%;
 }
 
 .app-brand-logo {
-  background: #ffffff;
+  background: transparent;
   border-radius: 10px;
   display: block;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
-  height: 64px;
+  height: auto;
   object-fit: contain;
-  padding: 6px 10px;
-  width: auto;
+  padding: 0;
+  width: 100%;
+}
+
+.app-brand-bottom {
+  align-items: flex-end;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.app-brand-text-link {
+  text-decoration: none;
+  min-width: 0;
 }
 
 .app-brand-text strong {
@@ -63,7 +73,7 @@ body {
   color: var(--sidebar-text-muted);
 }
 
-/* Toggle button: now inline with brand */
+/* Toggle button: inline in bottom row, no overlap */
 .app-sidebar-toggle {
   background: none;
   border: 1px solid var(--sidebar-border);
@@ -77,6 +87,7 @@ body {
   width: 28px;
   padding: 0;
   flex-shrink: 0;
+  margin-bottom: 2px;
   transition:
     background 0.15s ease,
     color 0.15s ease;
@@ -110,13 +121,13 @@ body {
 /* Collapsed brand: only logo + toggle, no text */
 .app-shell[data-sidebar-collapsed] .app-brand {
   border-bottom: none;
-  flex-direction: column;
   gap: 10px;
   padding-bottom: 0;
 }
 
 .app-shell[data-sidebar-collapsed] .app-brand-text,
-.app-shell[data-sidebar-collapsed] .app-brand-inner {
+.app-shell[data-sidebar-collapsed] .app-brand-text-link,
+.app-shell[data-sidebar-collapsed] .app-brand-logo-link {
   display: contents;
 }
 
@@ -146,6 +157,14 @@ body {
 
 .app-shell[data-sidebar-collapsed] .app-brand-text {
   display: none;
+}
+
+.app-shell[data-sidebar-collapsed] .app-brand-bottom {
+  justify-content: center;
+}
+
+.app-shell[data-sidebar-collapsed] .app-sidebar-toggle {
+  margin-bottom: 0;
 }
 
 /* 折叠时：隐藏原 logo，显示 AI 圆形图标 */

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { getNotesCalendarData, getAppointmentList, type CalendarDay, type AppointmentListItem } from '@/app/actions'
+import { getNotesCalendarData, getAppointmentList, getTodoList, type CalendarDay, type AppointmentListItem, type TodoListItem } from '@/app/actions'
 
 type Props = {
   onDateSelect: (dateStr: string | null) => void
@@ -65,6 +65,9 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
   // 预约列表
   const [appointments, setAppointments] = useState<AppointmentListItem[]>([])
 
+  // 待办列表
+  const [todos, setTodos] = useState<TodoListItem[]>([])
+
   // 日历展开/收起（给预约日程腾空间）
   const [calExpanded, setCalExpanded] = useState(true)
 
@@ -77,7 +80,7 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
     setOpen(true)
     setLoading(true)
     try {
-      const [data, appts] = await Promise.all([
+      const [data, appts, todoList] = await Promise.all([
         getNotesCalendarData(
           entityType as Parameters<typeof getNotesCalendarData>[0],
           entityId
@@ -86,9 +89,14 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
           entityType as Parameters<typeof getAppointmentList>[0],
           entityId
         ),
+        getTodoList(
+          entityType as Parameters<typeof getTodoList>[0],
+          entityId
+        ),
       ])
       setCalendarData(data)
       setAppointments(appts)
+      setTodos(todoList)
     } catch { /* ignore */ }
     setLoading(false)
   }, [entityType, entityId])
@@ -160,14 +168,15 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
 
   // 总数统计
   const totalCounts = useMemo(() => {
-    let todos = 0, logs = 0, notes = 0, appts = 0
+    let todos = 0, logs = 0, notes = 0, appts = 0, diaries = 0
     for (const d of calendarData) {
       todos += d.todoCount
       logs += d.logCount
       notes += d.noteCount
       appts += d.apptCount ?? 0
+      diaries += d.diaryCount ?? 0
     }
-    return { todos, logs, notes, appts }
+    return { todos, logs, notes, appts, diaries }
   }, [calendarData])
 
   // ── 渲染 ──
@@ -222,6 +231,9 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
             <span className="notes-calendar-legend-item">
               <span className="notes-calendar-dot appt" />预约
             </span>
+            <span className="notes-calendar-legend-item">
+              <span className="notes-calendar-dot diary" />日记
+            </span>
             {selectedDate && (
               <button className="notes-calendar-clear-btn" onClick={() => { onDateSelect(null); handleClose() }}>
                 清除筛选
@@ -249,7 +261,7 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
                 key={dateStr}
                 className={`notes-calendar-cell${isToday ? ' is-today' : ''}${isSelected ? ' is-selected' : ''}${info ? ' has-notes' : ''}`}
                 onClick={() => handleDateClick(dateStr)}
-                title={info ? `待办${info.todoCount} 沟通${info.logCount} 随笔${info.noteCount} 预约${info.apptCount ?? 0}` : '无笔记'}
+                title={info ? `待办${info.todoCount} 沟通${info.logCount} 随笔${info.noteCount} 预约${info.apptCount ?? 0} 日记${info.diaryCount ?? 0}` : '无笔记'}
                 type="button"
               >
                 <span className="notes-calendar-day-num">{day}</span>
@@ -259,6 +271,7 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
                     {info.logCount > 0 && <span className="notes-calendar-badge log">{info.logCount}</span>}
                     {info.noteCount > 0 && <span className="notes-calendar-badge note">{info.noteCount}</span>}
                     {(info.apptCount ?? 0) > 0 && <span className="notes-calendar-badge appt">{info.apptCount ?? 0}</span>}
+                    {(info.diaryCount ?? 0) > 0 && <span className="notes-calendar-badge diary">{info.diaryCount ?? 0}</span>}
                   </span>
                 )}
               </button>
@@ -298,8 +311,51 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
                         )}
                         {a.done && <span className="notes-calendar-appt-done">✓</span>}
                       </div>
-                      {a.location && (
-                        <div className="notes-calendar-appt-location">📍 {a.location}</div>
+                    {a.location && (
+                      <div className="notes-calendar-appt-location">📍 {a.location}</div>
+                    )}
+                    {a.content && (
+                      <div className="notes-calendar-appt-content">{a.content}</div>
+                    )}
+                  </div>
+                  )
+                }
+                return items
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* ── 待办列表 ── */}
+        {todos.length > 0 && (
+          <div className="notes-calendar-appt-section">
+            <h3 className="notes-calendar-appt-title">📋 待办日程</h3>
+            <div className="notes-calendar-appt-list">
+              {(() => {
+                let lastDate = ''
+                const items: React.ReactNode[] = []
+                for (const t of todos) {
+                  if (t.date !== lastDate) {
+                    lastDate = t.date
+                    items.push(
+                      <div key={`todo-date-${t.date}`} className="notes-calendar-appt-date-header">
+                        {formatApptDate(t.date)}
+                        <span className="notes-calendar-appt-date-sub">{t.date}</span>
+                      </div>
+                    )
+                  }
+                  items.push(
+                    <div key={t.id} className={`notes-calendar-appt-item${t.done ? ' is-done' : ''}`}>
+                      <div className="notes-calendar-appt-item-row">
+                        <span className="notes-calendar-appt-time">{t.time}</span>
+                        {t.repeatType && <span className="notes-calendar-todo-repeat">🔄</span>}
+                        {t.entityName && (
+                          <span className="notes-calendar-appt-entity">{t.entityName}</span>
+                        )}
+                        {t.done && <span className="notes-calendar-appt-done">✓</span>}
+                      </div>
+                      {t.content && (
+                        <div className="notes-calendar-appt-content">{t.content}</div>
                       )}
                     </div>
                   )
@@ -317,6 +373,7 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
           <span className="notes-calendar-stat log">{totalCounts.logs} 沟通</span>
           <span className="notes-calendar-stat note">{totalCounts.notes} 随笔</span>
           <span className="notes-calendar-stat appt">{totalCounts.appts} 预约</span>
+          <span className="notes-calendar-stat diary">{totalCounts.diaries} 日记</span>
         </div>
 
         {loading && (

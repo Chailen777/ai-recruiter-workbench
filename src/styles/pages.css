@@ -1070,10 +1070,10 @@ body {
 }
 .login-logo-img {
   display: block;
-  height: 96px;
+  height: 120px;
   width: auto;
   object-fit: contain;
-  background: #ffffff;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   border-radius: 14px;
   padding: 10px 18px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
@@ -1234,8 +1234,9 @@ body {
     padding: 32px 24px 24px;
   }
   .login-logo-img {
-    height: 76px;
-    padding: 8px 14px;
+    height: 90px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   }
   .login-logo-text strong {
     font-size: 18px;
@@ -1319,13 +1320,13 @@ body {
 
 .lock-logo {
   display: block;
-  height: 80px;
+  height: 100px;
   margin: 0 auto 16px;
   object-fit: contain;
   width: auto;
-  background: #ffffff;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   border-radius: 14px;
-  padding: 10px 16px;
+  padding: 10px 18px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 .lock-icon { font-size: 44px; margin-bottom: 12px; }

@@ -243,34 +243,38 @@ export function Sidebar({ collapsed, onToggleCollapse, open, onClose }: SidebarP
         data-open={open ? 'true' : undefined}
       >
         <div className="app-brand">
-          <Link className="app-brand-inner" href="/home">
+          <Link className="app-brand-logo-link" href="/home">
             <img
               alt="Chailen 柴伦世家"
               className="app-brand-logo"
               src="/chailen-logo.png"
             />
             <div className="app-brand-logo-collapsed" aria-hidden="true">AI</div>
-            <span className="app-brand-text">
-              <strong>AI超级猎头工作台</strong>
-              <small>V0.2 OS</small>
-            </span>
           </Link>
-          <button
-            aria-label={collapsed ? '展开侧栏' : '收起侧栏'}
-            className="app-sidebar-toggle"
-            onClick={onToggleCollapse}
-            type="button"
-          >
-            <svg
-              aria-hidden="true"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 20 20"
+          <div className="app-brand-bottom">
+            <Link className="app-brand-text-link" href="/home">
+              <span className="app-brand-text">
+                <strong>AI超级猎头工作台</strong>
+                <small>V0.2 OS</small>
+              </span>
+            </Link>
+            <button
+              aria-label={collapsed ? '展开侧栏' : '收起侧栏'}
+              className="app-sidebar-toggle"
+              onClick={onToggleCollapse}
+              type="button"
             >
-              <path d={collapsed ? 'M7 5l6 6-6 6' : 'M13 5l-6 6 6 6'} strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+              <svg
+                aria-hidden="true"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 20 20"
+              >
+                <path d={collapsed ? 'M7 5l6 6-6 6' : 'M13 5l-6 6 6 6'} strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <nav className="app-nav" aria-label="主导航">

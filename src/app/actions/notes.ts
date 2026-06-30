@@ -1,18 +1,28 @@
 'use server'
 
+import { randomUUID } from 'crypto'
 import { revalidatePath } from 'next/cache'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { syncNotesToMd } from '@/lib/notes-md'
 import { writeNoteMd, deleteNoteMd, type NoteData } from '@/lib/notes-data-md'
+import {
+  createAppRepeatDates,
+  parseAppDateTime,
+  parseAppEndOfDay,
+  type AppRepeatType,
+} from '@/lib/app-date-time'
 
 type EntityType = 'global' | 'job' | 'candidate' | 'company' | 'match' | 'knowledge' | 'school' | 'chart' | 'info' | 'contact' | 'project'
 
 export type AddNoteResult =
-  | { success: true; noteId: number }
-  | { success: false; code: 'INVALID_CONTENT' | 'DATABASE_UNAVAILABLE' | 'SAVE_FAILED'; message: string }
+  | { success: true; noteId: number; createdCount?: number }
+  | { success: false; code: 'INVALID_CONTENT' | 'INVALID_REPEAT' | 'DATABASE_UNAVAILABLE' | 'SAVE_FAILED'; message: string }
 
 const TRANSIENT_DATABASE_CODES = new Set(['P1001', 'P2024'])
+const REPEAT_TYPES = new Set<AppRepeatType>(['weekly', 'monthly', 'yearly'])
+const MAX_REPEAT_FREQUENCY = 99
+const MAX_REPEAT_OCCURRENCES = 365
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -139,6 +149,14 @@ async function toNoteData(note: {
   appointmentLocation?: string | null
   appointmentType?: string | null
   appointmentPerson?: string | null
+  articleType?: string | null
+  articlePerson?: string | null
+  logPerson?: string | null
+  scheduledDate?: Date | null
+  repeatType?: string | null
+  repeatFrequency?: number | null
+  repeatEndDate?: Date | null
+  repeatGroupId?: string | null
 }): Promise<NoteData> {
   return {
     id: note.id,
@@ -154,6 +172,14 @@ async function toNoteData(note: {
     appointmentLocation: note.appointmentLocation ?? null,
     appointmentType: note.appointmentType ?? null,
     appointmentPerson: note.appointmentPerson ?? null,
+    articleType: note.articleType ?? null,
+    articlePerson: note.articlePerson ?? null,
+    logPerson: note.logPerson ?? null,
+    scheduledDate: note.scheduledDate ?? null,
+    repeatType: note.repeatType ?? null,
+    repeatFrequency: note.repeatFrequency ?? null,
+    repeatEndDate: note.repeatEndDate ?? null,
+    repeatGroupId: note.repeatGroupId ?? null,
   }
 }
 
@@ -177,6 +203,14 @@ export async function getNotes(entityType: EntityType, entityId: number) {
       appointmentLocation: n.appointmentLocation ?? null,
       appointmentType: n.appointmentType ?? null,
       appointmentPerson: n.appointmentPerson ?? null,
+      articleType: n.articleType ?? null,
+      articlePerson: n.articlePerson ?? null,
+      logPerson: n.logPerson ?? null,
+      scheduledDate: n.scheduledDate?.toISOString() ?? null,
+      repeatType: n.repeatType ?? null,
+      repeatFrequency: n.repeatFrequency ?? null,
+      repeatEndDate: n.repeatEndDate?.toISOString() ?? null,
+      repeatGroupId: n.repeatGroupId ?? null,
     }))
   } catch {
     return []
@@ -201,12 +235,117 @@ export async function addNote(formData: FormData): Promise<AddNoteResult> {
     const appointmentType = type === 'appointment' ? (formData.get('appointmentType') as string) || null : null
     const appointmentPerson = type === 'appointment' ? (formData.get('appointmentPerson') as string)?.trim() || null : null
 
+    // 日记字段
+    const articleType = type === 'diary' ? (formData.get('articleType') as string) || null : null
+    const articlePerson = type === 'diary' ? (formData.get('articlePerson') as string)?.trim() || null : null
+
+    // 沟通字段
+    const logPerson = type === 'log' ? (formData.get('logPerson') as string)?.trim() || null : null
+
+    // 待办重复字段
+    const isTodo = type === 'todo'
+    const scheduledDateStr = isTodo ? (formData.get('scheduledDate') as string) || null : null
+    const repeatTypeValue = isTodo ? (formData.get('repeatType') as string) || null : null
+    const repeatFrequency = isTodo ? Number(formData.get('repeatFrequency') ?? 1) : null
+    const repeatEndDateStr = isTodo ? (formData.get('repeatEndDate') as string) || null : null
+
+    // ── 重复待办：生成多条记录 ──
+    if (isTodo && repeatTypeValue) {
+      if (!REPEAT_TYPES.has(repeatTypeValue as AppRepeatType)) {
+        return { success: false, code: 'INVALID_REPEAT', message: '不支持的重复类型' }
+      }
+      if (!scheduledDateStr) {
+        return { success: false, code: 'INVALID_REPEAT', message: '请先选择待办时间' }
+      }
+      if (!repeatEndDateStr) {
+        return { success: false, code: 'INVALID_REPEAT', message: '请选择重复截止日期' }
+      }
+      if (
+        repeatFrequency === null ||
+        !Number.isInteger(repeatFrequency) ||
+        repeatFrequency < 1 ||
+        repeatFrequency > MAX_REPEAT_FREQUENCY
+      ) {
+        return {
+          success: false,
+          code: 'INVALID_REPEAT',
+          message: `重复频率必须是 1–${MAX_REPEAT_FREQUENCY} 的整数`,
+        }
+      }
+
+      const repeatType = repeatTypeValue as AppRepeatType
+      const startDate = parseAppDateTime(scheduledDateStr)
+      const endDate = parseAppEndOfDay(repeatEndDateStr)
+      if (endDate < startDate) {
+        return {
+          success: false,
+          code: 'INVALID_REPEAT',
+          message: '重复截止日期不能早于首次待办时间',
+        }
+      }
+
+      const groupId = randomUUID()
+      const frequency = repeatFrequency
+
+      // 始终从首日按第 N 个间隔计算，避免月末和闰年日期逐次漂移。
+      const schedule = createAppRepeatDates(
+        startDate,
+        endDate,
+        repeatType,
+        frequency,
+        MAX_REPEAT_OCCURRENCES,
+      )
+      if (schedule.exceedsLimit) {
+        return {
+          success: false,
+          code: 'INVALID_REPEAT',
+          message: `单次最多创建 ${MAX_REPEAT_OCCURRENCES} 个重复待办，请缩短日期范围或调大频率`,
+        }
+      }
+      const dates = schedule.dates
+
+      // 批量创建
+      const records = dates.map((d) => ({
+        content,
+        type,
+        entityType,
+        entityId,
+        scheduledDate: d,
+        repeatType,
+        repeatFrequency: frequency,
+        repeatEndDate: endDate,
+        repeatGroupId: groupId,
+      }))
+
+      const { createdCount, firstNote } = await prisma.$transaction(async (tx) => {
+        const created = await tx.note.createMany({ data: records })
+        const first = await tx.note.findFirst({
+          where: { repeatGroupId: groupId },
+          orderBy: { scheduledDate: 'asc' },
+        })
+        return { createdCount: created.count, firstNote: first }
+      })
+
+      try { await syncMd(entityType, entityId) } catch {}
+      if (firstNote) {
+        try { await writeNoteMd(await toNoteData(firstNote)) } catch {}
+      }
+
+      revalidateForEntity(entityType, entityId)
+      return { success: true, noteId: firstNote?.id ?? 0, createdCount }
+    }
+
+    // ── 普通待办（无重复）或其他类型 ──
     const note = await createNoteWithRetry({
       content, type, entityType, entityId,
       ...(appointmentTime ? { appointmentTime: new Date(appointmentTime) } : {}),
       ...(appointmentLocation ? { appointmentLocation } : {}),
       ...(appointmentType ? { appointmentType } : {}),
       ...(appointmentPerson ? { appointmentPerson } : {}),
+      ...(articleType ? { articleType } : {}),
+      ...(articlePerson ? { articlePerson } : {}),
+      ...(logPerson ? { logPerson } : {}),
+      ...(isTodo && scheduledDateStr ? { scheduledDate: parseAppDateTime(scheduledDateStr) } : {}),
     })
 
     // MD 文件同步（Vercel 只读文件系统会静默失败，不影响核心功能）
@@ -298,7 +437,148 @@ export async function toggleDoneNote(formData: FormData) {
   revalidateForEntity(note.entityType as EntityType, note.entityId)
 }
 
-// ── 查询全部笔记（全局 + 所有实体），附带实体名称 ──
+// ── 编辑笔记内容 ───────────────────────────────
+export async function editNote(formData: FormData) {
+  const id = Number(formData.get('id'))
+  if (!id) return
+
+  const content = (formData.get('content') as string)?.trim()
+  if (!content) return
+
+  const note = await prisma.note.findUnique({ where: { id } })
+  if (!note) return
+
+  // 预约字段（仅 appointment 类型才更新）
+  const isAppointment = note.type === 'appointment'
+  const appointmentTime = isAppointment ? (formData.get('appointmentTime') as string) || null : undefined
+  const appointmentLocation = isAppointment ? (formData.get('appointmentLocation') as string)?.trim() || null : undefined
+  const appointmentType = isAppointment ? (formData.get('appointmentType') as string) || null : undefined
+  const appointmentPerson = isAppointment ? (formData.get('appointmentPerson') as string)?.trim() || null : undefined
+
+  // 日记字段（仅 diary 类型才更新）
+  const isDiary = note.type === 'diary'
+  const articleType = isDiary ? (formData.get('articleType') as string) || null : undefined
+  const articlePerson = isDiary ? (formData.get('articlePerson') as string)?.trim() || null : undefined
+
+  // 沟通字段（仅 log 类型才更新）
+  const isLog = note.type === 'log'
+  const logPerson = isLog ? (formData.get('logPerson') as string)?.trim() || null : undefined
+
+  const data: Record<string, unknown> = { content }
+  if (appointmentTime !== undefined) data.appointmentTime = appointmentTime ? new Date(appointmentTime) : null
+  if (appointmentLocation !== undefined) data.appointmentLocation = appointmentLocation
+  if (appointmentType !== undefined) data.appointmentType = appointmentType
+  if (appointmentPerson !== undefined) data.appointmentPerson = appointmentPerson
+  if (articleType !== undefined) data.articleType = articleType
+  if (articlePerson !== undefined) data.articlePerson = articlePerson
+  if (logPerson !== undefined) data.logPerson = logPerson
+
+  const updated = await prisma.note.update({ where: { id }, data })
+
+  // MD 文件同步（Vercel 文件系统不可写时静默失败）
+  try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
+  try { await writeNoteMd(await toNoteData(updated)) } catch {}
+
+  revalidateForEntity(note.entityType as EntityType, note.entityId)
+}
+
+// ── 带范围的编辑（重复待办专用）─────────────────
+// scope: 'single' | 'future' | 'all'
+export async function editNoteWithScope(formData: FormData) {
+  const id = Number(formData.get('id'))
+  const scope = (formData.get('scope') as string) || 'single'
+  if (!id) return
+
+  const note = await prisma.note.findUnique({ where: { id } })
+  if (!note) return
+
+  const content = (formData.get('content') as string)?.trim()
+  if (!content) return
+
+  // 待办重复字段
+  const isTodo = note.type === 'todo'
+  const scheduledDateStr = isTodo ? (formData.get('scheduledDate') as string) || null : null
+
+  const updateData: Record<string, unknown> = { content }
+  if (isTodo && scheduledDateStr) {
+    updateData.scheduledDate = parseAppDateTime(scheduledDateStr)
+  }
+
+  if (scope === 'single' || !note.repeatGroupId) {
+    // 仅修改当条
+    const updated = await prisma.note.update({ where: { id }, data: updateData })
+    try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
+    try { await writeNoteMd(await toNoteData(updated)) } catch {}
+  } else if (scope === 'future' && note.scheduledDate) {
+    // 修改当前及以后重复
+    await prisma.note.updateMany({
+      where: {
+        repeatGroupId: note.repeatGroupId,
+        scheduledDate: { gte: note.scheduledDate },
+      },
+      data: updateData,
+    })
+    try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
+  } else if (scope === 'all') {
+    // 修改全部重复
+    await prisma.note.updateMany({
+      where: { repeatGroupId: note.repeatGroupId },
+      data: updateData,
+    })
+    try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
+  }
+
+  revalidateForEntity(note.entityType as EntityType, note.entityId)
+}
+
+// ── 带范围的删除（重复待办专用）─────────────────
+// scope: 'single' | 'future' | 'all'
+export async function deleteNoteWithScope(formData: FormData) {
+  const id = Number(formData.get('id'))
+  const scope = (formData.get('scope') as string) || 'single'
+  if (!id) return
+
+  const note = await prisma.note.findUnique({ where: { id } })
+  if (!note) return
+
+  if (scope === 'single' || !note.repeatGroupId) {
+    // 仅删除当条
+    await prisma.note.delete({ where: { id } })
+    try { await deleteNoteMd(note.id) } catch {}
+  } else if (scope === 'future' && note.scheduledDate) {
+    // 删除当前及以后重复
+    const toDelete = await prisma.note.findMany({
+      where: {
+        repeatGroupId: note.repeatGroupId,
+        scheduledDate: { gte: note.scheduledDate },
+      },
+      select: { id: true },
+    })
+    const ids = toDelete.map((n) => n.id)
+    if (ids.length > 0) {
+      await prisma.note.deleteMany({ where: { id: { in: ids } } })
+      for (const did of ids) {
+        try { await deleteNoteMd(did) } catch {}
+      }
+    }
+  } else if (scope === 'all') {
+    // 删除全部重复
+    const toDelete = await prisma.note.findMany({
+      where: { repeatGroupId: note.repeatGroupId },
+      select: { id: true },
+    })
+    const ids = toDelete.map((n) => n.id)
+    if (ids.length > 0) {
+      await prisma.note.deleteMany({ where: { id: { in: ids } } })
+      for (const did of ids) {
+        try { await deleteNoteMd(did) } catch {}
+      }
+    }
+  }
+
+  try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
+  revalidateForEntity(note.entityType as EntityType, note.entityId)
+}
 export async function getAllNotes() {
   try {
     const notes = await prisma.note.findMany({ orderBy: { createdAt: 'desc' } })
@@ -372,6 +652,14 @@ export async function getAllNotes() {
       appointmentLocation: n.appointmentLocation ?? null,
       appointmentType: n.appointmentType ?? null,
       appointmentPerson: n.appointmentPerson ?? null,
+      articleType: n.articleType ?? null,
+      articlePerson: n.articlePerson ?? null,
+      logPerson: n.logPerson ?? null,
+      scheduledDate: n.scheduledDate?.toISOString() ?? null,
+      repeatType: n.repeatType ?? null,
+      repeatFrequency: n.repeatFrequency ?? null,
+      repeatEndDate: n.repeatEndDate?.toISOString() ?? null,
+      repeatGroupId: n.repeatGroupId ?? null,
     }))
   } catch {
     return []
@@ -459,6 +747,7 @@ export type CalendarDay = {
   logCount: number    // 当天创建的沟通记录数
   noteCount: number   // 当天创建的随笔数
   apptCount: number   // 当天创建的预约数
+  diaryCount: number  // 当天创建的日记数
   futureTodos: number // 当天到期/关联的未完成待办（未来）
 }
 
@@ -472,32 +761,35 @@ export async function getNotesCalendarData(entityType?: EntityType, entityId?: n
 
     const notes = await prisma.note.findMany({ where, orderBy: { createdAt: 'desc' } })
 
-    // 按日期分组统计：预约用 appointmentTime，其余用 createdAt
+    // 按日期分组统计：预约用 appointmentTime，待办用 scheduledDate，其余用 createdAt
     const dayMap = new Map<string, CalendarDay>()
 
     for (const n of notes) {
-      const targetDate = n.type === 'appointment' && n.appointmentTime
-        ? n.appointmentTime
-        : n.createdAt
+      const targetDate =
+        n.type === 'appointment' && n.appointmentTime
+          ? n.appointmentTime
+          : n.type === 'todo' && n.scheduledDate
+          ? n.scheduledDate
+          : n.createdAt
       const dateStr = targetDate.toISOString().slice(0, 10) // 'YYYY-MM-DD'
       let day = dayMap.get(dateStr)
       if (!day) {
-        day = { date: dateStr, todoCount: 0, logCount: 0, noteCount: 0, apptCount: 0, futureTodos: 0 }
+        day = { date: dateStr, todoCount: 0, logCount: 0, noteCount: 0, apptCount: 0, diaryCount: 0, futureTodos: 0 }
         dayMap.set(dateStr, day)
       }
       if (n.type === 'todo') {
-        if (n.done) {
-          day.todoCount++
-        } else {
-          day.todoCount++
+        day.todoCount++
+        if (!n.done) {
           // 未完成的 todo 也计入 futureTodos（如果日期在未来）
           const now = new Date()
-          if (n.createdAt > now) day.futureTodos++
+          if (targetDate > now) day.futureTodos++
         }
       } else if (n.type === 'log') {
         day.logCount++
       } else if (n.type === 'appointment') {
         day.apptCount++
+      } else if (n.type === 'diary') {
+        day.diaryCount++
       } else {
         day.noteCount++
       }
@@ -581,6 +873,78 @@ export async function getAppointmentList(entityType?: EntityType, entityId?: num
           entityType: a.entityType,
         }
       })
+  } catch {
+    return []
+  }
+}
+
+// ── 待办列表：按计划时间升序返回所有待办详情 ──────
+export type TodoListItem = {
+  id: number
+  date: string           // YYYY-MM-DD
+  time: string           // HH:mm
+  fullTime: string       // ISO string
+  content: string
+  done: boolean
+  repeatType: string | null
+  repeatGroupId: string | null
+  entityName: string | null
+  entityType: string
+}
+
+export async function getTodoList(entityType?: EntityType, entityId?: number): Promise<TodoListItem[]> {
+  try {
+    const where: Record<string, unknown> = { type: 'todo', scheduledDate: { not: null } }
+    if (entityType && entityType !== 'global') {
+      where.entityType = entityType
+      where.entityId = entityId ?? 0
+    }
+
+    const todos = await prisma.note.findMany({
+      where,
+      orderBy: { scheduledDate: 'asc' },
+      select: {
+        id: true,
+        content: true,
+        done: true,
+        entityType: true,
+        entityId: true,
+        scheduledDate: true,
+        repeatType: true,
+        repeatGroupId: true,
+      },
+    })
+
+    // 批量解析实体名称（去重）
+    const entityKeys = new Set<string>()
+    for (const t of todos) {
+      if (t.entityType !== 'global' && t.entityId !== 0) {
+        entityKeys.add(`${t.entityType}:${t.entityId}`)
+      }
+    }
+    const entityNameMap = new Map<string, string | null>()
+    for (const key of entityKeys) {
+      const [et, eidStr] = key.split(':')
+      const name = await getEntityName(et, Number(eidStr))
+      entityNameMap.set(key, name)
+    }
+
+    return todos.map((t) => {
+      const sd = t.scheduledDate!
+      const entityKey = `${t.entityType}:${t.entityId ?? 0}`
+      return {
+        id: t.id,
+        date: sd.toISOString().slice(0, 10),
+        time: `${String(sd.getHours()).padStart(2, '0')}:${String(sd.getMinutes()).padStart(2, '0')}`,
+        fullTime: sd.toISOString(),
+        content: t.content,
+        done: t.done,
+        repeatType: t.repeatType ?? null,
+        repeatGroupId: t.repeatGroupId ?? null,
+        entityName: entityNameMap.get(entityKey) ?? null,
+        entityType: t.entityType,
+      }
+    })
   } catch {
     return []
   }
