@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { syncNotesToMd } from '@/lib/notes-md'
 import { writeNoteMd, deleteNoteMd, type NoteData } from '@/lib/notes-data-md'
+import { parseAppDateTime, parseAppEndOfDay } from '@/lib/app-date-time'
 
 type EntityType = 'global' | 'job' | 'candidate' | 'company' | 'match' | 'knowledge' | 'school' | 'chart' | 'info' | 'contact' | 'project'
 
@@ -242,8 +243,8 @@ export async function addNote(formData: FormData): Promise<AddNoteResult> {
 
     // ── 重复待办：生成多条记录 ──
     if (isTodo && scheduledDateStr && repeatType) {
-      const startDate = new Date(scheduledDateStr)
-      const endDate = repeatEndDateStr ? new Date(repeatEndDateStr + 'T23:59:59') : null
+      const startDate = parseAppDateTime(scheduledDateStr)
+      const endDate = repeatEndDateStr ? parseAppEndOfDay(repeatEndDateStr) : null
       const groupId = randomUUID()
       const frequency = repeatFrequency || 1
 
@@ -304,7 +305,7 @@ export async function addNote(formData: FormData): Promise<AddNoteResult> {
       ...(articleType ? { articleType } : {}),
       ...(articlePerson ? { articlePerson } : {}),
       ...(logPerson ? { logPerson } : {}),
-      ...(isTodo && scheduledDateStr ? { scheduledDate: new Date(scheduledDateStr) } : {}),
+      ...(isTodo && scheduledDateStr ? { scheduledDate: parseAppDateTime(scheduledDateStr) } : {}),
     })
 
     // MD 文件同步（Vercel 只读文件系统会静默失败，不影响核心功能）
@@ -460,7 +461,7 @@ export async function editNoteWithScope(formData: FormData) {
 
   const updateData: Record<string, unknown> = { content }
   if (isTodo && scheduledDateStr) {
-    updateData.scheduledDate = new Date(scheduledDateStr)
+    updateData.scheduledDate = parseAppDateTime(scheduledDateStr)
   }
 
   if (scope === 'single' || !note.repeatGroupId) {

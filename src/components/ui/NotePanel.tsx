@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { addNote, deleteNote, editNote, togglePinNote, toggleDoneNote, editNoteWithScope, deleteNoteWithScope } from '@/app/actions'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useToast } from '@/components/providers/ToastProvider'
+import { formatAppDateTime, toAppDateTimeLocal } from '@/lib/app-date-time'
 
 export type NoteItem = {
   id: number
@@ -108,20 +109,6 @@ const REPEAT_LABELS: Record<string, string> = {
   weekly: '每周',
   monthly: '每月',
   yearly: '每年',
-}
-
-const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']
-
-/** 格式化待办计划时间：YYYY年MM月DD日 HH:mm 星期X */
-function formatScheduledDate(iso: string) {
-  const d = new Date(iso)
-  const yyyy = d.getFullYear()
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  const week = WEEKDAY_LABELS[d.getDay()]
-  const hh = String(d.getHours()).padStart(2, '0')
-  const min = String(d.getMinutes()).padStart(2, '0')
-  return `${yyyy}年${mm}月${dd}日 ${hh}:${min} 星期${week}`
 }
 
 export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false }: NotePanelProps) {
@@ -1222,7 +1209,7 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
                             </span>
                           )}
                           <span className="note-timeline-appt-item">
-                            🕐 {formatScheduledDate(note.scheduledDate)}
+                            🕐 {formatAppDateTime(note.scheduledDate)}
                           </span>
                         </div>
                       )}
@@ -1336,7 +1323,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
   const [editLogPerson, setEditLogPerson] = useState(note.logPerson ?? '')
   // 待办编辑状态
   const [editTodoDate, setEditTodoDate] = useState(
-    note.scheduledDate ? note.scheduledDate.slice(0, 16) : ''
+    note.scheduledDate ? toAppDateTimeLocal(note.scheduledDate) : ''
   )
   // 重复待办编辑/删除范围选择
   const [editScopeOpen, setEditScopeOpen] = useState(false)
@@ -1546,7 +1533,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
     setEditArticleType(note.articleType ?? 'diary')
     setEditArticlePerson(note.articlePerson ?? '')
     setEditLogPerson(note.logPerson ?? '')
-    setEditTodoDate(note.scheduledDate ? note.scheduledDate.slice(0, 16) : '')
+    setEditTodoDate(note.scheduledDate ? toAppDateTimeLocal(note.scheduledDate) : '')
     setIsEditing(false)
     setIsEditFullscreen(false)
   }
@@ -1993,7 +1980,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                   <circle cx="8" cy="8" r="7"/>
                   <polyline points="8,4 8,8 11,10"/>
                 </svg>
-                <span>{formatScheduledDate(note.scheduledDate)}</span>
+                <span>{formatAppDateTime(note.scheduledDate)}</span>
               </span>
             </div>
           )}
