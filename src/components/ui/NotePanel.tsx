@@ -1259,7 +1259,6 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
                           <span className="note-entity-name">{note.entityName}</span>
                         </div>
                       )}
-                      <span className="note-global-author">作者：陈成</span>
                     </div>
                   </div>
                 ))}
@@ -2016,8 +2015,6 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
             >
               删除
             </button>
-
-            <span className="note-global-author">作者：陈成</span>
           </div>
         </>
       )}
