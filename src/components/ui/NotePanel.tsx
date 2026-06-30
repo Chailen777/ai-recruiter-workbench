@@ -134,12 +134,6 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   const [diaryCharCount, setDiaryCharCount] = useState(0)
   const MAX_DIARY_CHARS = 10000
 
-  /** 获取当前活动编辑器（全屏或内联）的纯文本字数 */
-  const getDiaryText = useCallback(() => {
-    const ref = isFullscreen ? fullscreenEditorRef : diaryEditorRef
-    return (ref.current?.innerText ?? '').trim()
-  }, [isFullscreen])
-
   /** 更新字数统计 */
   const updateDiaryCharCount = useCallback(() => {
     const ref = isFullscreen ? fullscreenEditorRef : diaryEditorRef
