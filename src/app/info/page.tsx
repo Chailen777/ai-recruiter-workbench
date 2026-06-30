@@ -123,7 +123,7 @@ export default async function InfoPage({
         >
           {rows.length > 0 ? (
             <div className="resource-card-list">
-              {pageRows.map((item) => (
+              {rows.map((item) => (
               <ResourceCard
                 key={item.id}
                 title={item.title}

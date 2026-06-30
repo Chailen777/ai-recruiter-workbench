@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ReactNode } from 'react'
 
 import { StatusBadge } from './StatusBadge'
+import { statusVariant } from '@/lib/status-utils'
 
 export type TableListColumn<Row> = {
   align?: 'left' | 'center' | 'right'

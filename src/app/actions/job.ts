@@ -7,6 +7,7 @@ import { required, validateForm } from '@/lib/form'
 import { prisma } from '@/lib/prisma'
 import { processAttachments, deleteAllAttachments, saveAvatar, removeAvatar } from '@/lib/uploads'
 import { syncJobMd, deleteJobMd } from '@/lib/markdown'
+import { requireServerAuth } from '@/lib/server-auth'
 import { applyJobStatusEffects } from '@/lib/workflow'
 import { actionError, actionSuccess, collectErrors, value, intValue, requiredValue } from './shared'
 

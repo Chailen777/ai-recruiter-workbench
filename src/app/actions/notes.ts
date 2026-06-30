@@ -12,6 +12,7 @@ import {
   parseAppEndOfDay,
   type AppRepeatType,
 } from '@/lib/app-date-time'
+import { requireServerAuth } from '@/lib/server-auth'
 
 type EntityType = 'global' | 'job' | 'candidate' | 'company' | 'match' | 'knowledge' | 'school' | 'chart' | 'info' | 'contact' | 'project'
 

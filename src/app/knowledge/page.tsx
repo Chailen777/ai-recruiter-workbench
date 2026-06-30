@@ -123,9 +123,9 @@ export default async function KnowledgePage({
           actions={<KnowledgeCreateSheet />}
           title="知识列表"
         >
-          {pageRows.length > 0 ? (
+          {rows.length > 0 ? (
             <div className="resource-card-list">
-              {pageRows.map((item) => (
+              {rows.map((item) => (
               <ResourceCard
                 key={item.id}
                 title={item.title}

@@ -153,9 +153,9 @@ export default async function SchoolsPage({
           )}
           <Pagination
             baseHref="/schools"
-            page={clampedPage}
+            page={page}
             pageSize={PAGE_SIZE}
-            total={rows.length}
+            total={total}
           />
         </DetailPanel>
 

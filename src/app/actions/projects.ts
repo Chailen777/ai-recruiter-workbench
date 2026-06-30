@@ -5,6 +5,7 @@ import type { ActionResult } from '@/lib/form'
 import { required, validateForm } from '@/lib/form'
 import { prisma } from '@/lib/prisma'
 import { processAttachments, deleteAllAttachments } from '@/lib/uploads'
+import { requireServerAuth } from '@/lib/server-auth'
 import { actionError, actionSuccess, collectErrors, value, intValue, requiredValue } from './shared'
 
 /* ─── Project (项目库) ─── */
