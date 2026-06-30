@@ -3444,6 +3444,17 @@
   color: var(--ds-color-text-muted);
 }
 
+.note-timeline-repeat {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.note-timeline-repeat-tag {
+  color: #2563eb !important;
+  background: rgba(37, 99, 235, 0.1) !important;
+  font-weight: 500;
+}
+
 .note-timeline-content {
   font-size: 13px;
   line-height: 1.6;
@@ -5116,6 +5127,11 @@
 [data-theme='dark'] .note-timeline-appt-item {
   background: rgba(168, 85, 247, 0.15);
   color: #c4b5fd;
+}
+
+[data-theme='dark'] .note-timeline-repeat-tag {
+  color: #60a5fa !important;
+  background: rgba(37, 99, 235, 0.2) !important;
 }
 
 [data-theme='dark'] .note-timeline-dot {

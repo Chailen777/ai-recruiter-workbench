@@ -1207,11 +1207,25 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
                         <span className={`note-type-badge ${TYPE_COLORS[note.type]}`}>
                           {TYPE_LABELS[note.type] ?? note.type}
                         </span>
+                        {note.repeatGroupId && <span className="note-timeline-repeat" title="重复待办">🔄</span>}
                         {note.done && (note.type === 'todo' || note.type === 'appointment') && (
                           <span className="note-timeline-done-mark">✓ 已完成</span>
                         )}
                       </div>
                       <p className="note-timeline-content">{note.type === 'diary' ? note.content.replace(/<[^>]+>/g, '') : note.content}</p>
+                      {/* 待办信息 */}
+                      {note.type === 'todo' && note.scheduledDate && (
+                        <div className="note-timeline-appt">
+                          {note.repeatType && (
+                            <span className="note-timeline-appt-item note-timeline-repeat-tag">
+                              🔄 {REPEAT_LABELS[note.repeatType] ?? note.repeatType}
+                            </span>
+                          )}
+                          <span className="note-timeline-appt-item">
+                            🕐 {formatScheduledDate(note.scheduledDate)}
+                          </span>
+                        </div>
+                      )}
                       {/* 预约信息 */}
                       {note.type === 'appointment' && (note.appointmentTime || note.appointmentPerson || note.appointmentLocation) && (
                         <div className="note-timeline-appt">
