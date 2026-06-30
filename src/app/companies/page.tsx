@@ -1,4 +1,4 @@
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 import { deleteCompany } from '@/app/actions'
 import { CompanyCreateSheet, CompanyEditSheet } from '@/components/forms'

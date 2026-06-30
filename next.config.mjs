@@ -40,10 +40,11 @@ const withPWA = nextPWA({
   buildExcludes: [/middleware-manifest\.json$/],
   runtimeCaching: [
     {
-      urlPattern: /^https?.*/,
+      urlPattern: /^https?:\/\/.*/i,
       handler: 'NetworkFirst',
       options: {
         cacheName: 'offlineCache',
+        matchOptions: { ignoreSearch: true },
         expiration: {
           maxEntries: 200,
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days

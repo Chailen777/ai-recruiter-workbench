@@ -1,4 +1,4 @@
-export const revalidate = 30
+export const dynamic = 'force-dynamic'
 
 import { abandonMatch, deleteJob, eliminateMatch, ignoreMatch, recommendMatch, resetMatch } from '@/app/actions'
 import Link from 'next/link'

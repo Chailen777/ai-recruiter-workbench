@@ -1,6 +1,5 @@
-export const revalidate = 30
-
 import { abandonMatch, eliminateMatch, ignoreMatch, recommendMatch, resetMatch } from '@/app/actions'
+import { MatchActionForm } from './MatchActionForm'
 import Link from 'next/link'
 import {
   ActionButton,
@@ -375,83 +374,71 @@ export default async function MatchPage({
               <div className={`match-detail-actions${!hasAnyStatus(selectedRow.status) ? ' is-default' : ''}`}>
                 {/* 推荐 */}
                 {selectedRow.status === '已推荐' ? (
-                  <form action={resetMatch}>
-                    {resetFields(selectedRow)}
-                    <button className="match-detail-btn match-detail-btn--recommend is-active" type="submit">
-                      ✓ 已推荐
-                    </button>
-                  </form>
+                  <MatchActionForm
+                    action={resetMatch}
+                    className="match-detail-btn match-detail-btn--recommend is-active"
+                    fields={resetFields(selectedRow)}
+                    label="✓ 已推荐"
+                  />
                 ) : (
-                  <form action={recommendMatch}>
-                    {actionFields(selectedRow)}
-                    <button
-                      className="match-detail-btn match-detail-btn--recommend"
-                      type="submit"
-                      disabled={hasAnyStatus(selectedRow.status)}
-                    >
-                      👍 推荐
-                    </button>
-                  </form>
+                  <MatchActionForm
+                    action={recommendMatch}
+                    className="match-detail-btn match-detail-btn--recommend"
+                    disabled={hasAnyStatus(selectedRow.status)}
+                    fields={actionFields(selectedRow)}
+                    label="👍 推荐"
+                  />
                 )}
                 {/* 拒绝 */}
                 {selectedRow.status === '已拒绝' ? (
-                  <form action={resetMatch}>
-                    {resetFields(selectedRow)}
-                    <button className="match-detail-btn match-detail-btn--reject is-active" type="submit">
-                      ✗ 已拒绝
-                    </button>
-                  </form>
+                  <MatchActionForm
+                    action={resetMatch}
+                    className="match-detail-btn match-detail-btn--reject is-active"
+                    fields={resetFields(selectedRow)}
+                    label="✗ 已拒绝"
+                  />
                 ) : (
-                  <form action={ignoreMatch}>
-                    {actionFields(selectedRow)}
-                    <button
-                      className="match-detail-btn match-detail-btn--reject"
-                      type="submit"
-                      disabled={hasAnyStatus(selectedRow.status)}
-                    >
-                      👎 拒绝
-                    </button>
-                  </form>
+                  <MatchActionForm
+                    action={ignoreMatch}
+                    className="match-detail-btn match-detail-btn--reject"
+                    disabled={hasAnyStatus(selectedRow.status)}
+                    fields={actionFields(selectedRow)}
+                    label="👎 拒绝"
+                  />
                 )}
                 {/* 淘汰 */}
                 {selectedRow.status === '已淘汰' ? (
-                  <form action={resetMatch}>
-                    {resetFields(selectedRow)}
-                    <button className="match-detail-btn match-detail-btn--eliminate is-active" type="submit">
-                      ✗ 已淘汰
-                    </button>
-                  </form>
+                  <MatchActionForm
+                    action={resetMatch}
+                    className="match-detail-btn match-detail-btn--eliminate is-active"
+                    fields={resetFields(selectedRow)}
+                    label="✗ 已淘汰"
+                  />
                 ) : (
-                  <form action={eliminateMatch}>
-                    {actionFields(selectedRow)}
-                    <button
-                      className="match-detail-btn match-detail-btn--eliminate"
-                      type="submit"
-                      disabled={hasAnyStatus(selectedRow.status)}
-                    >
-                      🚫 淘汰
-                    </button>
-                  </form>
+                  <MatchActionForm
+                    action={eliminateMatch}
+                    className="match-detail-btn match-detail-btn--eliminate"
+                    disabled={hasAnyStatus(selectedRow.status)}
+                    fields={actionFields(selectedRow)}
+                    label="🚫 淘汰"
+                  />
                 )}
                 {/* 放弃 */}
                 {selectedRow.status === '已放弃' ? (
-                  <form action={resetMatch}>
-                    {resetFields(selectedRow)}
-                    <button className="match-detail-btn match-detail-btn--abandon is-active" type="submit">
-                      ✗ 已放弃
-                    </button>
-                  </form>
+                  <MatchActionForm
+                    action={resetMatch}
+                    className="match-detail-btn match-detail-btn--abandon is-active"
+                    fields={resetFields(selectedRow)}
+                    label="✗ 已放弃"
+                  />
                 ) : (
-                  <form action={abandonMatch}>
-                    {actionFields(selectedRow)}
-                    <button
-                      className="match-detail-btn match-detail-btn--abandon"
-                      type="submit"
-                      disabled={hasAnyStatus(selectedRow.status)}
-                    >
-                      🏳 放弃
-                    </button>
-                  </form>
+                  <MatchActionForm
+                    action={abandonMatch}
+                    className="match-detail-btn match-detail-btn--abandon"
+                    disabled={hasAnyStatus(selectedRow.status)}
+                    fields={actionFields(selectedRow)}
+                    label="🏳 放弃"
+                  />
                 )}
               </div>
               <div className={`match-score-card`} data-level={selectedRow.level}>
