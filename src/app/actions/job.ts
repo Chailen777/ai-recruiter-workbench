@@ -156,7 +156,6 @@ export async function updateJob(formData: FormData): Promise<ActionResult> {
     await applyJobStatusEffects(prisma, id, status)
     try { revalidatePath('/jobs') } catch {}
     try { revalidatePath('/match') } catch {}
-    try { revalidatePath('/home') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)

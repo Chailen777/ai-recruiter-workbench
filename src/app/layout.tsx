@@ -52,59 +52,6 @@ const themeScript = `
 })();
 `
 
-const swCleanupScript = `
-(function() {
-  if (typeof window === 'undefined') return;
-  if (!('serviceWorker' in navigator)) return;
-  
-  function unregisterAll() {
-    return navigator.serviceWorker.getRegistrations().then(function(regs) {
-      return Promise.all(regs.map(function(reg) {
-        return reg.unregister().then(function(ok) {
-          console.log('[SW Cleanup] unregister:', ok, reg.scope);
-        }).catch(function(err) {
-          console.error('[SW Cleanup] unregister failed:', err);
-        });
-      }));
-    });
-  }
-  
-  function clearAllCaches() {
-    if (!('caches' in window)) return Promise.resolve();
-    return caches.keys().then(function(names) {
-      return Promise.all(names.map(function(name) {
-        return caches.delete(name).then(function(ok) {
-          console.log('[SW Cleanup] cache deleted:', ok, name);
-        }).catch(function(err) {
-          console.error('[SW Cleanup] cache delete failed:', err);
-        });
-      }));
-    });
-  }
-  
-  // 检查是否有旧的 service worker（缓存规则不正确的版本）
-  // 新版本的 service worker 会在 scope 中设置正确的缓存名
-  navigator.serviceWorker.getRegistrations().then(function(regs) {
-    var hasOld = regs.some(function(reg) {
-      return reg.scope && reg.scope.includes(window.location.origin);
-    });
-    if (hasOld) {
-      console.log('[SW Cleanup] Found old service worker, clearing caches and unregistering...');
-      unregisterAll().then(function() {
-        return clearAllCaches();
-      }).then(function() {
-        console.log('[SW Cleanup] Done. Reloading to activate new service worker...');
-        // 只清理一次，避免无限循环
-        if (!sessionStorage.getItem('sw-cleared')) {
-          sessionStorage.setItem('sw-cleared', '1');
-          window.location.reload();
-        }
-      });
-    }
-  });
-})();
-`
-
 function SkipLink() {
   return (
     <a className="skip-link" href="#main-content">
@@ -126,11 +73,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Script
           dangerouslySetInnerHTML={{ __html: themeScript }}
           id="theme-script"
-          strategy="beforeInteractive"
-        />
-        <Script
-          dangerouslySetInnerHTML={{ __html: swCleanupScript }}
-          id="sw-cleanup-script"
           strategy="beforeInteractive"
         />
       </head>

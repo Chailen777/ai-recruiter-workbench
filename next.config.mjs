@@ -8,10 +8,12 @@ const nextConfig = {
 
   /* ── 包按需导入：recharts / @dnd-kit 在引用时才加载 ── */
   experimental: {
-    serverActions: {
-      bodySizeLimit: '20mb',
-    },
     optimizePackageImports: ['recharts', '@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+  },
+
+  /* ── Server Actions（Next.js 15 已从 experimental 移至顶层）── */
+  serverActions: {
+    bodySizeLimit: '20mb',
   },
 
   /* ── 图片优化 ── */

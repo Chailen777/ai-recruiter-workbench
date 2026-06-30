@@ -117,7 +117,6 @@ export async function updateCandidate(formData: FormData): Promise<ActionResult>
     await applyCandidateStatusEffects(prisma, id, status)
     try { revalidatePath('/candidates') } catch {}
     try { revalidatePath('/match') } catch {}
-    try { revalidatePath('/home') } catch {}
     return actionSuccess()
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)

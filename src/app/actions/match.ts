@@ -137,7 +137,9 @@ async function saveMatchWithStatus(formData: FormData, status: string) {
     // 状态联动失败不影响核心流程
   }
 
-  safeRevalidate('/match', '/candidates', '/jobs', '/home')
+  // 不 revalidate /home：首页 fetchDashboardStats 22+ 并行查询会击穿 Neon 连接池
+  // 首页的统计数据会在用户下次导航到 /home 时自然刷新
+  safeRevalidate('/match', '/candidates', '/jobs')
 }
 
 export async function recommendMatch(formData: FormData) {
@@ -168,7 +170,9 @@ export async function resetMatch(formData: FormData) {
     // 记录不存在则忽略
   }
 
-  safeRevalidate('/match', '/candidates', '/jobs', '/home')
+  // 不 revalidate /home：首页 fetchDashboardStats 22+ 并行查询会击穿 Neon 连接池
+  // 首页的统计数据会在用户下次导航到 /home 时自然刷新
+  safeRevalidate('/match', '/candidates', '/jobs')
 }
 
 export async function quickMatch(
@@ -371,7 +375,9 @@ export async function quickRecommend(
     // 状态联动失败不影响核心流程
   }
 
-  safeRevalidate('/match', '/candidates', '/jobs', '/home')
+  // 不 revalidate /home：首页 fetchDashboardStats 22+ 并行查询会击穿 Neon 连接池
+  // 首页的统计数据会在用户下次导航到 /home 时自然刷新
+  safeRevalidate('/match', '/candidates', '/jobs')
 
   return { success: true }
 }
@@ -431,7 +437,9 @@ export async function quickIgnore(
     // 状态联动失败不影响核心流程
   }
 
-  safeRevalidate('/match', '/candidates', '/jobs', '/home')
+  // 不 revalidate /home：首页 fetchDashboardStats 22+ 并行查询会击穿 Neon 连接池
+  // 首页的统计数据会在用户下次导航到 /home 时自然刷新
+  safeRevalidate('/match', '/candidates', '/jobs')
 
   return { success: true }
 }
@@ -485,7 +493,9 @@ export async function quickEliminate(
     // Markdown 同步失败不影响核心流程
   }
 
-  safeRevalidate('/match', '/candidates', '/jobs', '/home')
+  // 不 revalidate /home：首页 fetchDashboardStats 22+ 并行查询会击穿 Neon 连接池
+  // 首页的统计数据会在用户下次导航到 /home 时自然刷新
+  safeRevalidate('/match', '/candidates', '/jobs')
 
   return { success: true }
 }
@@ -539,7 +549,9 @@ export async function quickAbandon(
     // Markdown 同步失败不影响核心流程
   }
 
-  safeRevalidate('/match', '/candidates', '/jobs', '/home')
+  // 不 revalidate /home：首页 fetchDashboardStats 22+ 并行查询会击穿 Neon 连接池
+  // 首页的统计数据会在用户下次导航到 /home 时自然刷新
+  safeRevalidate('/match', '/candidates', '/jobs')
 
   return { success: true }
 }
@@ -555,7 +567,9 @@ export async function quickReset(
   } catch {
     // 记录不存在则忽略
   }
-  safeRevalidate('/match', '/candidates', '/jobs', '/home')
+  // 不 revalidate /home：首页 fetchDashboardStats 22+ 并行查询会击穿 Neon 连接池
+  // 首页的统计数据会在用户下次导航到 /home 时自然刷新
+  safeRevalidate('/match', '/candidates', '/jobs')
 
   return { success: true }
 }
