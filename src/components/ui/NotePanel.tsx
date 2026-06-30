@@ -110,7 +110,7 @@ const REPEAT_LABELS: Record<string, string> = {
 
 const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']
 
-/** 格式化待办计划时间：YYYY年MM月DD日 周X HH:mm */
+/** 格式化待办计划时间：YYYY年MM月DD日 HH:mm 星期X */
 function formatScheduledDate(iso: string) {
   const d = new Date(iso)
   const yyyy = d.getFullYear()
@@ -119,7 +119,7 @@ function formatScheduledDate(iso: string) {
   const week = WEEKDAY_LABELS[d.getDay()]
   const hh = String(d.getHours()).padStart(2, '0')
   const min = String(d.getMinutes()).padStart(2, '0')
-  return `${yyyy}年${mm}月${dd}日 周${week} ${hh}:${min}`
+  return `${yyyy}年${mm}月${dd}日 ${hh}:${min} 星期${week}`
 }
 
 export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false }: NotePanelProps) {
