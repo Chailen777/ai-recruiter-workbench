@@ -1,5 +1,3 @@
-export const dynamic = 'force-dynamic'
-
 import { abandonMatch, eliminateMatch, ignoreMatch, recommendMatch, resetMatch } from '@/app/actions'
 import { MatchActionForm } from './MatchActionForm'
 import Link from 'next/link'
@@ -18,6 +16,8 @@ import { MatchKanbanBoard } from '@/components/ui/MatchKanbanBoard'
 import { prisma } from '@/lib/prisma'
 import { scoreCandidateForJobs, scoreJobForCandidates, passesDimensionFilter, type MatchLevel } from '@/lib/matching'
 import type { MatchDimensionKey } from '@/lib/matching'
+
+export const dynamic = 'force-dynamic'
 
 const PAGE_SIZE = 10
 
