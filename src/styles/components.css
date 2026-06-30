@@ -4378,6 +4378,94 @@
   background: #dc2626;
 }
 
+/* 浮动退出按钮 — 固定在右上角，手机端始终可见 */
+.note-diary-fs-float-exit {
+  align-items: center;
+  background: #ef4444;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  font-size: 20px;
+  font-weight: 700;
+  height: 40px;
+  justify-content: center;
+  position: fixed;
+  right: 12px;
+  top: 12px;
+  transition: all 0.15s;
+  width: 40px;
+  z-index: 100000;
+}
+
+.note-diary-fs-float-exit:hover {
+  background: #dc2626;
+  transform: scale(1.1);
+}
+
+.note-diary-fs-float-exit:active {
+  transform: scale(0.95);
+}
+
+/* 手机端：顶部栏自适应换行 */
+@media (max-width: 768px) {
+  .note-diary-fs-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 56px 8px 12px;
+  }
+
+  .note-diary-fs-header-left {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .note-diary-fs-title {
+    font-size: 14px;
+  }
+
+  .note-diary-fs-select {
+    font-size: 12px;
+    padding: 3px 6px;
+  }
+
+  .note-diary-fs-input {
+    font-size: 12px;
+    padding: 3px 6px;
+    width: 100px;
+  }
+
+  .note-diary-fs-header-right {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+
+  /* 隐藏文字版退出按钮，浮动按钮已够用 */
+  .note-diary-fs-exit-btn {
+    display: none;
+  }
+
+  /* 全屏编辑器内边距缩小 */
+  .note-diary-fs-editor {
+    padding: 16px 16px;
+  }
+
+  .note-diary-fs-toolbar {
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 6px 8px;
+  }
+
+  .note-diary-fs-footer {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 12px;
+  }
+}
+
 .note-diary-fs-toolbar {
   background: var(--ds-color-surface-secondary, #f9fafb);
   border-bottom: 1px solid var(--ds-color-border-light, #f0f0f0);

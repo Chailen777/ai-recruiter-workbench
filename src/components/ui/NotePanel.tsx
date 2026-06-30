@@ -677,7 +677,16 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       {/* ── 日记全屏写作模式 ── */}
       {isFullscreen && inputType === 'diary' && typeof document !== 'undefined' && createPortal(
         <div className="note-diary-fullscreen-overlay" role="dialog" aria-modal="true" aria-label="全屏写作模式">
-          {/* 顶部栏：标题 + 文章类型/人物 + 字数 + 退出 */}
+          {/* 浮动退出按钮（始终可见，手机端友好） */}
+          <button
+            type="button"
+            className="note-diary-fs-float-exit"
+            onClick={() => exitFullscreen()}
+            title="退出全屏 (ESC)"
+          >
+            ✕
+          </button>
+          {/* 顶部栏：标题 + 文章类型/人物 + 字数 */}
           <div className="note-diary-fs-header">
             <div className="note-diary-fs-header-left">
               <span className="note-diary-fs-title">✍️ 创作模式</span>
@@ -1594,6 +1603,15 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
       {/* ── 编辑模式全屏写作 ── */}
       {isEditFullscreen && note.type === 'diary' && typeof document !== 'undefined' && createPortal(
         <div className="note-diary-fullscreen-overlay" role="dialog" aria-modal="true" aria-label="全屏编辑模式">
+          {/* 浮动退出按钮（始终可见，手机端友好） */}
+          <button
+            type="button"
+            className="note-diary-fs-float-exit"
+            onClick={() => exitEditFullscreen()}
+            title="退出全屏 (ESC)"
+          >
+            ✕
+          </button>
           <div className="note-diary-fs-header">
             <div className="note-diary-fs-header-left">
               <span className="note-diary-fs-title">✍️ 编辑模式</span>
