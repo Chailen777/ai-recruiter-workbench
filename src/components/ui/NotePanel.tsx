@@ -141,6 +141,29 @@ const CATEGORY_LABELS: Record<string, string> = {
   other_life: '其他生活事项',
 }
 
+/** 事项类型图标映射（用于卡片显示） */
+const CATEGORY_ICONS: Record<string, string> = {
+  birthday: '🎂',
+}
+
+/** 获取事项类型显示文字，优先用图标 */
+function getCategoryDisplay(category: string): string {
+  return CATEGORY_ICONS[category] ?? CATEGORY_LABELS[category] ?? category
+}
+
+/** 构建待办信息行（有值就显示，不以 repeatType 为前提） */
+function buildTodoInfoLine(note: NoteItem): string {
+  const parts: string[] = []
+  if (note.repeatType) {
+    const label = formatRepeatLabel(note.repeatType, note.repeatWeekdays)
+    parts.push(`🔄 ${label}`)
+  }
+  if (note.repeatPerson) parts.push(note.repeatPerson)
+  if (note.repeatCategory) parts.push(getCategoryDisplay(note.repeatCategory))
+  if (note.scheduledDate) parts.push(formatAppDateTime(note.scheduledDate))
+  return parts.join(' · ')
+}
+
 /** 根据 repeatType 和 repeatWeekdays 生成显示文字 */
 function formatRepeatLabel(repeatType: string, repeatWeekdays?: string | null): string {
   if (repeatType === 'weekday' && repeatWeekdays) {
@@ -1388,21 +1411,17 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
                       </div>
                       <p className="note-timeline-content">{note.type === 'diary' ? note.content.replace(/<[^>]+>/g, '') : note.content}</p>
                       {/* 待办信息 */}
-                      {note.type === 'todo' && note.scheduledDate && (
+                      {note.type === 'todo' && (note.scheduledDate || note.repeatType || note.repeatPerson || note.repeatCategory) && (
                         <div className="note-timeline-appt">
-                          {note.repeatType && (
-                            <span className="note-timeline-appt-item note-timeline-repeat-tag">
-                              🔄 {formatRepeatLabel(note.repeatType, note.repeatWeekdays)}
-                              {note.repeatPerson && ` · ${note.repeatPerson}`}
-                              {note.repeatCategory && ` · ${CATEGORY_LABELS[note.repeatCategory] ?? note.repeatCategory}`}
-                              {note.scheduledDate && ` · ${formatAppDateTime(note.scheduledDate)}`}
-                            </span>
-                          )}
-                          {!note.repeatType && (
-                            <span className="note-timeline-appt-item">
-                              🕐 {formatAppDateTime(note.scheduledDate)}
-                            </span>
-                          )}
+                          {(() => {
+                            const line = buildTodoInfoLine(note)
+                            if (!line) return null
+                            return (
+                              <span className={`note-timeline-appt-item${note.repeatType ? ' note-timeline-repeat-tag' : ''}`}>
+                                {note.repeatType ? line : `🕐 ${line}`}
+                              </span>
+                            )
+                          })()}
                         </div>
                       )}
                       {/* 预约信息 */}
@@ -1939,7 +1958,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                     {note.repeatFrequency && note.repeatFrequency > 1 ? `（每${note.repeatFrequency}${note.repeatType === 'weekly' ? '周' : note.repeatType === 'monthly' ? '月' : '年'}）` : ''}
                     {note.repeatEndDate ? ` · 截止 ${new Date(note.repeatEndDate).toLocaleDateString('zh-CN')}` : ''}
                     {note.repeatPerson ? ` · 人员 ${note.repeatPerson}` : ''}
-                    {note.repeatCategory ? ` · ${CATEGORY_LABELS[note.repeatCategory] ?? note.repeatCategory}` : ''}
+                    {note.repeatCategory ? ` · ${getCategoryDisplay(note.repeatCategory)}` : ''}
                     {note.scheduledDate ? ` · ${formatAppDateTime(note.scheduledDate)}` : ''}
                   </span>
                 </div>
@@ -2208,25 +2227,24 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
           )}
 
           {/* ── 待办信息卡 ── */}
-          {note.type === 'todo' && note.scheduledDate && (
+          {note.type === 'todo' && (note.scheduledDate || note.repeatType || note.repeatPerson || note.repeatCategory) && (
             <div className="note-todo-bar">
-              {note.repeatType && (
-                <span className="note-todo-repeat-tag" title="重复待办">
-                  🔄 {formatRepeatLabel(note.repeatType, note.repeatWeekdays)}
-                  {note.repeatPerson && ` · ${note.repeatPerson}`}
-                  {note.repeatCategory && ` · ${CATEGORY_LABELS[note.repeatCategory] ?? note.repeatCategory}`}
-                  {note.scheduledDate && ` · ${formatAppDateTime(note.scheduledDate)}`}
-                </span>
-              )}
-              {!note.repeatType && note.scheduledDate && (
-                <span className="note-todo-scheduled">
-                  <svg className="note-appt-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="8" cy="8" r="7"/>
-                    <polyline points="8,4 8,8 11,10"/>
-                  </svg>
-                  <span>{formatAppDateTime(note.scheduledDate)}</span>
-                </span>
-              )}
+              {(() => {
+                const line = buildTodoInfoLine(note)
+                if (!line) return null
+                if (note.repeatType) {
+                  return <span className="note-todo-repeat-tag" title="重复待办">{line}</span>
+                }
+                return (
+                  <span className="note-todo-scheduled">
+                    <svg className="note-appt-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="8" cy="8" r="7"/>
+                      <polyline points="8,4 8,8 11,10"/>
+                    </svg>
+                    <span>{line}</span>
+                  </span>
+                )
+              })()}
             </div>
           )}
 
