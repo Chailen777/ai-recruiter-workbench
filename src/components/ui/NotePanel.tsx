@@ -57,6 +57,8 @@ type NotePanelProps = {
   loading?: boolean
   /** 视图模式（由父组件控制） */
   viewMode?: 'calendar' | 'list' | 'timeline' | 'bookmark'
+  /** 手机端底部编辑栏是否可见 */
+  mobileComposeVisible?: boolean
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -250,7 +252,7 @@ function formatRepeatLabel(repeatType: string, repeatWeekdays?: string | null): 
   return REPEAT_LABELS[repeatType] ?? repeatType
 }
 
-export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false, viewMode: externalViewMode }: NotePanelProps) {
+export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false, viewMode: externalViewMode, mobileComposeVisible = false }: NotePanelProps) {
   const [inputType, setInputType] = useState<'todo' | 'log' | 'note' | 'appointment' | 'diary'>('note')
   const [inputValue, setInputValue] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -681,7 +683,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       {(viewMode !== 'calendar' && viewMode !== 'bookmark') && (
       <form
         ref={formRef}
-        className="note-input-area"
+        className={`note-input-area${mobileComposeVisible ? ' is-mobile-visible' : ''}`}
         onSubmit={(e) => {
           e.preventDefault()
           handleSubmit()

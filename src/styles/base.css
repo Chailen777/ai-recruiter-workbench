@@ -676,32 +676,6 @@ html {
   height: 11px;
 }
 
-/* ── Header 自动隐藏（15s 无滚动）── */
-.app-right-panel.is-header-hidden .app-right-panel-header {
-  padding: 0;
-  transition: padding .25s ease;
-}
-.app-right-panel.is-header-hidden .app-right-panel-title,
-.app-right-panel.is-header-hidden .app-right-panel-toggle {
-  max-height: 0;
-  opacity: 0;
-  margin: 0;
-  overflow: hidden;
-  transition: max-height .25s ease, opacity .2s ease, margin .25s ease;
-}
-.app-right-panel.is-header-hidden .notes-icon-btn,
-.app-right-panel.is-header-hidden .notes-view-toggle,
-.app-right-panel.is-header-hidden .note-header-search {
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  padding: 0;
-  margin: 0;
-  width: 0;
-  border-width: 0;
-  transition: max-height .25s ease, opacity .2s ease, padding .25s ease, margin .25s ease, width .25s ease;
-}
-
 /* ── 重复待办开关按钮 ── */
 .note-repeat-toggle-btn {
   display: inline-flex;

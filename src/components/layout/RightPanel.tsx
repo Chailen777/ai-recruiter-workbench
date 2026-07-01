@@ -89,9 +89,29 @@ export function RightPanel() {
     setSearchExpanded(false)
   }, [searchInputValue])
 
-  // ── 移动端根据滚动方向控制 header 显隐 ──
+  // ── 移动端底部搜索/笔记编辑栏（互斥）──
+  const [mobileSearchVisible, setMobileSearchVisible] = useState(false)
+  const [mobileComposeVisible, setMobileComposeVisible] = useState(false)
+
+  const handleMobileSearch = useCallback(() => {
+    setMobileSearchVisible(v => !v)
+    setMobileComposeVisible(false)
+  }, [])
+
+  const handleMobileCompose = useCallback(() => {
+    setMobileComposeVisible(v => !v)
+    setMobileSearchVisible(false)
+  }, [])
+
+  const handleMobileHome = useCallback(() => {
+    setCollapsed(true)
+    setMobileSearchVisible(false)
+    setMobileComposeVisible(false)
+    try { localStorage.setItem(STORAGE_KEY, 'true') } catch { /* noop */ }
+  }, [])
+
+  // bodyRef 保留用于将来滚动检测
   const bodyRef = useRef<HTMLDivElement>(null)
-  const [headerVisible, setHeaderVisible] = useState(true)
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchInputValue(value)
@@ -107,6 +127,7 @@ export function RightPanel() {
     setSearchInputValue('')
     setGlobalSearchTerm('')
     setSearchExpanded(false)
+    setMobileSearchVisible(false)
     if (searchDebounceTimer.current) {
       clearTimeout(searchDebounceTimer.current)
     }
@@ -147,50 +168,6 @@ export function RightPanel() {
     })
   }, [])
 
-  // 内容向上滚时隐藏标题栏；手指向下滑、返回上方时立即显示。
-  useEffect(() => {
-    const el = bodyRef.current
-    if (!el || collapsed) return
-
-    const mobileQuery = window.matchMedia('(max-width: 900px)')
-    let bodyAnchor = el.scrollTop
-    let pageAnchor = window.scrollY
-
-    const updateHeader = (current: number, anchor: number) => {
-      if (!mobileQuery.matches || searchExpanded || current <= 8) {
-        setHeaderVisible(true)
-        return current
-      }
-
-      const delta = current - anchor
-      if (delta >= 12) {
-        setHeaderVisible(false)
-        return current
-      }
-      if (delta <= -8) {
-        setHeaderVisible(true)
-        return current
-      }
-      return anchor
-    }
-
-    const handleBodyScroll = () => {
-      bodyAnchor = updateHeader(el.scrollTop, bodyAnchor)
-    }
-    const handlePageScroll = () => {
-      pageAnchor = updateHeader(window.scrollY, pageAnchor)
-    }
-
-    setHeaderVisible(true)
-    el.addEventListener('scroll', handleBodyScroll, { passive: true })
-    window.addEventListener('scroll', handlePageScroll, { passive: true })
-
-    return () => {
-      el.removeEventListener('scroll', handleBodyScroll)
-      window.removeEventListener('scroll', handlePageScroll)
-    }
-  }, [collapsed, searchExpanded])
-
   // ── Global notes (loaded client-side) ──
   const [notes, setNotes] = useState<NoteItem[]>([])
   const [notesLoaded, setNotesLoaded] = useState(false)
@@ -219,7 +196,7 @@ export function RightPanel() {
   return (
     <aside
       aria-label="全局备忘录面板"
-      className={`app-right-panel${collapsed ? ' is-collapsed' : ''}${headerVisible ? '' : ' is-header-hidden'}`}
+      className={`app-right-panel${collapsed ? ' is-collapsed' : ''}`}
       data-collapsed={collapsed ? 'true' : 'false'}
       id="global-note-panel"
     >
@@ -370,14 +347,52 @@ export function RightPanel() {
             searchTerm={globalSearchTerm}
             loading={!notesLoaded}
             viewMode={viewMode}
+            mobileComposeVisible={mobileComposeVisible}
           />
           </ErrorBoundary>
           {/* 手机端：右下角视图切换浮动按钮 */}
           <NoteViewFab
             viewMode={viewMode}
-            setViewMode={(mode) => { handleClearSearch(); setViewMode(mode) }}
+            setViewMode={(mode) => { handleClearSearch(); setMobileComposeVisible(false); setViewMode(mode) }}
             bookmarkCount={bookmarkCount}
+            onHome={handleMobileHome}
+            onSearch={handleMobileSearch}
+            onCompose={handleMobileCompose}
+            searchActive={mobileSearchVisible}
+            composeActive={mobileComposeVisible}
           />
+        </div>
+      )}
+
+      {/* ── 手机端底部搜索栏 ── */}
+      {!collapsed && mobileSearchVisible && (
+        <div className="mobile-search-bar">
+          <svg className="mobile-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <circle cx="9" cy="9" r="5"/>
+            <line x1="13" y1="13" x2="18" y2="18"/>
+          </svg>
+          <input
+            type="text"
+            className="mobile-search-input"
+            placeholder="搜索笔记..."
+            value={searchInputValue}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            aria-label="搜索笔记"
+            autoFocus
+          />
+          {searchInputValue && (
+            <button
+              type="button"
+              className="mobile-search-clear"
+              onClick={handleClearSearch}
+              aria-label="清除搜索"
+            >
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <line x1="5" y1="5" x2="15" y2="15"/>
+                <line x1="15" y1="5" x2="5" y2="15"/>
+              </svg>
+            </button>
+          )}
         </div>
       )}
     </aside>

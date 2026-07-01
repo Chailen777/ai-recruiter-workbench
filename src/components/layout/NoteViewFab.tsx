@@ -11,6 +11,15 @@ interface ViewOption {
   svg: React.ReactNode
 }
 
+/* ── 操作项（非视图模式）── */
+interface ActionItem {
+  id: string
+  label: string
+  svg: React.ReactNode
+  onClick: () => void
+  active?: boolean
+}
+
 const VIEW_OPTIONS: ViewOption[] = [
   {
     id: 'bookmark',
@@ -65,22 +74,35 @@ const VIEW_OPTIONS: ViewOption[] = [
   },
 ]
 
-/* 扇形位置：从右下角向左上方向展开的弧线 */
+/* 扇形位置：7 项从上到下弧线展开 */
 const FAN_POSITIONS = [
-  { x: -135, y: -105 },  // 收藏
-  { x: -150, y: -55 },   // 日历
-  { x: -150, y:   0 },   // 列表
-  { x: -135, y:  55 },   // 时间轴
+  { x: -120, y: -255 },  // 首页
+  { x: -140, y: -198 },  // 搜索
+  { x: -150, y: -141 },  // 笔记
+  { x: -155, y: -84 },   // 收藏
+  { x: -155, y: -27 },   // 日历
+  { x: -140, y:  30 },   // 列表
+  { x: -120, y:  87 },   // 时间轴
 ]
 
 export function NoteViewFab({
   viewMode,
   setViewMode,
   bookmarkCount,
+  onHome,
+  onSearch,
+  onCompose,
+  searchActive = false,
+  composeActive = false,
 }: {
   viewMode: ViewMode
   setViewMode: (mode: ViewMode) => void
   bookmarkCount: number
+  onHome?: () => void
+  onSearch?: () => void
+  onCompose?: () => void
+  searchActive?: boolean
+  composeActive?: boolean
 }) {
   const [expanded, setExpanded] = useState(false)
   const [awake, setAwake] = useState(false)
@@ -128,13 +150,70 @@ export function NoteViewFab({
     }
   }, [expanded, handleOutsideClick])
 
-  const handleSelect = useCallback((mode: ViewMode) => {
+  const handleSelectView = useCallback((mode: ViewMode) => {
     setViewMode(mode)
     setExpanded(false)
   }, [setViewMode])
 
+  const handleAction = useCallback((action: () => void) => {
+    action()
+    setExpanded(false)
+  }, [])
+
   const currentOption = VIEW_OPTIONS.find((o) => o.id === viewMode) || VIEW_OPTIONS[2]
-  const otherOptions = VIEW_OPTIONS.filter((o) => o.id !== viewMode)
+  const otherViewOptions = VIEW_OPTIONS.filter((o) => o.id !== viewMode)
+
+  /* 构建操作项列表 */
+  const actionItems: ActionItem[] = [
+    {
+      id: 'home',
+      label: '首页',
+      svg: (
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 10L10 3L17 10" />
+          <path d="M5 9V16C5 16.5523 5.44772 17 6 17H14C14.5523 17 15 16.5523 15 16V9" />
+          <path d="M8 17V12H12V17" />
+        </svg>
+      ),
+      onClick: () => onHome?.(),
+    },
+    {
+      id: 'search',
+      label: '搜索',
+      svg: (
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <circle cx="9" cy="9" r="5"/>
+          <line x1="13" y1="13" x2="18" y2="18"/>
+        </svg>
+      ),
+      onClick: () => onSearch?.(),
+      active: searchActive,
+    },
+    {
+      id: 'compose',
+      label: '笔记',
+      svg: (
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2L18 6L8 16L4 17L5 13L14 2Z" />
+          <path d="M13 3L17 7" />
+        </svg>
+      ),
+      onClick: () => onCompose?.(),
+      active: composeActive,
+    },
+  ]
+
+  /* 合并：操作项 + 视图项 */
+  const allFanItems = [
+    ...actionItems,
+    ...otherViewOptions.map((o) => ({
+      id: o.id,
+      label: o.label,
+      svg: o.svg,
+      onClick: () => handleSelectView(o.id),
+      isView: true,
+    })),
+  ]
 
   return createPortal(
     <div
@@ -145,23 +224,23 @@ export function NoteViewFab({
     >
       {/* 扇形菜单项 */}
       <div className="note-view-fab-menu">
-        {otherOptions.map((opt, i) => (
+        {allFanItems.map((item, i) => (
           <button
-            key={opt.id}
+            key={item.id}
             type="button"
-            className="note-view-fab-option"
+            className={`note-view-fab-option${'active' in item && item.active ? ' is-action-active' : ''}`}
             style={{
               '--fx': `${FAN_POSITIONS[i].x}px`,
               '--fy': `${FAN_POSITIONS[i].y}px`,
               transitionDelay: expanded
-                ? `${0.04 + i * 0.05}s`
-                : `${0.06 - i * 0.015}s`,
+                ? `${0.04 + i * 0.04}s`
+                : `${0.08 - i * 0.01}s`,
             } as React.CSSProperties}
-            onClick={() => handleSelect(opt.id)}
+            onClick={() => handleAction(item.onClick)}
           >
-            <span className="note-view-fab-opt-icon">{opt.svg}</span>
-            <span className="note-view-fab-opt-label">{opt.label}</span>
-            {opt.id === 'bookmark' && bookmarkCount > 0 && (
+            <span className="note-view-fab-opt-icon">{item.svg}</span>
+            <span className="note-view-fab-opt-label">{item.label}</span>
+            {item.id === 'bookmark' && bookmarkCount > 0 && (
               <span className="note-view-fab-badge">{bookmarkCount}</span>
             )}
           </button>
