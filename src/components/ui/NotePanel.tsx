@@ -905,18 +905,6 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
                         <label
                           key={opt.value}
                           className={`note-weekday-chip${checked ? ' note-weekday-chip--active' : ''}`}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            padding: '4px 10px',
-                            borderRadius: '6px',
-                            fontSize: '13px',
-                            cursor: 'pointer',
-                            border: '1px solid var(--border)',
-                            background: checked ? 'var(--accent)' : 'transparent',
-                            color: checked ? 'var(--accent-fg, #fff)' : 'var(--foreground)',
-                            userSelect: 'none',
-                          }}
                         >
                           <input
                             type="checkbox"

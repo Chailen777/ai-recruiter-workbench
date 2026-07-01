@@ -591,6 +591,33 @@ html {
   right: 8px;
 }
 
+/* ── 星期选择 chip ── */
+.note-weekday-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1.5px solid var(--ds-color-border);
+  background: transparent;
+  color: var(--ds-color-text-secondary);
+  transition: all 0.18s ease;
+  user-select: none;
+}
+.note-weekday-chip:hover {
+  border-color: var(--ds-color-primary, #2563eb);
+  color: var(--ds-color-primary, #2563eb);
+}
+.note-weekday-chip--active {
+  background: var(--ds-color-primary, #2563eb) !important;
+  border-color: var(--ds-color-primary, #2563eb) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
 /* ── 重复待办按钮栏（默认状态，右上角） ── */
 .note-repeat-bar {
   display: flex;
