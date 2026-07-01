@@ -583,6 +583,12 @@ html {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  position: relative;
+}
+.note-repeat-panel > .note-appt-close-btn {
+  position: absolute;
+  top: 6px;
+  right: 8px;
 }
 
 /* 搜索框（展开时显示） */

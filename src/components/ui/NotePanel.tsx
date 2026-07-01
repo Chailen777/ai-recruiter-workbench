@@ -787,12 +787,132 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
                 className="note-appt-input"
                 value={todoDate}
                 onChange={(e) => setTodoDate(e.target.value)}
-                required={showRepeat && !!todoRepeat}
+                required={!!todoRepeat}
               />
             </div>
             <div className="note-appt-row">
               <label className="note-appt-label">重复</label>
-              {!showRepeat ? (
+              <select
+                className="note-appt-select"
+                value={todoRepeat}
+                onChange={(e) => setTodoRepeat(e.target.value)}
+              >
+                <option value="">不重复</option>
+                <option value="daily">每天</option>
+                <option value="weekly">每周</option>
+                <option value="monthly">每月</option>
+                <option value="yearly">每年</option>
+                <option value="quarterly">每季度</option>
+                <option value="halfyearly">每半年</option>
+                <option value="workday">工作日</option>
+                <option value="weekday">每周几</option>
+                <option value="custom">自定义</option>
+              </select>
+              {todoRepeat && todoRepeat !== 'workday' && todoRepeat !== 'custom' && (
+                <>
+                  <span className="note-todo-freq-label">每</span>
+                  <input
+                    type="number"
+                    className="note-todo-freq-input"
+                    value={todoFreq}
+                    onChange={(e) => {
+                      const raw = e.target.value
+                      if (raw === '') { setTodoFreq(1); return }
+                      setTodoFreq(Math.min(99, Math.max(1, Number(raw) || 1)))
+                    }}
+                    min={1}
+                    max={99}
+                    step={1}
+                    required
+                    style={{ width: '50px' }}
+                  />
+                  <span className="note-todo-freq-label">
+                    {todoRepeat === 'daily' ? '天' : todoRepeat === 'weekly' ? '周' : todoRepeat === 'monthly' ? '月' : todoRepeat === 'yearly' ? '年' : todoRepeat === 'quarterly' ? '季' : todoRepeat === 'halfyearly' ? '半年' : '天'}
+                  </span>
+                </>
+              )}
+              {todoRepeat === 'workday' && (
+                <span className="note-todo-freq-label">（周一到周五）</span>
+              )}
+              {todoRepeat === 'custom' && (
+                <>
+                  <span className="note-todo-freq-label">第</span>
+                  <input
+                    type="number"
+                    className="note-todo-freq-input"
+                    value={repeatCustomNum === '' ? '' : repeatCustomNum}
+                    onChange={(e) => {
+                      const raw = e.target.value
+                      if (raw === '') { setRepeatCustomNum(''); return }
+                      const n = Number(raw)
+                      if (!isNaN(n) && n >= 1 && n <= 366) setRepeatCustomNum(n)
+                    }}
+                    placeholder="天"
+                    min={1}
+                    max={366}
+                    step={1}
+                    style={{ width: '56px' }}
+                  />
+                  <span className="note-todo-freq-label">天/年/季度</span>
+                </>
+              )}
+            </div>
+            {todoRepeat === 'weekday' && (
+              <div className="note-appt-row" style={{ flexWrap: 'wrap', gap: '4px' }}>
+                {WEEKDAY_OPTIONS.map((opt) => {
+                  const checked = todoWeekdays.includes(opt.value)
+                  return (
+                    <label
+                      key={opt.value}
+                      className={`note-weekday-chip${checked ? ' note-weekday-chip--active' : ''}`}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        border: '1px solid var(--border)',
+                        background: checked ? 'var(--accent)' : 'transparent',
+                        color: checked ? 'var(--accent-fg, #fff)' : 'var(--foreground)',
+                        userSelect: 'none',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        value={opt.value}
+                        checked={checked}
+                        onChange={() => {
+                          setTodoWeekdays((prev) =>
+                            prev.includes(opt.value)
+                              ? prev.filter((v) => v !== opt.value)
+                              : [...prev, opt.value]
+                          )
+                        }}
+                        style={{ display: 'none' }}
+                      />
+                      {opt.label}
+                    </label>
+                  )
+                })}
+              </div>
+            )}
+            {todoRepeat && (
+              <div className="note-appt-row">
+                <label className="note-appt-label">截止</label>
+                <input
+                  type="date"
+                  className="note-appt-input"
+                  value={todoEndDate}
+                  onChange={(e) => setTodoEndDate(e.target.value)}
+                  min={todoDate ? todoDate.slice(0, 10) : undefined}
+                  required
+                />
+              </div>
+            )}
+            {/* 重复待办高级配置开关 */}
+            {!showRepeat ? (
+              <div className="note-appt-row">
                 <button
                   type="button"
                   className="note-repeat-toggle-btn"
@@ -800,144 +920,20 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
                 >
                   🔄 重复待办
                 </button>
-              ) : (
+              </div>
+            ) : (
+              <div className="note-repeat-panel">
                 <button
                   type="button"
-                  className="note-repeat-toggle-btn note-repeat-toggle-btn--active"
+                  className="note-appt-close-btn"
                   onClick={() => {
                     setShowRepeat(false)
-                    setTodoRepeat('')
-                    setTodoEndDate('')
-                    setTodoWeekdays([])
-                    setRepeatCustomNum('')
+                    setRepeatPerson('')
+                    setRepeatCategory('')
                   }}
-                >
-                  ✕ 关闭重复待办
-                </button>
-              )}
-            </div>
-            {showRepeat && (
-              <div className="note-repeat-panel">
-                <div className="note-appt-row">
-                  <label className="note-appt-label">频率</label>
-                  <select
-                    className="note-appt-select"
-                    value={todoRepeat}
-                    onChange={(e) => setTodoRepeat(e.target.value)}
-                  >
-                    <option value="">请选择</option>
-                    <option value="daily">每天</option>
-                    <option value="weekly">每周</option>
-                    <option value="monthly">每月</option>
-                    <option value="yearly">每年</option>
-                    <option value="quarterly">每季度</option>
-                    <option value="halfyearly">每半年</option>
-                    <option value="workday">工作日</option>
-                    <option value="weekday">每周几</option>
-                    <option value="custom">自定义</option>
-                  </select>
-                  {todoRepeat && todoRepeat !== 'workday' && todoRepeat !== 'custom' && (
-                    <>
-                      <span className="note-todo-freq-label">每</span>
-                      <input
-                        type="number"
-                        className="note-todo-freq-input"
-                        value={todoFreq}
-                        onChange={(e) => {
-                          const raw = e.target.value
-                          if (raw === '') { setTodoFreq(1); return }
-                          setTodoFreq(Math.min(99, Math.max(1, Number(raw) || 1)))
-                        }}
-                        min={1}
-                        max={99}
-                        step={1}
-                        required
-                        style={{ width: '50px' }}
-                      />
-                      <span className="note-todo-freq-label">
-                        {todoRepeat === 'daily' ? '天' : todoRepeat === 'weekly' ? '周' : todoRepeat === 'monthly' ? '月' : todoRepeat === 'yearly' ? '年' : todoRepeat === 'quarterly' ? '季' : todoRepeat === 'halfyearly' ? '半年' : '天'}
-                      </span>
-                    </>
-                  )}
-                  {todoRepeat === 'workday' && (
-                    <span className="note-todo-freq-label">（周一到周五）</span>
-                  )}
-                  {todoRepeat === 'custom' && (
-                    <>
-                      <span className="note-todo-freq-label">第</span>
-                      <input
-                        type="number"
-                        className="note-todo-freq-input"
-                        value={repeatCustomNum === '' ? '' : repeatCustomNum}
-                        onChange={(e) => {
-                          const raw = e.target.value
-                          if (raw === '') { setRepeatCustomNum(''); return }
-                          const n = Number(raw)
-                          if (!isNaN(n) && n >= 1 && n <= 366) setRepeatCustomNum(n)
-                        }}
-                        placeholder="天"
-                        min={1}
-                        max={366}
-                        step={1}
-                        style={{ width: '56px' }}
-                      />
-                      <span className="note-todo-freq-label">天/年/季度</span>
-                    </>
-                  )}
-                </div>
-                {todoRepeat === 'weekday' && (
-                  <div className="note-appt-row" style={{ flexWrap: 'wrap', gap: '4px' }}>
-                    {WEEKDAY_OPTIONS.map((opt) => {
-                      const checked = todoWeekdays.includes(opt.value)
-                      return (
-                        <label
-                          key={opt.value}
-                          className={`note-weekday-chip${checked ? ' note-weekday-chip--active' : ''}`}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            padding: '4px 10px',
-                            borderRadius: '6px',
-                            fontSize: '13px',
-                            cursor: 'pointer',
-                            border: '1px solid var(--border)',
-                            background: checked ? 'var(--accent)' : 'transparent',
-                            color: checked ? 'var(--accent-fg, #fff)' : 'var(--foreground)',
-                            userSelect: 'none',
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            value={opt.value}
-                            checked={checked}
-                            onChange={() => {
-                              setTodoWeekdays((prev) =>
-                                prev.includes(opt.value)
-                                  ? prev.filter((v) => v !== opt.value)
-                                  : [...prev, opt.value]
-                              )
-                            }}
-                            style={{ display: 'none' }}
-                          />
-                          {opt.label}
-                        </label>
-                      )
-                    })}
-                  </div>
-                )}
-                {todoRepeat && (
-                  <div className="note-appt-row">
-                    <label className="note-appt-label">截止</label>
-                    <input
-                      type="date"
-                      className="note-appt-input"
-                      value={todoEndDate}
-                      onChange={(e) => setTodoEndDate(e.target.value)}
-                      min={todoDate ? todoDate.slice(0, 10) : undefined}
-                      required
-                    />
-                  </div>
-                )}
+                  aria-label="关闭重复待办配置"
+                  title="关闭重复待办配置"
+                >✕</button>
                 <div className="note-appt-row">
                   <label className="note-appt-label">人员</label>
                   <input
