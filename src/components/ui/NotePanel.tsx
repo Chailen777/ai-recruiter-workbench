@@ -141,6 +141,18 @@ const CATEGORY_LABELS: Record<string, string> = {
   other_life: '其他生活事项',
 }
 
+/** 根据 repeatType 和 repeatWeekdays 生成显示文字 */
+function formatRepeatLabel(repeatType: string, repeatWeekdays?: string | null): string {
+  if (repeatType === 'weekday' && repeatWeekdays) {
+    const days = repeatWeekdays.split(',').map((d) => {
+      const opt = WEEKDAY_OPTIONS.find((o) => o.value === d.trim())
+      return opt ? opt.label : d
+    })
+    return days.join('、')
+  }
+  return REPEAT_LABELS[repeatType] ?? repeatType
+}
+
 export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false, viewMode: externalViewMode }: NotePanelProps) {
   const [inputType, setInputType] = useState<'todo' | 'log' | 'note' | 'appointment' | 'diary'>('note')
   const [inputValue, setInputValue] = useState('')
@@ -1392,14 +1404,17 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
                         <div className="note-timeline-appt">
                           {note.repeatType && (
                             <span className="note-timeline-appt-item note-timeline-repeat-tag">
-                              🔄 {REPEAT_LABELS[note.repeatType] ?? note.repeatType}
+                              🔄 {formatRepeatLabel(note.repeatType, note.repeatWeekdays)}
                               {note.repeatPerson && ` · ${note.repeatPerson}`}
                               {note.repeatCategory && ` · ${CATEGORY_LABELS[note.repeatCategory] ?? note.repeatCategory}`}
+                              {note.scheduledDate && ` · ${formatAppDateTime(note.scheduledDate)}`}
                             </span>
                           )}
-                          <span className="note-timeline-appt-item">
-                            🕐 {formatAppDateTime(note.scheduledDate)}
-                          </span>
+                          {!note.repeatType && (
+                            <span className="note-timeline-appt-item">
+                              🕐 {formatAppDateTime(note.scheduledDate)}
+                            </span>
+                          )}
                         </div>
                       )}
                       {/* 预约信息 */}
@@ -1932,9 +1947,12 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                 <div className="note-edit-appt-row">
                   <label className="note-edit-label">重复</label>
                   <span className="note-edit-readonly">
-                    {REPEAT_LABELS[note.repeatType] ?? note.repeatType}
+                    {formatRepeatLabel(note.repeatType, note.repeatWeekdays)}
                     {note.repeatFrequency && note.repeatFrequency > 1 ? `（每${note.repeatFrequency}${note.repeatType === 'weekly' ? '周' : note.repeatType === 'monthly' ? '月' : '年'}）` : ''}
                     {note.repeatEndDate ? ` · 截止 ${new Date(note.repeatEndDate).toLocaleDateString('zh-CN')}` : ''}
+                    {note.repeatPerson ? ` · 人员 ${note.repeatPerson}` : ''}
+                    {note.repeatCategory ? ` · ${CATEGORY_LABELS[note.repeatCategory] ?? note.repeatCategory}` : ''}
+                    {note.scheduledDate ? ` · ${formatAppDateTime(note.scheduledDate)}` : ''}
                   </span>
                 </div>
               )}
@@ -2206,18 +2224,21 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
             <div className="note-todo-bar">
               {note.repeatType && (
                 <span className="note-todo-repeat-tag" title="重复待办">
-                  🔄 {REPEAT_LABELS[note.repeatType] ?? note.repeatType}
+                  🔄 {formatRepeatLabel(note.repeatType, note.repeatWeekdays)}
                   {note.repeatPerson && ` · ${note.repeatPerson}`}
                   {note.repeatCategory && ` · ${CATEGORY_LABELS[note.repeatCategory] ?? note.repeatCategory}`}
+                  {note.scheduledDate && ` · ${formatAppDateTime(note.scheduledDate)}`}
                 </span>
               )}
-              <span className="note-todo-scheduled">
-                <svg className="note-appt-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="8" cy="8" r="7"/>
-                  <polyline points="8,4 8,8 11,10"/>
-                </svg>
-                <span>{formatAppDateTime(note.scheduledDate)}</span>
-              </span>
+              {!note.repeatType && note.scheduledDate && (
+                <span className="note-todo-scheduled">
+                  <svg className="note-appt-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="8" cy="8" r="7"/>
+                    <polyline points="8,4 8,8 11,10"/>
+                  </svg>
+                  <span>{formatAppDateTime(note.scheduledDate)}</span>
+                </span>
+              )}
             </div>
           )}
 
