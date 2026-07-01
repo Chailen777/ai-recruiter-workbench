@@ -74,15 +74,20 @@ const VIEW_OPTIONS: ViewOption[] = [
   },
 ]
 
-/* 扇形位置：7 项从上到下弧线展开 */
+/*
+ * 扇形位置：7 项沿四分之一圆弧展开，圆心在右下角（FAB 按钮位置）。
+ * 角度从 90°（正上方）到 180°（正左方），等分 6 段。
+ * 半径 R = 200px，公式：x = R*cos(θ), y = -R*sin(θ)
+ */
+const FAN_ARC_R = 200
 const FAN_POSITIONS = [
-  { x: -120, y: -255 },  // 首页
-  { x: -140, y: -198 },  // 搜索
-  { x: -150, y: -141 },  // 笔记
-  { x: -155, y: -84 },   // 收藏
-  { x: -155, y: -27 },   // 日历
-  { x: -140, y:  30 },   // 列表
-  { x: -120, y:  87 },   // 时间轴
+  { x: 0,                          y: -FAN_ARC_R                   }, // 首页   (90°)
+  { x: Math.round(-FAN_ARC_R * 0.259), y: Math.round(-FAN_ARC_R * 0.966) }, // 搜索   (105°)
+  { x: Math.round(-FAN_ARC_R * 0.5),   y: Math.round(-FAN_ARC_R * 0.866) }, // 笔记   (120°)
+  { x: Math.round(-FAN_ARC_R * 0.707), y: Math.round(-FAN_ARC_R * 0.707) }, // 收藏   (135°)
+  { x: Math.round(-FAN_ARC_R * 0.866), y: Math.round(-FAN_ARC_R * 0.5)   }, // 日历   (150°)
+  { x: Math.round(-FAN_ARC_R * 0.966), y: Math.round(-FAN_ARC_R * 0.259) }, // 列表   (165°)
+  { x: -FAN_ARC_R,                 y: 0                             }, // 时间轴 (180°)
 ]
 
 export function NoteViewFab({
