@@ -27,6 +27,14 @@ function toNoteItem(n: Record<string, unknown>): NoteItem {
     appointmentLocation: (n.appointmentLocation as string) ?? null,
     appointmentType: (n.appointmentType as string) ?? null,
     appointmentPerson: (n.appointmentPerson as string) ?? null,
+    articleType: (n.articleType as string) ?? null,
+    articlePerson: (n.articlePerson as string) ?? null,
+    logPerson: (n.logPerson as string) ?? null,
+    scheduledDate: (n.scheduledDate as string) ?? null,
+    repeatType: (n.repeatType as string) ?? null,
+    repeatFrequency: (n.repeatFrequency as number) ?? null,
+    repeatEndDate: (n.repeatEndDate as string) ?? null,
+    repeatGroupId: (n.repeatGroupId as string) ?? null,
   }
 }
 

@@ -34,6 +34,12 @@ const APPT_TYPE_LABELS: Record<string, string> = {
   other: '其他',
 }
 
+const REPEAT_LABELS: Record<string, string> = {
+  weekly: '每周',
+  monthly: '每月',
+  yearly: '每年',
+}
+
 // 日期分组：今天/明天/之后
 function formatApptDate(dateStr: string): string {
   const today = new Date()
@@ -348,7 +354,11 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
                     <div key={t.id} className={`notes-calendar-appt-item${t.done ? ' is-done' : ''}`}>
                       <div className="notes-calendar-appt-item-row">
                         <span className="notes-calendar-appt-time">{t.time}</span>
-                        {t.repeatType && <span className="notes-calendar-todo-repeat">🔄</span>}
+                        {t.repeatType && (
+                          <span className="notes-calendar-todo-repeat" title="重复待办">
+                            🔄 {REPEAT_LABELS[t.repeatType] ?? t.repeatType}
+                          </span>
+                        )}
                         {t.entityName && (
                           <span className="notes-calendar-appt-entity">{t.entityName}</span>
                         )}
