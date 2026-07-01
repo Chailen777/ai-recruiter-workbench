@@ -89,23 +89,9 @@ export function RightPanel() {
     setSearchExpanded(false)
   }, [searchInputValue])
 
-  // ── 滚动驱动的 header 显隐 + 15s 自动隐藏 ──
+  // ── 移动端根据滚动方向控制 header 显隐 ──
   const bodyRef = useRef<HTMLDivElement>(null)
   const [headerVisible, setHeaderVisible] = useState(true)
-  const headerHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const showHeaderWithTimer = useCallback(() => {
-    setHeaderVisible(true)
-    if (headerHideTimerRef.current) clearTimeout(headerHideTimerRef.current)
-    headerHideTimerRef.current = setTimeout(() => {
-      // 只在非顶部时隐藏，顶部始终显示（同时检查 panel body 和页面滚动）
-      const bodyScrollTop = bodyRef.current?.scrollTop ?? 0
-      const pageScrollY = window.scrollY ?? 0
-      if (bodyScrollTop > 10 || pageScrollY > 10) {
-        setHeaderVisible(false)
-      }
-    }, 15000)
-  }, [])
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchInputValue(value)
@@ -161,25 +147,49 @@ export function RightPanel() {
     })
   }, [])
 
-  // ── 滚动时显示 header + 启动 15s 自动隐藏计时 ──
+  // 内容向上滚时隐藏标题栏；手指向下滑、返回上方时立即显示。
   useEffect(() => {
     const el = bodyRef.current
     if (!el || collapsed) return
 
-    const handler = () => showHeaderWithTimer()
-    // 桌面端：panel body 滚动；移动端：页面整体滚动；同时监听两者以兼容所有场景
-    el.addEventListener('scroll', handler, { passive: true })
-    window.addEventListener('scroll', handler, { passive: true })
+    const mobileQuery = window.matchMedia('(max-width: 900px)')
+    let bodyAnchor = el.scrollTop
+    let pageAnchor = window.scrollY
 
-    // 首次展开面板时启动计时
-    showHeaderWithTimer()
+    const updateHeader = (current: number, anchor: number) => {
+      if (!mobileQuery.matches || searchExpanded || current <= 8) {
+        setHeaderVisible(true)
+        return current
+      }
+
+      const delta = current - anchor
+      if (delta >= 12) {
+        setHeaderVisible(false)
+        return current
+      }
+      if (delta <= -8) {
+        setHeaderVisible(true)
+        return current
+      }
+      return anchor
+    }
+
+    const handleBodyScroll = () => {
+      bodyAnchor = updateHeader(el.scrollTop, bodyAnchor)
+    }
+    const handlePageScroll = () => {
+      pageAnchor = updateHeader(window.scrollY, pageAnchor)
+    }
+
+    setHeaderVisible(true)
+    el.addEventListener('scroll', handleBodyScroll, { passive: true })
+    window.addEventListener('scroll', handlePageScroll, { passive: true })
 
     return () => {
-      el.removeEventListener('scroll', handler)
-      window.removeEventListener('scroll', handler)
-      if (headerHideTimerRef.current) clearTimeout(headerHideTimerRef.current)
+      el.removeEventListener('scroll', handleBodyScroll)
+      window.removeEventListener('scroll', handlePageScroll)
     }
-  }, [collapsed, showHeaderWithTimer])
+  }, [collapsed, searchExpanded])
 
   // ── Global notes (loaded client-side) ──
   const [notes, setNotes] = useState<NoteItem[]>([])
