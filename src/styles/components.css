@@ -8105,6 +8105,8 @@
     position: fixed;
     right: 16px;
     bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    width: 42px;
+    height: 42px;
     z-index: 10100;
     pointer-events: none;
   }
@@ -8133,7 +8135,7 @@
     position: relative;
     -webkit-tap-highlight-color: transparent;
     /* 闲置时半透明 + 略靠右隐藏 */
-    opacity: .38;
+    opacity: .55;
     transform: translateX(4px);
   }
   /* 唤醒 */
