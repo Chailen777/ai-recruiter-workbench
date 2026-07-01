@@ -8146,6 +8146,7 @@
 
   /* ═══ 右下角扇形视图切换（手机端专属） ═══ */
   .note-view-fab {
+    display: block;
     position: fixed;
     right: 16px;
     bottom: calc(72px + env(safe-area-inset-bottom, 0px));
