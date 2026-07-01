@@ -235,7 +235,7 @@ export function RightPanel() {
               <button
                 type="button"
                 className={`notes-icon-btn ${viewMode === 'bookmark' ? 'is-active' : ''}`}
-                onClick={() => setViewMode('bookmark')}
+                onClick={() => { setViewMode('bookmark'); handleClearSearch() }}
                 title="查看收藏"
                 aria-label="查看收藏"
                 style={{ position: 'relative' }}
@@ -248,7 +248,7 @@ export function RightPanel() {
               <button
                 type="button"
                 className={`notes-icon-btn ${viewMode === 'calendar' ? 'is-active' : ''}`}
-                onClick={() => setViewMode('calendar')}
+                onClick={() => { setViewMode('calendar'); handleClearSearch() }}
                 title="日历视图"
                 aria-label="日历视图"
               >
@@ -262,7 +262,7 @@ export function RightPanel() {
               <button
                 type="button"
                 className={`notes-icon-btn ${viewMode === 'list' ? 'is-active' : ''}`}
-                onClick={() => setViewMode('list')}
+                onClick={() => { setViewMode('list'); handleClearSearch() }}
                 title="列表视图"
                 aria-label="列表视图"
               >
@@ -278,7 +278,7 @@ export function RightPanel() {
               <button
                 type="button"
                 className={`notes-icon-btn ${viewMode === 'timeline' ? 'is-active' : ''}`}
-                onClick={() => setViewMode('timeline')}
+                onClick={() => { setViewMode('timeline'); handleClearSearch() }}
                 title="时间轴视图"
                 aria-label="时间轴视图"
               >

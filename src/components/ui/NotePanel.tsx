@@ -480,7 +480,9 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   }, [])
 
   // ── 根据 filterType 过滤（memoized）──
+  // 收藏视图 / 搜索时：跳过 Tab 筛选，用全量数据
   const filtered = useMemo(() => {
+    if (viewMode === 'bookmark' || Boolean(searchTerm)) return sorted
     return sorted.filter((n) => {
       if (filterType === 'all') {
         // 「今天」：今天创建的笔记 + 今天预约/待办
@@ -497,11 +499,12 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       if ((filterType === 'todo' || filterType === 'appointment') && showOnlyUndone) return n.type === filterType && !n.done
       return n.type === filterType
     })
-  }, [sorted, filterType, showOnlyUndone, getLocalToday])
+  }, [sorted, filterType, showOnlyUndone, getLocalToday, viewMode, searchTerm])
 
   // ── 按日期筛选（memoized）──
   const dateFiltered = useMemo(() => {
-    if (!filterDate) return filtered
+    // 收藏视图：跳过日期筛选，显示全量收藏
+    if (viewMode === 'bookmark' || !filterDate) return filtered
     return filtered.filter((n) => {
       const targetDate = n.type === 'todo' && n.scheduledDate
         ? n.scheduledDate
@@ -510,7 +513,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         : n.createdAt
       return targetDate.slice(0, 10) === filterDate
     })
-  }, [filtered, filterDate])
+  }, [filtered, filterDate, viewMode])
 
   // ── 搜索过滤（memoized）──
   const searchFiltered = useMemo(() => {
