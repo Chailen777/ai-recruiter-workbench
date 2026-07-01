@@ -263,7 +263,7 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
 
     // 组内排序：按时间升序
     for (const dayNotes of grouped.values()) {
-      dayNotes.sort((a, b) => new Date(getSortTime(a)).getTime() - new Date(getSortTime(b)).getTime())
+      dayNotes.sort((a, b) => new Date(getSortTime(b)).getTime() - new Date(getSortTime(a)).getTime())
     }
 
     // 分组排序：今天 → 明天 → 昨天 → 未来 → 过去

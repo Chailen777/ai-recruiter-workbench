@@ -1445,7 +1445,7 @@ function ListView({ notes, onChanged, searchTerm, filterDate, filterType, showOn
 
   // 组内按时间升序
   for (const dayNotes of grouped.values()) {
-    dayNotes.sort((a, b) => new Date(getSortTime(a)).getTime() - new Date(getSortTime(b)).getTime())
+    dayNotes.sort((a, b) => new Date(getSortTime(b)).getTime() - new Date(getSortTime(a)).getTime())
   }
 
   // 构建今天/明天/昨天基准
@@ -1621,7 +1621,7 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
 
   // 组内按时间升序
   for (const dayNotes of grouped.values()) {
-    dayNotes.sort((a, b) => new Date(getSortTime(a)).getTime() - new Date(getSortTime(b)).getTime())
+    dayNotes.sort((a, b) => new Date(getSortTime(b)).getTime() - new Date(getSortTime(a)).getTime())
   }
 
   // 构建今天/明天/昨天基准
