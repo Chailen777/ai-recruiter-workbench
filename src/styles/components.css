@@ -1086,12 +1086,142 @@
   color: var(--ds-color-text-muted-dark, #9ca3af);
 }
 
+/* ── 暗色模式：日历新组件 ── */
+[data-theme='dark'] .notes-calendar-tabs-group {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .notes-calendar-tab.is-active {
+  background: var(--ds-color-card-dark, #1e293b);
+  color: var(--ds-color-text-primary-dark, #f3f4f6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='dark'] .notes-calendar-tab:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ds-color-text-primary-dark, #f3f4f6);
+}
+
+[data-theme='dark'] .notes-calendar-group-header {
+  background: var(--ds-color-card-dark, #1e293b);
+}
+
+[data-theme='dark'] .notes-calendar-group-header:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme='dark'] .notes-calendar-group-count {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ds-color-text-muted-dark, #9ca3af);
+}
+
 /* 加载中 */
 .notes-calendar-loading {
   text-align: center;
   padding: 12px;
   font-size: 13px;
   color: var(--ds-color-text-secondary);
+}
+
+/* ── Tab 切换 ── */
+.notes-calendar-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.notes-calendar-tabs-group {
+  display: flex;
+  gap: 4px;
+  background: var(--ds-color-surface-secondary, rgba(0, 0, 0, 0.04));
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.notes-calendar-tab {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ds-color-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.notes-calendar-tab:hover {
+  color: var(--ds-color-text-primary);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.notes-calendar-tab.is-active {
+  background: var(--ds-color-card, #ffffff);
+  color: var(--ds-color-text-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ── 分组可折叠标题 ── */
+.notes-calendar-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 4px;
+  border: none;
+  border-bottom: 1px solid var(--ds-color-border);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  background: var(--ds-color-card);
+  z-index: 1;
+}
+
+.notes-calendar-group-header:hover {
+  background: var(--ds-color-surface-hover, rgba(0, 0, 0, 0.02));
+}
+
+.notes-calendar-collapse-icon {
+  font-size: 10px;
+  color: var(--ds-color-text-muted);
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.notes-calendar-group-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ds-color-text-primary);
+}
+
+.notes-calendar-group-count {
+  font-size: 11px;
+  color: var(--ds-color-text-muted);
+  margin-left: auto;
+  background: var(--ds-color-surface-secondary, rgba(0, 0, 0, 0.05));
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.notes-calendar-group-body {
+  padding-bottom: 4px;
+}
+
+/* ── 空状态 ── */
+.notes-calendar-empty {
+  text-align: center;
+  padding: 32px 16px;
+  font-size: 13px;
+  color: var(--ds-color-text-muted);
 }
 
 /* ── 列表标题 + 分页 ── */
