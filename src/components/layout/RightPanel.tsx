@@ -68,7 +68,9 @@ export function RightPanel() {
   // ── 搜索（带 debounce）──
   const [globalSearchTerm, setGlobalSearchTerm] = useState('')
   const [searchInputValue, setSearchInputValue] = useState('')
+  const [searchVisible, setSearchVisible] = useState(false)
   const searchDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchInputValue(value)
@@ -83,10 +85,27 @@ export function RightPanel() {
   const handleClearSearch = useCallback(() => {
     setSearchInputValue('')
     setGlobalSearchTerm('')
+    setSearchVisible(false)
     if (searchDebounceTimer.current) {
       clearTimeout(searchDebounceTimer.current)
     }
   }, [])
+
+  const toggleSearch = useCallback(() => {
+    setSearchVisible((v) => {
+      const next = !v
+      if (next) {
+        // 展开后自动聚焦输入框
+        setTimeout(() => searchInputRef.current?.focus(), 50)
+      } else {
+        handleClearSearch()
+      }
+      return next
+    })
+  }, [handleClearSearch])
+
+  // ── 视图模式 ──
+  const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list')
 
   // ── Collapse state (persisted to localStorage) ──
   const [collapsed, setCollapsed] = useState(true) // 默认折叠
@@ -165,34 +184,85 @@ export function RightPanel() {
         )}
         {collapsed ? null : (
           <>
+            {/* 搜索图标按钮 */}
+            <button
+              type="button"
+              className={`notes-icon-btn${searchVisible ? ' is-active' : ''}`}
+              onClick={toggleSearch}
+              title="搜索笔记"
+              aria-label="搜索笔记"
+            >
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <circle cx="9" cy="9" r="5"/>
+                <line x1="13" y1="13" x2="18" y2="18"/>
+              </svg>
+            </button>
+            {/* 搜索输入框（展开时显示） */}
+            {searchVisible && (
+              <div className="note-search-wrap">
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  className="note-search-input"
+                  placeholder="搜索笔记…"
+                  value={searchInputValue}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  aria-label="搜索笔记"
+                />
+                {searchInputValue && (
+                  <button
+                    type="button"
+                    className="note-search-clear"
+                    onClick={handleClearSearch}
+                    title="清除搜索"
+                    aria-label="清除搜索"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            )}
+            {/* 日历 */}
             <NotesCalendar
               onDateSelect={setFilterDate}
               selectedDate={filterDate}
             />
-            <div className="note-search-wrap">
-              <svg className="note-search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <circle cx="7" cy="7" r="4.5"/>
-                <line x1="10.5" y1="10.5" x2="14" y2="14"/>
-              </svg>
-              <input
-                type="text"
-                className="note-search-input"
-                placeholder="搜索笔记…"
-                value={searchInputValue}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                aria-label="搜索笔记"
-              />
-              {searchInputValue && (
-                <button
-                  type="button"
-                  className="note-search-clear"
-                  onClick={handleClearSearch}
-                  title="清除搜索"
-                  aria-label="清除搜索"
-                >
-                  ×
-                </button>
-              )}
+            {/* 视图切换：列表 / 时间轴 */}
+            <div className="notes-view-toggle">
+              <button
+                type="button"
+                className={`notes-icon-btn ${viewMode === 'list' ? 'is-active' : ''}`}
+                onClick={() => setViewMode('list')}
+                title="列表视图"
+                aria-label="列表视图"
+              >
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="5" x2="19" y2="5"/>
+                  <line x1="5" y1="10" x2="19" y2="10"/>
+                  <line x1="5" y1="15" x2="19" y2="15"/>
+                  <circle cx="2" cy="5" r="1.2" fill="currentColor" stroke="none"/>
+                  <circle cx="2" cy="10" r="1.2" fill="currentColor" stroke="none"/>
+                  <circle cx="2" cy="15" r="1.2" fill="currentColor" stroke="none"/>
+                </svg>
+              </button>
+              <button
+                type="button"
+                className={`notes-icon-btn ${viewMode === 'timeline' ? 'is-active' : ''}`}
+                onClick={() => setViewMode('timeline')}
+                title="时间轴视图"
+                aria-label="时间轴视图"
+              >
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="3" cy="4" r="1.5" fill="currentColor" stroke="none"/>
+                  <line x1="6" y1="4" x2="19" y2="4"/>
+                  <circle cx="3" cy="10" r="1.5" fill="currentColor" stroke="none"/>
+                  <line x1="6" y1="10" x2="19" y2="10"/>
+                  <circle cx="3" cy="16" r="1.5" fill="currentColor" stroke="none"/>
+                  <line x1="6" y1="16" x2="19" y2="16"/>
+                  <line x1="3" y1="5.5" x2="3" y2="8.5" strokeWidth="1.2"/>
+                  <line x1="3" y1="11.5" x2="3" y2="14.5" strokeWidth="1.2"/>
+                </svg>
+              </button>
             </div>
           </>
         )}
@@ -212,6 +282,7 @@ export function RightPanel() {
             onClearFilterDate={() => setFilterDate(null)}
             searchTerm={globalSearchTerm}
             loading={!notesLoaded}
+            viewMode={viewMode}
           />
           </ErrorBoundary>
         </div>

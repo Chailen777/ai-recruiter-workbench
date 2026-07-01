@@ -53,6 +53,8 @@ type NotePanelProps = {
   searchTerm?: string
   /** 笔记列表首次加载中，显示骨架屏 */
   loading?: boolean
+  /** 视图模式（由父组件控制） */
+  viewMode?: 'list' | 'timeline'
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -139,7 +141,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   other_life: '其他生活事项',
 }
 
-export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false }: NotePanelProps) {
+export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false, viewMode: externalViewMode }: NotePanelProps) {
   const [inputType, setInputType] = useState<'todo' | 'log' | 'note' | 'appointment' | 'diary'>('note')
   const [inputValue, setInputValue] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -150,8 +152,9 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   const [filterType, setFilterType] = useState<'all' | 'todo' | 'log' | 'note' | 'appointment' | 'diary'>('all')
   const [showOnlyUndone, setShowOnlyUndone] = useState(false)
 
-  // ── 视图模式 ──
-  const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list')
+  // ── 视图模式（优先使用外部传入的）──
+  const [internalViewMode, setInternalViewMode] = useState<'list' | 'timeline'>('list')
+  const viewMode = externalViewMode ?? internalViewMode
 
   // ── 预约表单字段 ──
   const [apptTime, setApptTime] = useState('')
@@ -617,26 +620,6 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
             {TYPE_LABELS.diary}
           </button>
 
-        </div>
-
-        {/* 视图切换 */}
-        <div className="note-view-toggle">
-          <button
-            type="button"
-            className={`note-view-btn ${viewMode === 'list' ? 'active' : ''}`}
-            onClick={() => setViewMode('list')}
-            title="列表视图"
-          >
-            列表
-          </button>
-          <button
-            type="button"
-            className={`note-view-btn ${viewMode === 'timeline' ? 'active' : ''}`}
-            onClick={() => setViewMode('timeline')}
-            title="时间轴视图"
-          >
-            时间轴
-          </button>
         </div>
 
         {/* 预约专用表单字段 */}

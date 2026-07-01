@@ -497,6 +497,103 @@ html {
   letter-spacing: 0.04em;
 }
 
+/* ── Header 图标按钮（搜索/列表/时间轴）── */
+.notes-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-card);
+  color: var(--ds-color-text-secondary);
+  cursor: pointer;
+  padding: 0;
+  transition: background 150ms, color 150ms, border-color 150ms;
+  flex-shrink: 0;
+}
+.notes-icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+.notes-icon-btn:hover {
+  background: var(--ds-color-bg-hover);
+  color: var(--ds-color-primary, #2563eb);
+  border-color: color-mix(in srgb, var(--ds-color-primary, #2563eb) 40%, var(--ds-color-border));
+}
+.notes-icon-btn.is-active {
+  color: var(--ds-color-primary, #2563eb);
+  border-color: var(--ds-color-primary, #2563eb);
+  background: color-mix(in srgb, var(--ds-color-primary, #2563eb) 10%, transparent);
+}
+
+/* 视图切换按钮组 */
+.notes-view-toggle {
+  display: flex;
+  gap: 2px;
+  border-radius: var(--ds-radius-md);
+  overflow: hidden;
+}
+.notes-view-toggle .notes-icon-btn {
+  border-radius: 0;
+}
+.notes-view-toggle .notes-icon-btn:first-child {
+  border-radius: var(--ds-radius-md) 0 0 var(--ds-radius-md);
+}
+.notes-view-toggle .notes-icon-btn:last-child {
+  border-radius: 0 var(--ds-radius-md) var(--ds-radius-md) 0;
+}
+
+/* 搜索框（展开时显示） */
+.note-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 120px;
+  max-width: 200px;
+}
+.note-search-input {
+  width: 100%;
+  padding: 6px 28px 6px 10px;
+  font-size: 13px;
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-card);
+  color: var(--ds-color-text);
+  outline: none;
+  transition: border-color 150ms;
+}
+.note-search-input:focus {
+  border-color: var(--ds-color-primary, #2563eb);
+}
+.note-search-input::placeholder {
+  color: var(--ds-color-text-tertiary);
+}
+.note-search-clear {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: var(--ds-color-border);
+  color: var(--ds-color-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: background 150ms;
+}
+.note-search-clear:hover {
+  background: var(--ds-color-text-tertiary);
+  color: var(--ds-color-bg);
+}
+
 /* ── 展开时的内容区 ── */
 .app-right-panel-body {
   display: grid;
