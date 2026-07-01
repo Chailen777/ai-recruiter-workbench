@@ -138,17 +138,55 @@ const CATEGORY_LABELS: Record<string, string> = {
   study: '读书学习',
   meeting: '开会',
   exercise: '锻炼身体',
+  work: '工作',
+  leisure: '休闲',
+  kids: '孩子',
+  parents: '父母',
+  friends: '朋友',
+  family: '家人',
   other_life: '其他生活事项',
 }
 
 /** 事项类型图标映射（用于卡片显示） */
 const CATEGORY_ICONS: Record<string, string> = {
   birthday: '🎂',
+  study: '📚',
+  meeting: '💼',
+  exercise: '🏃',
+  work: '💻',
+  leisure: '🎮',
+  kids: '👶',
+  parents: '👴',
+  friends: '🤝',
+  family: '👨‍👩‍👧‍👦',
+  other_life: '📋',
+}
+
+/** 事项类型卡片颜色（左边框色） */
+const CATEGORY_COLORS: Record<string, string> = {
+  birthday: 'pink',
+  study: 'brown',
+  meeting: 'blue',
+  exercise: 'green',
+  work: 'blue',
+  leisure: 'gold',
+  kids: 'mint',
+  parents: 'warmOrange',
+  friends: 'cyan',
+  family: 'purple',
+  other_life: 'gray',
 }
 
 /** 获取事项类型显示文字，优先用图标 */
 function getCategoryDisplay(category: string): string {
   return CATEGORY_ICONS[category] ?? CATEGORY_LABELS[category] ?? category
+}
+
+/** 获取事项类型对应的颜色类名 */
+function getCategoryColorClass(category: string | null | undefined): string {
+  if (!category) return ''
+  const color = CATEGORY_COLORS[category]
+  return color ? `cat-${color}` : ''
 }
 
 /** 构建待办信息行（有值就显示，不以 repeatType 为前提） */
@@ -1008,11 +1046,17 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
                     onChange={(e) => setRepeatCategory(e.target.value)}
                   >
                     <option value="">无</option>
-                    <option value="birthday">生日</option>
-                    <option value="study">读书学习</option>
-                    <option value="meeting">开会</option>
-                    <option value="exercise">锻炼身体</option>
-                    <option value="other_life">其他生活事项</option>
+                    <option value="birthday">🎂 生日</option>
+                    <option value="study">📚 读书学习</option>
+                    <option value="meeting">💼 开会</option>
+                    <option value="exercise">🏃 锻炼身体</option>
+                    <option value="work">💻 工作</option>
+                    <option value="leisure">🎮 休闲</option>
+                    <option value="kids">👶 孩子</option>
+                    <option value="parents">👴 父母</option>
+                    <option value="friends">🤝 朋友</option>
+                    <option value="family">👨‍👩‍👧‍👦 家人</option>
+                    <option value="other_life">📋 其他生活事项</option>
                   </select>
                 </div>
               </div>
@@ -1445,7 +1489,7 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
                         const rows = buildTodoDetailRows(note)
                         if (rows.length === 0) return null
                         return (
-                          <div className="note-todo-detail-card">
+                          <div className={`note-todo-detail-card ${getCategoryColorClass(note.repeatCategory)}`}>
                             {rows.map((row, idx) => (
                               <div key={idx} className="note-todo-detail-row">
                                 <span className="note-todo-detail-label">{row.icon} {row.label}</span>
@@ -2017,11 +2061,17 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                       name="repeatCategory"
                     >
                       <option value="">未分类</option>
-                      <option value="birthday">生日</option>
-                      <option value="study">读书学习</option>
-                      <option value="meeting">开会</option>
-                      <option value="exercise">锻炼身体</option>
-                      <option value="other_life">其他生活事项</option>
+                      <option value="birthday">🎂 生日</option>
+                      <option value="study">📚 读书学习</option>
+                      <option value="meeting">💼 开会</option>
+                      <option value="exercise">🏃 锻炼身体</option>
+                      <option value="work">💻 工作</option>
+                      <option value="leisure">🎮 休闲</option>
+                      <option value="kids">👶 孩子</option>
+                      <option value="parents">👴 父母</option>
+                      <option value="friends">🤝 朋友</option>
+                      <option value="family">👨‍👩‍👧‍👦 家人</option>
+                      <option value="other_life">📋 其他生活事项</option>
                     </select>
                   </div>
                 </>
@@ -2262,7 +2312,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
             const rows = buildTodoDetailRows(note)
             if (rows.length === 0) return null
             return (
-              <div className="note-todo-detail-card">
+              <div className={`note-todo-detail-card ${getCategoryColorClass(note.repeatCategory)}`}>
                 {rows.map((row, idx) => (
                   <div key={idx} className="note-todo-detail-row">
                     <span className="note-todo-detail-label">{row.icon} {row.label}</span>

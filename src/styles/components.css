@@ -4016,8 +4016,21 @@
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   border-radius: 10px;
   border: 1px solid #bfdbfe;
+  border-left: 3px solid #3b82f6;
   box-shadow: 0 1px 3px rgba(59, 130, 246, 0.08);
 }
+
+/* 类型颜色变体 - 左边框色 */
+.note-todo-detail-card.cat-pink { border-left-color: #ec4899; background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%); border-color: #fbcfe8; }
+.note-todo-detail-card.cat-brown { border-left-color: #a16207; background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border-color: #fde68a; }
+.note-todo-detail-card.cat-blue { border-left-color: #3b82f6; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-color: #bfdbfe; }
+.note-todo-detail-card.cat-green { border-left-color: #22c55e; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-color: #bbf7d0; }
+.note-todo-detail-card.cat-gold { border-left-color: #f59e0b; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-color: #fde68a; }
+.note-todo-detail-card.cat-mint { border-left-color: #14b8a6; background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%); border-color: #99f6e4; }
+.note-todo-detail-card.cat-warmOrange { border-left-color: #f97316; background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border-color: #fed7aa; }
+.note-todo-detail-card.cat-cyan { border-left-color: #06b6d4; background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%); border-color: #a5f3fc; }
+.note-todo-detail-card.cat-purple { border-left-color: #a855f7; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border-color: #e9d5ff; }
+.note-todo-detail-card.cat-gray { border-left-color: #9ca3af; background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); border-color: #e5e7eb; }
 
 .note-todo-detail-row {
   display: flex;
@@ -4051,6 +4064,16 @@
   border-color: rgba(59, 130, 246, 0.2);
   box-shadow: 0 1px 3px rgba(59, 130, 246, 0.12);
 }
+[data-theme='dark'] .note-todo-detail-card.cat-pink { border-left-color: #f472b6; background: linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(236, 72, 153, 0.05) 100%); border-color: rgba(236, 72, 153, 0.2); }
+[data-theme='dark'] .note-todo-detail-card.cat-brown { border-left-color: #ca8a04; background: linear-gradient(135deg, rgba(202, 138, 4, 0.08) 0%, rgba(202, 138, 4, 0.05) 100%); border-color: rgba(202, 138, 4, 0.2); }
+[data-theme='dark'] .note-todo-detail-card.cat-blue { border-left-color: #60a5fa; background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%); border-color: rgba(59, 130, 246, 0.2); }
+[data-theme='dark'] .note-todo-detail-card.cat-green { border-left-color: #4ade80; background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0.05) 100%); border-color: rgba(34, 197, 94, 0.2); }
+[data-theme='dark'] .note-todo-detail-card.cat-gold { border-left-color: #fbbf24; background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.05) 100%); border-color: rgba(245, 158, 11, 0.2); }
+[data-theme='dark'] .note-todo-detail-card.cat-mint { border-left-color: #2dd4bf; background: linear-gradient(135deg, rgba(20, 184, 166, 0.08) 0%, rgba(20, 184, 166, 0.05) 100%); border-color: rgba(20, 184, 166, 0.2); }
+[data-theme='dark'] .note-todo-detail-card.cat-warmOrange { border-left-color: #fb923c; background: linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%); border-color: rgba(249, 115, 22, 0.2); }
+[data-theme='dark'] .note-todo-detail-card.cat-cyan { border-left-color: #22d3ee; background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%); border-color: rgba(6, 182, 212, 0.2); }
+[data-theme='dark'] .note-todo-detail-card.cat-purple { border-left-color: #c084fc; background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%); border-color: rgba(168, 85, 247, 0.2); }
+[data-theme='dark'] .note-todo-detail-card.cat-gray { border-left-color: #9ca3af; background: linear-gradient(135deg, rgba(156, 163, 175, 0.08) 0%, rgba(156, 163, 175, 0.05) 100%); border-color: rgba(156, 163, 175, 0.2); }
 
 [data-theme='dark'] .note-todo-detail-label {
   color: #93c5fd;
@@ -4066,6 +4089,16 @@
     border-color: rgba(59, 130, 246, 0.2);
     box-shadow: 0 1px 3px rgba(59, 130, 246, 0.12);
   }
+  :root:not([data-theme='light']) .note-todo-detail-card.cat-pink { border-left-color: #f472b6; background: linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(236, 72, 153, 0.05) 100%); border-color: rgba(236, 72, 153, 0.2); }
+  :root:not([data-theme='light']) .note-todo-detail-card.cat-brown { border-left-color: #ca8a04; background: linear-gradient(135deg, rgba(202, 138, 4, 0.08) 0%, rgba(202, 138, 4, 0.05) 100%); border-color: rgba(202, 138, 4, 0.2); }
+  :root:not([data-theme='light']) .note-todo-detail-card.cat-blue { border-left-color: #60a5fa; background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%); border-color: rgba(59, 130, 246, 0.2); }
+  :root:not([data-theme='light']) .note-todo-detail-card.cat-green { border-left-color: #4ade80; background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0.05) 100%); border-color: rgba(34, 197, 94, 0.2); }
+  :root:not([data-theme='light']) .note-todo-detail-card.cat-gold { border-left-color: #fbbf24; background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.05) 100%); border-color: rgba(245, 158, 11, 0.2); }
+  :root:not([data-theme='light']) .note-todo-detail-card.cat-mint { border-left-color: #2dd4bf; background: linear-gradient(135deg, rgba(20, 184, 166, 0.08) 0%, rgba(20, 184, 166, 0.05) 100%); border-color: rgba(20, 184, 166, 0.2); }
+  :root:not([data-theme='light']) .note-todo-detail-card.cat-warmOrange { border-left-color: #fb923c; background: linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%); border-color: rgba(249, 115, 22, 0.2); }
+  :root:not([data-theme='light']) .note-todo-detail-card.cat-cyan { border-left-color: #22d3ee; background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%); border-color: rgba(6, 182, 212, 0.2); }
+  :root:not([data-theme='light']) .note-todo-detail-card.cat-purple { border-left-color: #c084fc; background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%); border-color: rgba(168, 85, 247, 0.2); }
+  :root:not([data-theme='light']) .note-todo-detail-card.cat-gray { border-left-color: #9ca3af; background: linear-gradient(135deg, rgba(156, 163, 175, 0.08) 0%, rgba(156, 163, 175, 0.05) 100%); border-color: rgba(156, 163, 175, 0.2); }
   :root:not([data-theme='light']) .note-todo-detail-label {
     color: #93c5fd;
   }
