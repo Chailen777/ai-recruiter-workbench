@@ -124,6 +124,7 @@ export async function POST(req: NextRequest) {
         pinned: note.pinned,
         bookmarked: note.bookmarked,
         done: note.done,
+        person: note.person ?? null,
         createdAt: note.createdAt,
         author: '陈成',
       })
@@ -188,6 +189,7 @@ export async function PATCH(req: NextRequest) {
         pinned: updated.pinned,
         bookmarked: updated.bookmarked,
         done: updated.done,
+        person: updated.person ?? null,
         createdAt: updated.createdAt,
         author: '陈成',
       })

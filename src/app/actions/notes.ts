@@ -147,6 +147,7 @@ async function toNoteData(note: {
   pinned: boolean
   bookmarked: boolean
   done: boolean
+  person?: string | null
   entityType: string
   entityId: number
   createdAt: Date
@@ -174,6 +175,7 @@ async function toNoteData(note: {
     pinned: note.pinned,
     bookmarked: note.bookmarked,
     done: note.done,
+    person: note.person ?? null,
     entityType: note.entityType,
     entityId: note.entityId,
     entityName: await getEntityName(note.entityType, note.entityId),
@@ -211,6 +213,7 @@ export async function getNotes(entityType: EntityType, entityId: number) {
       pinned: n.pinned,
       bookmarked: n.bookmarked,
       done: n.done,
+      person: n.person ?? null,
       entityType: n.entityType,
       entityId: n.entityId,
       createdAt: n.createdAt.toISOString(),
@@ -521,6 +524,9 @@ export async function editNote(formData: FormData) {
   const isLog = note.type === 'log'
   const logPerson = isLog ? (formData.get('logPerson') as string)?.trim() || null : undefined
 
+  // 人物标识（所有类型都支持）
+  const person = (formData.get('person') as string)?.trim() || null
+
   const data: Record<string, unknown> = { content }
   if (appointmentTime !== undefined) data.appointmentTime = appointmentTime ? new Date(appointmentTime) : null
   if (appointmentLocation !== undefined) data.appointmentLocation = appointmentLocation
@@ -529,6 +535,7 @@ export async function editNote(formData: FormData) {
   if (articleType !== undefined) data.articleType = articleType
   if (articlePerson !== undefined) data.articlePerson = articlePerson
   if (logPerson !== undefined) data.logPerson = logPerson
+  if (person !== null) data.person = person
 
   // 待办字段（仅 todo 类型才更新）
   const isTodo = note.type === 'todo'
@@ -571,11 +578,15 @@ export async function editNoteWithScope(formData: FormData) {
   const content = (formData.get('content') as string)?.trim()
   if (!content) return
 
+  // 人物标识（所有类型都支持）
+  const person = (formData.get('person') as string)?.trim() || null
+
   // 待办重复字段
   const isTodo = note.type === 'todo'
   const scheduledDateStr = isTodo ? (formData.get('scheduledDate') as string) || null : null
 
   const updateData: Record<string, unknown> = { content }
+  if (person !== null) updateData.person = person
   if (isTodo && scheduledDateStr) {
     updateData.scheduledDate = parseAppDateTime(scheduledDateStr)
   }
@@ -723,6 +734,7 @@ export async function getAllNotes() {
       pinned: n.pinned,
       bookmarked: n.bookmarked,
       done: n.done,
+      person: n.person ?? null,
       entityType: n.entityType,
       entityId: n.entityId,
       entityName: n.entityType === 'candidate'

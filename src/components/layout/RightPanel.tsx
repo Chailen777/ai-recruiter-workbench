@@ -19,6 +19,7 @@ function toNoteItem(n: Record<string, unknown>): NoteItem {
     pinned: Boolean(n.pinned),
     bookmarked: Boolean(n.bookmarked),
     done: Boolean(n.done),
+    person: (n.person as string) ?? null,
     entityType: n.entityType as string,
     entityId: n.entityId as number,
     entityName: (n.entityName ?? null) as string | null,
@@ -310,9 +311,8 @@ export function RightPanel() {
             filterDate={filterDate}
             onClearFilterDate={() => setFilterDate(null)}
             searchTerm={globalSearchTerm}
-            bookmarkFilter={viewMode === 'bookmark'}
             loading={!notesLoaded}
-            viewMode={viewMode === 'bookmark' ? 'list' : viewMode as 'calendar' | 'list' | 'timeline'}
+            viewMode={viewMode}
           />
           </ErrorBoundary>
         </div>

@@ -14,6 +14,7 @@ export type NoteItem = {
   pinned: boolean
   bookmarked: boolean
   done: boolean
+  person?: string | null
   entityType?: string
   entityId?: number
   entityName?: string | null
@@ -52,12 +53,10 @@ type NotePanelProps = {
   onClearFilterDate?: () => void
   /** 搜索关键词（全文匹配） */
   searchTerm?: string
-  /** 收藏筛选（仅显示已收藏笔记） */
-  bookmarkFilter?: boolean
   /** 笔记列表首次加载中，显示骨架屏 */
   loading?: boolean
   /** 视图模式（由父组件控制） */
-  viewMode?: 'calendar' | 'list' | 'timeline'
+  viewMode?: 'calendar' | 'list' | 'timeline' | 'bookmark'
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -251,7 +250,7 @@ function formatRepeatLabel(repeatType: string, repeatWeekdays?: string | null): 
   return REPEAT_LABELS[repeatType] ?? repeatType
 }
 
-export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, bookmarkFilter, loading = false, viewMode: externalViewMode }: NotePanelProps) {
+export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false, viewMode: externalViewMode }: NotePanelProps) {
   const [inputType, setInputType] = useState<'todo' | 'log' | 'note' | 'appointment' | 'diary'>('note')
   const [inputValue, setInputValue] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -263,7 +262,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   const [showOnlyUndone, setShowOnlyUndone] = useState(false)
 
   // ── 视图模式（优先使用外部传入的）──
-  const [internalViewMode, setInternalViewMode] = useState<'list' | 'timeline'>('list')
+  const [internalViewMode, setInternalViewMode] = useState<'calendar' | 'list' | 'timeline' | 'bookmark'>('list')
   const viewMode = externalViewMode ?? internalViewMode
 
   // ── 预约表单字段 ──
@@ -537,9 +536,9 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
 
   // ── 收藏筛选（memoized）──
   const finalFiltered = useMemo(() => {
-    if (!bookmarkFilter) return searchFiltered
+    if (viewMode !== 'bookmark') return searchFiltered
     return searchFiltered.filter((n) => n.bookmarked)
-  }, [searchFiltered, bookmarkFilter])
+  }, [searchFiltered, viewMode])
 
   // ── 未完成待办计数（memoized）──
   const undoneTodoCount = useMemo(() => {
@@ -675,7 +674,8 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
 
   return (
     <div className="note-panel">
-      {/* ── 快速输入区 ── */}
+      {/* ── 快速输入区（日历/收藏视图下隐藏）── */}
+      {(viewMode !== 'calendar' && viewMode !== 'bookmark') && (
       <form
         ref={formRef}
         className="note-input-area"
@@ -690,7 +690,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
 
         {/* 类型切换（含今天 + 过滤标签） */}
         <div className="note-type-tabs" role="group" aria-label="笔记类型过滤">
-          {/* 今天 */}
+          {/* 今天 — 整个输入区已在日历/收藏视图下隐藏，此处无需额外判断 */}
           <button
             type="button"
             className={`note-type-tab ${filterType === 'all' ? 'active note-type-all' : ''}`}
@@ -1178,19 +1178,11 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
           </div>
         </div>
       </form>
+      )}
 
       {/* ── 日记全屏写作模式 ── */}
       {isFullscreen && inputType === 'diary' && typeof document !== 'undefined' && createPortal(
         <div className="note-diary-fullscreen-overlay" role="dialog" aria-modal="true" aria-label="全屏写作模式">
-          {/* 浮动退出按钮（始终可见，手机端友好） */}
-          <button
-            type="button"
-            className="note-diary-fs-float-exit"
-            onClick={() => exitFullscreen()}
-            title="退出全屏 (ESC)"
-          >
-            退出全屏
-          </button>
           {/* 顶部栏：标题 + 文章类型/人物 + 字数 */}
           <div className="note-diary-fs-header">
             <div className="note-diary-fs-header-left">
@@ -1348,8 +1340,8 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       {loading ? (
         <NoteSkeleton />
       ) : viewMode === 'calendar' ? (
-        <CalendarView notes={notes} onChanged={onNotesChanged} searchTerm={searchTerm} bookmarkFilter={bookmarkFilter} />
-      ) : viewMode === 'list' ? (
+        <CalendarView notes={notes} onChanged={onNotesChanged} searchTerm={searchTerm} />
+      ) : viewMode === 'list' || viewMode === 'bookmark' ? (
         <ListView notes={finalFiltered} onChanged={onNotesChanged} searchTerm={searchTerm} filterDate={filterDate} filterType={filterType} showOnlyUndone={showOnlyUndone} onClearFilterDate={onClearFilterDate} />
       ) : (
         <TimelineView notes={finalFiltered} onChanged={onNotesChanged} searchTerm={searchTerm} filterDate={filterDate} filterType={filterType} showOnlyUndone={showOnlyUndone} onClearFilterDate={onClearFilterDate} />
@@ -1391,11 +1383,10 @@ function getDayCategory(dateStr: string, t: string, tm: string, y: string): numb
 }
 
 /* ── 日历视图（内嵌在卡片笔记中） ── */
-function CalendarView({ notes, onChanged, searchTerm, bookmarkFilter }: {
+function CalendarView({ notes, onChanged, searchTerm }: {
   notes: NoteItem[]
   onChanged?: () => void
   searchTerm?: string
-  bookmarkFilter?: boolean
 }) {
   const [viewYear, setViewYear] = useState(() => new Date().getFullYear())
   const [viewMonth, setViewMonth] = useState(() => new Date().getMonth())
@@ -1431,10 +1422,6 @@ function CalendarView({ notes, onChanged, searchTerm, bookmarkFilter }: {
       const q = searchTerm.toLowerCase()
       filtered = filtered.filter((n) => n.content.toLowerCase().includes(q))
     }
-    // 收藏过滤
-    if (bookmarkFilter) {
-      filtered = filtered.filter((n) => n.bookmarked)
-    }
     // Tab 过滤
     if (calendarTab === 'appointment') filtered = filtered.filter((n) => n.type === 'appointment')
     if (calendarTab === 'todo') filtered = filtered.filter((n) => n.type === 'todo')
@@ -1443,7 +1430,7 @@ function CalendarView({ notes, onChanged, searchTerm, bookmarkFilter }: {
       filtered = filtered.filter((n) => getGroupDate(n) === filterDate)
     }
     return filtered
-  }, [notes, searchTerm, bookmarkFilter, calendarTab, filterDate])
+  }, [notes, searchTerm, calendarTab, filterDate])
 
   // ── 分组（与列表视图排序一致）──
   const noteGroups = useMemo(() => {
@@ -2058,6 +2045,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
   // ── 编辑模式状态 ──
   const [isEditing, setIsEditing] = useState(false)
   const [editContent, setEditContent] = useState(note.content)
+  const [editPerson, setEditPerson] = useState(note.person ?? '')
   const [editApptTime, setEditApptTime] = useState(
     note.appointmentTime ? note.appointmentTime.slice(0, 16) : ''
   )
@@ -2098,6 +2086,9 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
   // 待办内容折叠（非日记类型，> 150 字，约5行）
   const [contentExpanded, setContentExpanded] = useState(false)
   const contentIsLong = note.type !== 'diary' && note.content.trim().length > 150
+
+  // 人物标识前缀 — 显示格式：【人物名】内容
+  const displayContent = note.person ? `【${note.person}】${note.content}` : note.content
 
   // ── 编辑模式全屏 ──
   const [isEditFullscreen, setIsEditFullscreen] = useState(false)
@@ -2210,6 +2201,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
         const fd = new FormData()
         fd.set('id', String(note.id))
         fd.set('content', content)
+        if (editPerson.trim()) fd.set('person', editPerson.trim())
         if (note.type === 'appointment') {
           if (editApptTime) fd.set('appointmentTime', editApptTime)
           if (editApptLocation.trim()) fd.set('appointmentLocation', editApptLocation.trim())
@@ -2261,6 +2253,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
         fd.set('id', String(note.id))
         fd.set('content', content)
         fd.set('scope', scope)
+        if (editPerson.trim()) fd.set('person', editPerson.trim())
         if (note.type === 'todo' && editTodoDate) {
           fd.set('scheduledDate', editTodoDate)
         }
@@ -2798,6 +2791,18 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
               autoFocus
             />
           )}
+          {/* 人物标识（所有类型通用） */}
+          <div className="note-edit-person">
+            <label className="note-edit-label">👤 人物</label>
+            <input
+              type="text"
+              className="note-edit-input"
+              value={editPerson}
+              onChange={(e) => setEditPerson(e.target.value)}
+              placeholder="关联人物姓名…"
+              maxLength={50}
+            />
+          </div>
           <div className="note-edit-actions">
             <span className="note-edit-char-count">{note.type === 'diary' ? '' : `${editContent.length}/500`}</span>
             {note.type === 'diary' && (
@@ -2848,7 +2853,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
               <div className="note-diary-content-wrap">
                 <div
                   className={`note-content note-diary-content${diaryIsLong && !diaryExpanded ? ' collapsed' : ''}`}
-                  dangerouslySetInnerHTML={{ __html: note.content }}
+                  dangerouslySetInnerHTML={{ __html: note.person ? `<span class="note-person-prefix">【${note.person}】</span>${note.content}` : note.content }}
                 />
                 {diaryIsLong && (
                   <button
@@ -2863,7 +2868,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
             ) : (
               <div className="note-content-wrap">
                 <p className={`note-content${contentIsLong && !contentExpanded ? ' note-content-clamped' : ''}`}>
-                  {note.content}
+                  {displayContent}
                 </p>
                 {contentIsLong && (
                   <button
@@ -3124,15 +3129,6 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
       {/* ── 编辑模式全屏写作 ── */}
       {isEditFullscreen && note.type === 'diary' && typeof document !== 'undefined' && createPortal(
         <div className="note-diary-fullscreen-overlay" role="dialog" aria-modal="true" aria-label="全屏编辑模式">
-          {/* 浮动退出按钮（始终可见，手机端友好） */}
-          <button
-            type="button"
-            className="note-diary-fs-float-exit"
-            onClick={() => exitEditFullscreen()}
-            title="退出全屏 (ESC)"
-          >
-            退出全屏
-          </button>
           <div className="note-diary-fs-header">
             <div className="note-diary-fs-header-left">
               <span className="note-diary-fs-title">✍️ 编辑模式</span>

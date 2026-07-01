@@ -353,6 +353,8 @@ model Note {
   pinned     Boolean  @default(false)
   // 是否收藏（图钉）
   bookmarked Boolean  @default(false)
+  // 人物标识（所有类型可用）
+  person     String?
   // 是否完成 (todo 专用)
   done       Boolean  @default(false)
   // 预约字段 (appointment 专用)

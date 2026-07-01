@@ -19,6 +19,7 @@ export type NoteData = {
   pinned: boolean
   bookmarked: boolean
   done: boolean
+  person?: string | null
   entityType: string
   entityId: number
   entityName?: string | null
@@ -124,6 +125,9 @@ export function buildMdContent(note: NoteData): string {
   lines.push(`status: ${note.type === 'todo' ? (note.done ? 'completed' : 'pending') : 'open'}`)
   lines.push(`pinned: ${note.pinned}`)
   lines.push(`bookmarked: ${note.bookmarked}`)
+  if (note.person) {
+    lines.push(`person: ${yamlValue(note.person)}`)
+  }
   lines.push(`entity_type: ${note.entityType}`)
   lines.push(`entity_id: ${note.entityId}`)
   if (note.entityName) {
@@ -161,6 +165,9 @@ export function buildMdContent(note: NoteData): string {
   lines.push(`| 🏷️ 记录类型 | ${typeLabel(note.type)} |`)
   if (note.type === 'todo') {
     lines.push(`| ✅ 完成状态 | ${note.done ? '已完成' : '待完成'} |`)
+  }
+  if (note.person) {
+    lines.push(`| 👤 人物 | ${note.person} |`)
   }
   lines.push(`| 📌 置顶 | ${note.pinned ? '是' : '否'} |`)
   lines.push(`| 📌 收藏 | ${note.bookmarked ? '是' : '否'} |`)

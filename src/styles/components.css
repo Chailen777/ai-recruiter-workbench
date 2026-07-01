@@ -4074,6 +4074,18 @@
   color: #1d4ed8;
 }
 
+/* ── 人物标识前缀 ── */
+.note-person-prefix {
+  color: var(--ds-color-primary, #3b82f6);
+  font-weight: 700;
+  margin-right: 2px;
+}
+
+/* ── 编辑弹窗人物输入 ── */
+.note-edit-person {
+  margin-bottom: 8px;
+}
+
 /* .note-card.is-done — 完成仅打勾，不划线不变色 */
 
 /* 预约表单 */
