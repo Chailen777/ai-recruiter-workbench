@@ -74,8 +74,20 @@ export function RightPanel() {
   // ── 搜索（带 debounce）──
   const [globalSearchTerm, setGlobalSearchTerm] = useState('')
   const [searchInputValue, setSearchInputValue] = useState('')
+  const [searchExpanded, setSearchExpanded] = useState(false)
   const searchDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  const handleExpandSearch = useCallback(() => {
+    setSearchExpanded(true)
+    setTimeout(() => searchInputRef.current?.focus(), 50)
+  }, [])
+
+  const handleCollapseSearch = useCallback(() => {
+    // 有输入内容时不收起
+    if (searchInputValue) return
+    setSearchExpanded(false)
+  }, [searchInputValue])
 
   // ── 滚动状态：用于 tab 导航置顶 ──
   const bodyRef = useRef<HTMLDivElement>(null)
@@ -94,11 +106,10 @@ export function RightPanel() {
   const handleClearSearch = useCallback(() => {
     setSearchInputValue('')
     setGlobalSearchTerm('')
+    setSearchExpanded(false)
     if (searchDebounceTimer.current) {
       clearTimeout(searchDebounceTimer.current)
     }
-    // 清除后自动聚焦输入框
-    setTimeout(() => searchInputRef.current?.focus(), 50)
   }, [])
 
   // ── 视图模式（四个互斥：日历 / 列表 / 时间轴 / 收藏）──
@@ -195,32 +206,50 @@ export function RightPanel() {
         )}
         {collapsed ? null : (
           <>
-            {/* 搜索框 — 放在标题右边，始终可见 */}
-            <div className="note-header-search">
-              <svg className="note-header-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                <circle cx="9" cy="9" r="5"/>
-                <line x1="13" y1="13" x2="18" y2="18"/>
-              </svg>
-              <input
-                ref={searchInputRef}
-                type="text"
-                className="note-header-search-input"
-                placeholder="搜索笔记..."
-                value={searchInputValue}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                aria-label="搜索笔记"
-              />
-              {searchInputValue && (
+            {/* 搜索框 — 点击展开，失焦无内容时收起 */}
+            <div className={`note-header-search${searchExpanded ? ' is-expanded' : ''}`}>
+              {searchExpanded ? (
+                <>
+                  <svg className="note-header-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                    <circle cx="9" cy="9" r="5"/>
+                    <line x1="13" y1="13" x2="18" y2="18"/>
+                  </svg>
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    className="note-header-search-input"
+                    placeholder="搜索笔记..."
+                    value={searchInputValue}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    onBlur={handleCollapseSearch}
+                    aria-label="搜索笔记"
+                  />
+                  {searchInputValue && (
+                    <button
+                      type="button"
+                      className="note-header-search-clear"
+                      onClick={handleClearSearch}
+                      title="清除搜索"
+                      aria-label="清除搜索"
+                    >
+                      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                        <line x1="5" y1="5" x2="15" y2="15"/>
+                        <line x1="15" y1="5" x2="5" y2="15"/>
+                      </svg>
+                    </button>
+                  )}
+                </>
+              ) : (
                 <button
                   type="button"
-                  className="note-header-search-clear"
-                  onClick={handleClearSearch}
-                  title="清除搜索"
-                  aria-label="清除搜索"
+                  className="note-header-search-toggle"
+                  onClick={handleExpandSearch}
+                  title="搜索笔记"
+                  aria-label="搜索笔记"
                 >
                   <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                    <line x1="5" y1="5" x2="15" y2="15"/>
-                    <line x1="15" y1="5" x2="5" y2="15"/>
+                    <circle cx="9" cy="9" r="5"/>
+                    <line x1="13" y1="13" x2="18" y2="18"/>
                   </svg>
                 </button>
               )}

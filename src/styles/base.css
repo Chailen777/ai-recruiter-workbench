@@ -576,28 +576,63 @@ html {
 .note-header-search {
   display: flex;
   align-items: center;
-  flex: 1;
-  max-width: 240px;
-  min-width: 120px;
   height: 32px;
-  background: var(--ds-color-bg);
-  border: 1px solid var(--ds-color-border);
   border-radius: var(--ds-radius-md);
+  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s, box-shadow 0.2s,
+              opacity 0.2s, max-height 0.25s, padding 0.25s, margin 0.25s;
+}
+/* 收起态：紧凑图标 */
+.note-header-search:not(.is-expanded) {
+  width: 32px;
+}
+/* 展开态：完整输入框 */
+.note-header-search.is-expanded {
+  width: 200px;
   padding: 0 8px;
   gap: 6px;
-  transition: border-color 0.2s, box-shadow 0.2s, opacity 0.2s, max-height 0.25s, padding 0.25s, margin 0.25s, width 0.25s;
+  background: var(--ds-color-bg);
+  border: 1px solid var(--ds-color-border);
 }
-.note-header-search:focus-within {
+.note-header-search.is-expanded:focus-within {
   border-color: var(--ds-color-primary, #2563eb);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--ds-color-primary, #2563eb) 15%, transparent);
 }
+
+/* 收起态的搜索图标按钮 */
+.note-header-search-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-card);
+  color: var(--ds-color-text-secondary);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 150ms, color 150ms, border-color 150ms;
+}
+.note-header-search-toggle:hover {
+  background: var(--ds-color-bg-hover);
+  color: var(--ds-color-primary, #2563eb);
+  border-color: color-mix(in srgb, var(--ds-color-primary, #2563eb) 40%, var(--ds-color-border));
+}
+.note-header-search-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* 展开态内部元素 */
 .note-header-search-icon {
   width: 15px;
   height: 15px;
   flex-shrink: 0;
   color: var(--ds-color-text-tertiary);
 }
-.note-header-search:focus-within .note-header-search-icon {
+.note-header-search.is-expanded:focus-within .note-header-search-icon {
   color: var(--ds-color-primary, #2563eb);
 }
 .note-header-search-input {
@@ -641,17 +676,6 @@ html {
   height: 11px;
 }
 
-/* 滚动收起 — 搜索框也隐藏 */
-.app-right-panel.is-scrolled-down .note-header-search {
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  padding: 0;
-  margin: 0;
-  width: 0;
-  border-width: 0;
-}
-
 /* ── 滚动时 header 收起（标题 + 搜索 / 视图按钮 / 折叠按钮淡出，tab 置顶）── */
 .app-right-panel.is-scrolled-down .app-right-panel-header {
   padding: 0;
@@ -666,7 +690,8 @@ html {
   transition: max-height .25s ease, opacity .2s ease, margin .25s ease;
 }
 .app-right-panel.is-scrolled-down .notes-icon-btn,
-.app-right-panel.is-scrolled-down .notes-view-toggle {
+.app-right-panel.is-scrolled-down .notes-view-toggle,
+.app-right-panel.is-scrolled-down .note-header-search {
   max-height: 0;
   opacity: 0;
   overflow: hidden;
@@ -2909,12 +2934,18 @@ td textarea {
     gap: 3px;
   }
   .note-header-search {
-    max-width: 160px;
-    min-width: 80px;
-    height: 36px;
+    /* mobile: adjust expand width */
   }
-  .note-header-search-input {
-    font-size: 13px;
+  .note-header-search.is-expanded {
+    width: 170px;
+  }
+  .note-header-search-toggle {
+    width: 40px;
+    height: 40px;
+  }
+  .note-header-search-toggle svg {
+    width: 22px;
+    height: 22px;
   }
 }
 
