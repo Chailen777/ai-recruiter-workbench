@@ -64,6 +64,14 @@ const VIEW_OPTIONS: ViewOption[] = [
   },
 ]
 
+/* 扇形位置：从右下角向左上方向展开的弧线 */
+const FAN_POSITIONS = [
+  { x: -135, y: -105 },  // 收藏
+  { x: -150, y: -55 },   // 日历
+  { x: -150, y:   0 },   // 列表
+  { x: -135, y:  55 },   // 时间轴
+]
+
 export function NoteViewFab({
   viewMode,
   setViewMode,
@@ -74,9 +82,35 @@ export function NoteViewFab({
   bookmarkCount: number
 }) {
   const [expanded, setExpanded] = useState(false)
+  const [awake, setAwake] = useState(false)
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const fabRef = useRef<HTMLDivElement>(null)
 
-  // 点击外部关闭
+  /* 唤醒：touch / hover 触发 */
+  const wakeUp = useCallback(() => {
+    setAwake(true)
+    if (idleTimer.current) {
+      clearTimeout(idleTimer.current)
+      idleTimer.current = null
+    }
+  }, [])
+
+  /* 3 秒无操作后回到半透明 */
+  const backToIdle = useCallback(() => {
+    if (expanded) return
+    if (idleTimer.current) clearTimeout(idleTimer.current)
+    idleTimer.current = setTimeout(() => setAwake(false), 3000)
+  }, [expanded])
+
+  useEffect(() => {
+    if (expanded) {
+      setAwake(true)
+      return
+    }
+    backToIdle()
+  }, [expanded, backToIdle])
+
+  /* 点击外部关闭 */
   const handleOutsideClick = useCallback((e: MouseEvent | TouchEvent) => {
     if (fabRef.current && !fabRef.current.contains(e.target as Node)) {
       setExpanded(false)
@@ -103,39 +137,46 @@ export function NoteViewFab({
 
   return (
     <div
-      className={`note-view-fab${expanded ? ' is-expanded' : ''}`}
+      className={`note-view-fab${expanded ? ' is-expanded' : ''}${awake ? ' is-awake' : ''}`}
       ref={fabRef}
+      onMouseEnter={wakeUp}
+      onTouchStart={wakeUp}
     >
-      {/* 展开菜单：除当前外的其他选项 */}
+      {/* 扇形菜单项 */}
       <div className="note-view-fab-menu">
-        {otherOptions.map((opt) => (
+        {otherOptions.map((opt, i) => (
           <button
             key={opt.id}
             type="button"
             className="note-view-fab-option"
+            style={{
+              '--fx': `${FAN_POSITIONS[i].x}px`,
+              '--fy': `${FAN_POSITIONS[i].y}px`,
+              transitionDelay: expanded
+                ? `${0.04 + i * 0.05}s`
+                : `${0.06 - i * 0.015}s`,
+            } as React.CSSProperties}
             onClick={() => handleSelect(opt.id)}
-            aria-label={opt.label}
-            title={opt.label}
           >
-            {opt.svg}
+            <span className="note-view-fab-opt-icon">{opt.svg}</span>
+            <span className="note-view-fab-opt-label">{opt.label}</span>
             {opt.id === 'bookmark' && bookmarkCount > 0 && (
-              <span className="notes-icon-badge">{bookmarkCount}</span>
+              <span className="note-view-fab-badge">{bookmarkCount}</span>
             )}
           </button>
         ))}
       </div>
 
-      {/* 主按钮：当前视图 */}
+      {/* 主触发按钮 */}
       <button
         type="button"
         className="note-view-fab-main"
         onClick={() => setExpanded((v) => !v)}
         aria-label={`切换视图，当前${currentOption.label}`}
-        title={`视图：${currentOption.label}`}
       >
         {currentOption.svg}
         {viewMode === 'bookmark' && bookmarkCount > 0 && (
-          <span className="notes-icon-badge">{bookmarkCount}</span>
+          <span className="note-view-fab-main-badge">{bookmarkCount}</span>
         )}
       </button>
     </div>
