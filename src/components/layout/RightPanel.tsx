@@ -208,25 +208,40 @@ export function RightPanel() {
         )}
         {collapsed ? null : (
           <>
-            {/* 搜索图标按钮 */}
-            <button
-              type="button"
-              className={`notes-icon-btn${searchVisible ? ' is-active' : ''}`}
-              onClick={toggleSearch}
-              title="搜索笔记"
-              aria-label="搜索笔记"
-            >
-              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                <circle cx="9" cy="9" r="5"/>
-                <line x1="13" y1="13" x2="18" y2="18"/>
-              </svg>
-            </button>
+            {/* 搜索 / 关闭按钮 */}
+            {searchVisible ? (
+              <button
+                type="button"
+                className="notes-icon-btn"
+                onClick={handleClearSearch}
+                title="关闭搜索"
+                aria-label="关闭搜索"
+              >
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <line x1="5" y1="5" x2="15" y2="15"/>
+                  <line x1="15" y1="5" x2="5" y2="15"/>
+                </svg>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="notes-icon-btn"
+                onClick={toggleSearch}
+                title="搜索笔记"
+                aria-label="搜索笔记"
+              >
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <circle cx="9" cy="9" r="5"/>
+                  <line x1="13" y1="13" x2="18" y2="18"/>
+                </svg>
+              </button>
+            )}
             {/* 视图切换：📌收藏 / 📅日历 / 📋列表 / ⏱时间轴 */}
             <div className="notes-view-toggle">
               <button
                 type="button"
                 className={`notes-icon-btn ${viewMode === 'bookmark' ? 'is-active' : ''}`}
-                onClick={() => setViewMode('bookmark')}
+                onClick={() => { handleClearSearch(); setViewMode('bookmark') }}
                 title="查看收藏"
                 aria-label="查看收藏"
                 style={{ position: 'relative' }}
@@ -239,7 +254,7 @@ export function RightPanel() {
               <button
                 type="button"
                 className={`notes-icon-btn ${viewMode === 'calendar' ? 'is-active' : ''}`}
-                onClick={() => setViewMode('calendar')}
+                onClick={() => { handleClearSearch(); setViewMode('calendar') }}
                 title="日历视图"
                 aria-label="日历视图"
               >
@@ -253,7 +268,7 @@ export function RightPanel() {
               <button
                 type="button"
                 className={`notes-icon-btn ${viewMode === 'list' ? 'is-active' : ''}`}
-                onClick={() => setViewMode('list')}
+                onClick={() => { handleClearSearch(); setViewMode('list') }}
                 title="列表视图"
                 aria-label="列表视图"
               >
@@ -269,7 +284,7 @@ export function RightPanel() {
               <button
                 type="button"
                 className={`notes-icon-btn ${viewMode === 'timeline' ? 'is-active' : ''}`}
-                onClick={() => setViewMode('timeline')}
+                onClick={() => { handleClearSearch(); setViewMode('timeline') }}
                 title="时间轴视图"
                 aria-label="时间轴视图"
               >
