@@ -707,7 +707,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
           {/* 待办 — 带未完成徽章 + 双击仅显示未完成 */}
           <button
             type="button"
-            className={`note-type-tab ${filterType === 'todo' ? 'active' : ''} ${TYPE_COLORS.todo} ${filterType === 'todo' && showOnlyUndone ? 'is-undone-filter' : ''}`}
+            className={`note-type-tab ${filterType === 'todo' ? 'active' : ''} ${filterType === 'todo' && showOnlyUndone ? 'is-undone-filter' : ''}`}
             onClick={() => handleTabClick('todo')}
             onDoubleClick={handleTodoDblClick}
             title={showOnlyUndone ? '双击：显示全部待办' : '双击：仅显示未完成待办'}
@@ -723,7 +723,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
           {/* 沟通 */}
           <button
             type="button"
-            className={`note-type-tab ${filterType === 'log' ? 'active' : ''} ${TYPE_COLORS.log}`}
+            className={`note-type-tab ${filterType === 'log' ? 'active' : ''}`}
             onClick={() => handleTabClick('log')}
           >
             {TYPE_LABELS.log}
@@ -732,7 +732,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
           {/* 随笔 */}
           <button
             type="button"
-            className={`note-type-tab ${filterType === 'note' ? 'active' : ''} ${TYPE_COLORS.note}`}
+            className={`note-type-tab ${filterType === 'note' ? 'active' : ''}`}
             onClick={() => handleTabClick('note')}
           >
             {TYPE_LABELS.note}
@@ -741,7 +741,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
           {/* 预约 — 带未完成徽章 + 双击仅显示未完成 */}
           <button
             type="button"
-            className={`note-type-tab ${filterType === 'appointment' ? 'active' : ''} ${TYPE_COLORS.appointment} ${filterType === 'appointment' && showOnlyUndone ? 'is-undone-filter' : ''}`}
+            className={`note-type-tab ${filterType === 'appointment' ? 'active' : ''} ${filterType === 'appointment' && showOnlyUndone ? 'is-undone-filter' : ''}`}
             onClick={() => handleTabClick('appointment')}
             onDoubleClick={handleAppointmentDblClick}
             title={showOnlyUndone ? '双击：显示全部预约' : '双击：仅显示未完成预约'}
@@ -757,7 +757,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
           {/* 日记 */}
           <button
             type="button"
-            className={`note-type-tab ${filterType === 'diary' ? 'active' : ''} ${TYPE_COLORS.diary}`}
+            className={`note-type-tab ${filterType === 'diary' ? 'active' : ''}`}
             onClick={() => handleTabClick('diary')}
           >
             {TYPE_LABELS.diary}
