@@ -2858,6 +2858,88 @@
   min-height: 0;
 }
 
+/* ── 列表按日期分组 ── */
+.note-list-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.note-list-date-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--ds-color-border, rgba(128, 128, 128, 0.15));
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  position: sticky;
+  top: 0;
+  background: var(--ds-color-bg-primary, #f8fafc);
+  z-index: 2;
+}
+
+.note-list-date-header:hover {
+  background: var(--ds-color-hover, rgba(0, 0, 0, 0.04));
+}
+
+.note-list-chevron {
+  font-size: 12px;
+  color: var(--ds-color-text-muted, #9ca3af);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+  line-height: 1;
+}
+
+.note-list-chevron.is-collapsed {
+  transform: rotate(-90deg);
+}
+
+.note-list-date-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ds-color-text-primary, #111827);
+  flex: 1;
+}
+
+.note-list-date-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ds-color-text-muted, #9ca3af);
+  background: var(--ds-color-bg-secondary, #f1f5f9);
+  border-radius: 10px;
+  padding: 1px 8px;
+}
+
+.note-list-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+/* Dark mode */
+[data-theme='dark'] .note-list-date-header {
+  background: var(--ds-color-bg-primary, #0f172a);
+}
+
+[data-theme='dark'] .note-list-date-header:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme='dark'] .note-list-date-label {
+  color: #e2e8f0;
+}
+
+[data-theme='dark'] .note-list-date-count {
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+}
+
 /* ── 空状态 ── */
 .note-empty {
   align-items: center;
@@ -3670,6 +3752,46 @@
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* 待办内容折叠 */
+.note-content-wrap {
+  position: relative;
+}
+
+.note-content-clamped {
+  max-height: 3.1em; /* 约2行 */
+  overflow: hidden;
+  position: relative;
+}
+
+.note-content-clamped::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1.5em;
+  background: linear-gradient(to bottom, transparent, var(--ds-color-card, #ffffff));
+  pointer-events: none;
+}
+
+.note-content-toggle {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ds-color-primary, #3b82f6);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s;
+  font-family: inherit;
+}
+
+.note-content-toggle:hover {
+  color: #1d4ed8;
 }
 
 .note-card.is-done .note-content {
@@ -4522,6 +4644,12 @@
   padding: 6px 10px;
 }
 
+/* select 下拉选项确保文字清晰可见 */
+.note-edit-select option {
+  background: #ffffff;
+  color: #111827;
+}
+
 .note-edit-datetime:focus,
 .note-edit-select:focus,
 .note-edit-input:focus {
@@ -4634,6 +4762,11 @@
   background: rgba(255, 255, 255, 0.04);
   border-color: var(--ds-color-border-dark, #374151);
   color: var(--ds-color-text-primary-dark, #f3f4f6);
+}
+
+[data-theme='dark'] .note-edit-select option {
+  background: #1e293b;
+  color: #f3f4f6;
 }
 
 [data-theme='dark'] .note-edit-datetime:focus,
@@ -5387,6 +5520,19 @@
     rgba(30, 41, 59, 0) 0%,
     var(--ds-color-bg-primary, #1e293b) 85%
   );
+}
+
+/* 暗色模式下内容折叠遮罩 */
+[data-theme='dark'] .note-content-clamped::after {
+  background: linear-gradient(to bottom, transparent, var(--ds-color-card, #1e293b));
+}
+
+[data-theme='dark'] .note-content-toggle {
+  color: #60a5fa;
+}
+
+[data-theme='dark'] .note-content-toggle:hover {
+  color: #93c5fd;
 }
 
 [data-theme='dark'] .note-diary-toggle {

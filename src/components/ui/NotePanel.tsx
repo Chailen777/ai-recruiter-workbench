@@ -177,9 +177,11 @@ const CATEGORY_COLORS: Record<string, string> = {
   other_life: 'gray',
 }
 
-/** 获取事项类型显示文字，优先用图标 */
+/** 获取事项类型显示文字：图标 + 文字 */
 function getCategoryDisplay(category: string): string {
-  return CATEGORY_ICONS[category] ?? CATEGORY_LABELS[category] ?? category
+  const icon = CATEGORY_ICONS[category] ?? ''
+  const label = CATEGORY_LABELS[category] ?? category
+  return icon ? `${icon} ${label}` : label
 }
 
 /** 获取事项类型对应的颜色类名 */
@@ -206,9 +208,9 @@ function buildTodoInfoLine(note: NoteItem): string {
 function buildTodoDetailRows(note: NoteItem) {
   const rows: { icon: string; label: string; value: string }[] = []
   
-  // 时间 ⏰
+  // 开始时间 ⏰
   if (note.scheduledDate) {
-    rows.push({ icon: '⏰', label: '时间', value: formatAppDateTime(note.scheduledDate) })
+    rows.push({ icon: '⏰', label: '开始时间', value: formatAppDateTime(note.scheduledDate) })
   }
   // 频率 🔄
   if (note.repeatType) {
@@ -218,9 +220,9 @@ function buildTodoDetailRows(note: NoteItem) {
       : ''
     rows.push({ icon: '🔄', label: '频率', value: freqNum ? `${freqLabel} ${freqNum}` : freqLabel })
   }
-  // 截止 📅
+  // 截止时间 📅
   if (note.repeatEndDate) {
-    rows.push({ icon: '📅', label: '截止', value: formatAppDate(note.repeatEndDate) })
+    rows.push({ icon: '📅', label: '截止时间', value: formatAppDate(note.repeatEndDate) })
   }
   // 人员 👤
   if (note.repeatPerson) {
@@ -1319,26 +1321,144 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       {loading ? (
         <NoteSkeleton />
       ) : viewMode === 'list' ? (
-        <div className="note-list">
-          {searchFiltered.length === 0 ? (
-            <div className="note-empty">
-              <span className="note-empty-icon">✦</span>
-              <p>{searchTerm ? `没有匹配"${searchTerm}"的笔记` : filterDate ? `"${filterDate}" 当天没有记录` : filterType === 'all' ? '还没有记录' : `没有"${TYPE_LABELS[filterType] ?? filterType}"记录`}</p>
-              <p className="note-empty-hint">{searchTerm ? '尝试其他关键词' : filterDate ? '选择其他日期查看笔记' : '用上面的输入框添加待办、沟通或随笔'}</p>
-            </div>
-          ) : (
-            searchFiltered.map((note) => (
-              <NoteCard
-                key={note.id}
-                note={note}
-                onChanged={onNotesChanged}
-              />
-            ))
-          )}
-        </div>
+        <ListView notes={searchFiltered} onChanged={onNotesChanged} searchTerm={searchTerm} filterDate={filterDate} filterType={filterType} showOnlyUndone={showOnlyUndone} onClearFilterDate={onClearFilterDate} />
       ) : (
         <TimelineView notes={searchFiltered} onChanged={onNotesChanged} searchTerm={searchTerm} filterDate={filterDate} filterType={filterType} showOnlyUndone={showOnlyUndone} onClearFilterDate={onClearFilterDate} />
       )}
+    </div>
+  )
+}
+
+/* ── 列表视图（按日期分组折叠） ── */
+function ListView({ notes, onChanged, searchTerm, filterDate, filterType, showOnlyUndone, onClearFilterDate }: {
+  notes: NoteItem[]
+  onChanged?: () => void
+  searchTerm?: string
+  filterDate?: string | null
+  filterType?: string
+  showOnlyUndone?: boolean
+  onClearFilterDate?: () => void
+}) {
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+
+  if (notes.length === 0) {
+    let title = '没有匹配的记录'
+    let hint = ''
+    let showClearBtn = false
+
+    if (searchTerm) {
+      title = `没有匹配"${searchTerm}"的记录`
+      hint = '尝试其他关键词'
+    } else if (filterDate) {
+      title = `${filterDate} 当天没有记录`
+      hint = '选择其他日期查看笔记'
+      showClearBtn = true
+    } else if (filterType && filterType !== 'all') {
+      const typeLabel = TYPE_LABELS[filterType] ?? filterType
+      if (showOnlyUndone && (filterType === 'todo' || filterType === 'appointment')) {
+        title = `没有未完成的${typeLabel}`
+        hint = '双击标签查看全部记录'
+      } else {
+        title = `没有"${typeLabel}"记录`
+        hint = '选择其他类型查看'
+      }
+    } else if (filterType === 'all') {
+      title = '还没有记录'
+      hint = '用上面的输入框添加待办、沟通或随笔'
+    }
+
+    return (
+      <div className="note-list">
+        <div className="note-empty">
+          <span className="note-empty-icon">✦</span>
+          <p>{title}</p>
+          <p className="note-empty-hint">{hint}</p>
+          {showClearBtn && onClearFilterDate && (
+            <button
+              type="button"
+              className="note-timeline-empty-clear"
+              onClick={onClearFilterDate}
+            >
+              清除日期筛选
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // 用本地日期提取，避免 UTC 时区问题
+  function localDate(iso: string) {
+    const d = new Date(iso)
+    return d.toLocaleDateString('sv-SE')
+  }
+
+  // 按待办/预约时间分组
+  const grouped = new Map<string, NoteItem[]>()
+  for (const n of notes) {
+    const dateSrc = n.scheduledDate || n.appointmentTime || n.createdAt
+    const d = localDate(dateSrc)
+    const arr = grouped.get(d) ?? []
+    arr.push(n)
+    if (!grouped.has(d)) grouped.set(d, arr)
+  }
+  // 按日期降序
+  const sortedDays = Array.from(grouped.keys()).sort().reverse()
+
+  function fmtDateHeader(dateStr: string) {
+    const now = new Date()
+    const today = localDate(now.toISOString())
+    const yesterday = localDate(new Date(now.getTime() - 86400000).toISOString())
+    const d = new Date(dateStr + 'T00:00:00')
+    const week = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()]
+    if (dateStr === today) return `今天 周${week}`
+    if (dateStr === yesterday) return `昨天 周${week}`
+    return `${d.getMonth() + 1}月${d.getDate()}日 周${week}`
+  }
+
+  function toggleGroup(day: string) {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev)
+      if (next.has(day)) next.delete(day)
+      else next.add(day)
+      return next
+    })
+  }
+
+  return (
+    <div className="note-list">
+      {sortedDays.map((day) => {
+        const isCollapsed = collapsedGroups.has(day)
+        const dayNotes = grouped.get(day)!
+        return (
+          <div key={day} className={`note-list-group ${isCollapsed ? 'is-collapsed' : ''}`}>
+            <div
+              className="note-list-date-header"
+              onClick={() => toggleGroup(day)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleGroup(day) }}
+              aria-expanded={!isCollapsed}
+              title={isCollapsed ? '点击展开' : '点击折叠'}
+            >
+              <span className={`note-list-chevron ${isCollapsed ? 'is-collapsed' : ''}`}>▾</span>
+              <span className="note-list-date-label">{fmtDateHeader(day)}</span>
+              <span className="note-list-date-count">{dayNotes.length} 条</span>
+            </div>
+            {!isCollapsed && (
+              <div className="note-list-entries">
+                {dayNotes.map((note) => (
+                  <NoteCard
+                    key={note.id}
+                    note={note}
+                    onChanged={onChanged}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -1627,6 +1747,9 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
     ? note.content.replace(/<[^>]+>/g, '').trim().length
     : 0
   const diaryIsLong = diaryPlainLength > 120
+  // 待办内容折叠（非日记类型，> 60 字）
+  const [contentExpanded, setContentExpanded] = useState(false)
+  const contentIsLong = note.type !== 'diary' && note.content.trim().length > 60
 
   // ── 编辑模式全屏 ──
   const [isEditFullscreen, setIsEditFullscreen] = useState(false)
@@ -2249,7 +2372,20 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                 )}
               </div>
             ) : (
-              <p className="note-content">{note.content}</p>
+              <div className="note-content-wrap">
+                <p className={`note-content${contentIsLong && !contentExpanded ? ' note-content-clamped' : ''}`}>
+                  {note.content}
+                </p>
+                {contentIsLong && (
+                  <button
+                    type="button"
+                    className="note-content-toggle"
+                    onClick={() => setContentExpanded(v => !v)}
+                  >
+                    {contentExpanded ? '收起 ↑' : '展开全文 ↓'}
+                  </button>
+                )}
+              </div>
             )}
           </div>
 
