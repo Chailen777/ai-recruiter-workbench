@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 
 type ViewMode = 'calendar' | 'list' | 'timeline' | 'bookmark'
 
@@ -135,7 +136,7 @@ export function NoteViewFab({
   const currentOption = VIEW_OPTIONS.find((o) => o.id === viewMode) || VIEW_OPTIONS[2]
   const otherOptions = VIEW_OPTIONS.filter((o) => o.id !== viewMode)
 
-  return (
+  return createPortal(
     <div
       className={`note-view-fab${expanded ? ' is-expanded' : ''}${awake ? ' is-awake' : ''}`}
       ref={fabRef}
@@ -179,6 +180,7 @@ export function NoteViewFab({
           <span className="note-view-fab-main-badge">{bookmarkCount}</span>
         )}
       </button>
-    </div>
+    </div>,
+    document.body
   )
 }
