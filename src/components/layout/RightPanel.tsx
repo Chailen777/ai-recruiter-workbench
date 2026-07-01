@@ -234,10 +234,11 @@ export function RightPanel() {
             <div className="notes-view-toggle">
               <button
                 type="button"
-                className={`notes-icon-btn ${viewMode === 'bookmark' ? 'is-active' : ''}`}
-                onClick={() => { setViewMode('bookmark'); handleClearSearch() }}
-                title="查看收藏"
+                className={`notes-icon-btn ${viewMode === 'bookmark' ? 'is-active' : ''}${searchVisible ? ' notes-icon-btn-disabled' : ''}`}
+                onClick={() => { if (searchVisible) return; setViewMode('bookmark'); handleClearSearch() }}
+                title={searchVisible ? '请先关闭搜索' : '查看收藏'}
                 aria-label="查看收藏"
+                disabled={searchVisible}
                 style={{ position: 'relative' }}
               >
                 📌
@@ -247,10 +248,11 @@ export function RightPanel() {
               </button>
               <button
                 type="button"
-                className={`notes-icon-btn ${viewMode === 'calendar' ? 'is-active' : ''}`}
-                onClick={() => { setViewMode('calendar'); handleClearSearch() }}
-                title="日历视图"
+                className={`notes-icon-btn ${viewMode === 'calendar' ? 'is-active' : ''}${searchVisible ? ' notes-icon-btn-disabled' : ''}`}
+                onClick={() => { if (searchVisible) return; setViewMode('calendar'); handleClearSearch() }}
+                title={searchVisible ? '请先关闭搜索' : '日历视图'}
                 aria-label="日历视图"
+                disabled={searchVisible}
               >
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="3" width="16" height="15" rx="2" />
@@ -261,10 +263,11 @@ export function RightPanel() {
               </button>
               <button
                 type="button"
-                className={`notes-icon-btn ${viewMode === 'list' ? 'is-active' : ''}`}
-                onClick={() => { setViewMode('list'); handleClearSearch() }}
-                title="列表视图"
+                className={`notes-icon-btn ${viewMode === 'list' ? 'is-active' : ''}${searchVisible ? ' notes-icon-btn-disabled' : ''}`}
+                onClick={() => { if (searchVisible) return; setViewMode('list'); handleClearSearch() }}
+                title={searchVisible ? '请先关闭搜索' : '列表视图'}
                 aria-label="列表视图"
+                disabled={searchVisible}
               >
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="5" y1="5" x2="19" y2="5"/>
@@ -277,10 +280,11 @@ export function RightPanel() {
               </button>
               <button
                 type="button"
-                className={`notes-icon-btn ${viewMode === 'timeline' ? 'is-active' : ''}`}
-                onClick={() => { setViewMode('timeline'); handleClearSearch() }}
-                title="时间轴视图"
+                className={`notes-icon-btn ${viewMode === 'timeline' ? 'is-active' : ''}${searchVisible ? ' notes-icon-btn-disabled' : ''}`}
+                onClick={() => { if (searchVisible) return; setViewMode('timeline'); handleClearSearch() }}
+                title={searchVisible ? '请先关闭搜索' : '时间轴视图'}
                 aria-label="时间轴视图"
+                disabled={searchVisible}
               >
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="3" cy="4" r="1.5" fill="currentColor" stroke="none"/>

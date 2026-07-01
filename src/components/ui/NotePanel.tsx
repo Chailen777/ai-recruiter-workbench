@@ -504,7 +504,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   // ── 按日期筛选（memoized）──
   const dateFiltered = useMemo(() => {
     // 收藏视图：跳过日期筛选，显示全量收藏
-    if (viewMode === 'bookmark' || !filterDate) return filtered
+    if (viewMode === 'bookmark' || Boolean(searchTerm) || !filterDate) return filtered
     return filtered.filter((n) => {
       const targetDate = n.type === 'todo' && n.scheduledDate
         ? n.scheduledDate
@@ -1568,7 +1568,7 @@ function CalendarView({ notes, onChanged, searchTerm }: {
                 {!isCollapsed && (
                   <div className="note-calendar-group-body">
                     {dayNotes.map((note) => (
-                      <NoteCard key={note.id} note={note} onChanged={onChanged} />
+                      <NoteCard key={note.id} note={note} onChanged={onChanged} searchTerm={searchTerm} />
                     ))}
                   </div>
                 )}
@@ -1745,6 +1745,7 @@ function ListView({ notes, onChanged, searchTerm, filterDate, filterType, showOn
                     key={note.id}
                     note={note}
                     onChanged={onChanged}
+                    searchTerm={searchTerm}
                   />
                 ))}
               </div>
@@ -2041,7 +2042,15 @@ const ENTITY_LABELS: Record<string, string> = {
   project: '项目库',
 }
 
-function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void }) {
+/** 搜索高亮：将文本中的关键词用 <mark> 包裹，不区分大小写 */
+function highlightText(text: string, keyword: string): string {
+  if (!keyword.trim()) return text
+  const escaped = keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+  const regex = new RegExp(`(${escaped})`, 'gi')
+  return text.replace(regex, '<mark class="search-highlight">$1</mark>')
+}
+
+function NoteCard({ note, onChanged, searchTerm }: { note: NoteItem; onChanged?: () => void; searchTerm?: string }) {
   const [isPending, startTransition] = useTransition()
   const [confirmOpen, setConfirmOpen] = useState(false)
 
@@ -2091,7 +2100,8 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
   const contentIsLong = note.type !== 'diary' && note.content.trim().length > 150
 
   // 人物标识前缀 — 显示格式：【人物名】内容
-  const displayContent = note.person ? `【${note.person}】${note.content}` : note.content
+  const rawContent = note.person ? `【${note.person}】${note.content}` : note.content
+  const displayContent = searchTerm ? highlightText(rawContent, searchTerm) : rawContent
 
   // ── 编辑模式全屏 ──
   const [isEditFullscreen, setIsEditFullscreen] = useState(false)
@@ -2856,7 +2866,10 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
               <div className="note-diary-content-wrap">
                 <div
                   className={`note-content note-diary-content${diaryIsLong && !diaryExpanded ? ' collapsed' : ''}`}
-                  dangerouslySetInnerHTML={{ __html: note.person ? `<span class="note-person-prefix">【${note.person}】</span>${note.content}` : note.content }}
+                  dangerouslySetInnerHTML={{ __html: (() => {
+                    const raw = note.person ? `<span class="note-person-prefix">【${note.person}】</span>${note.content}` : note.content
+                    return searchTerm ? highlightText(raw, searchTerm) : raw
+                  })() }}
                 />
                 {diaryIsLong && (
                   <button
@@ -2870,9 +2883,10 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
               </div>
             ) : (
               <div className="note-content-wrap">
-                <p className={`note-content${contentIsLong && !contentExpanded ? ' note-content-clamped' : ''}`}>
-                  {displayContent}
-                </p>
+                <p
+                  className={`note-content${contentIsLong && !contentExpanded ? ' note-content-clamped' : ''}`}
+                  dangerouslySetInnerHTML={{ __html: displayContent }}
+                />
                 {contentIsLong && (
                   <button
                     type="button"
