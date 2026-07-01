@@ -2992,7 +2992,7 @@
 .note-panel.is-scrolled-down .note-type-tabs {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 50;
   padding: 8px 0;
   margin: -8px 0;
   background: var(--ds-color-bg, #f8fafc);
@@ -8114,12 +8114,19 @@
     text-overflow: ellipsis;
   }
 
-  /* ── 滚动时 header 标题+搜索收起，tab 置顶 ── */
-  .app-right-panel.is-scrolled-down .app-right-panel-title {
+  /* ── 滚动时 header 整体收起，tab 置顶 ── */
+  .app-right-panel.is-scrolled-down .app-right-panel-header {
+    padding: 0;
+    min-height: 0;
+    transition: padding .25s ease;
+  }
+  .app-right-panel.is-scrolled-down .app-right-panel-title,
+  .app-right-panel.is-scrolled-down .app-right-panel-toggle {
     max-height: 0;
     opacity: 0;
     overflow: hidden;
     margin: 0;
+    padding: 0;
     transition: max-height .25s ease, opacity .2s ease, margin .25s ease;
   }
   .app-right-panel.is-scrolled-down .notes-icon-btn {
@@ -8130,10 +8137,6 @@
     margin: 0;
     width: 0;
     transition: max-height .25s ease, opacity .2s ease, padding .25s ease, margin .25s ease, width .25s ease;
-  }
-  /* 折叠按钮保持不变 */
-  .app-right-panel.is-scrolled-down .app-right-panel-toggle {
-    flex-shrink: 0;
   }
 
   /* 手机端隐藏 header 内的视图切换按钮组，改用右下角 FAB */

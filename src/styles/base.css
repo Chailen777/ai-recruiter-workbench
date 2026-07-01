@@ -572,8 +572,13 @@ html {
   border-radius: 0 var(--ds-radius-md) var(--ds-radius-md) 0;
 }
 
-/* ── 滚动时 header 收起（标题 + 搜索 / 视图按钮淡出，仅保留折叠按钮）── */
-.app-right-panel.is-scrolled-down .app-right-panel-title {
+/* ── 滚动时 header 收起（标题 + 搜索 / 视图按钮 / 折叠按钮淡出，tab 置顶）── */
+.app-right-panel.is-scrolled-down .app-right-panel-header {
+  padding: 0;
+  transition: padding .25s ease;
+}
+.app-right-panel.is-scrolled-down .app-right-panel-title,
+.app-right-panel.is-scrolled-down .app-right-panel-toggle {
   max-height: 0;
   opacity: 0;
   margin: 0;
