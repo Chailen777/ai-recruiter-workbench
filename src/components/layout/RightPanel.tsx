@@ -74,7 +74,6 @@ export function RightPanel() {
   // ── 搜索（带 debounce）──
   const [globalSearchTerm, setGlobalSearchTerm] = useState('')
   const [searchInputValue, setSearchInputValue] = useState('')
-  const [searchVisible, setSearchVisible] = useState(false)
   const searchDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -95,27 +94,15 @@ export function RightPanel() {
   const handleClearSearch = useCallback(() => {
     setSearchInputValue('')
     setGlobalSearchTerm('')
-    setSearchVisible(false)
     if (searchDebounceTimer.current) {
       clearTimeout(searchDebounceTimer.current)
     }
+    // 清除后自动聚焦输入框
+    setTimeout(() => searchInputRef.current?.focus(), 50)
   }, [])
 
   // ── 视图模式（四个互斥：日历 / 列表 / 时间轴 / 收藏）──
   const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'timeline' | 'bookmark'>('list')
-
-  const toggleSearch = useCallback(() => {
-    setSearchVisible((v) => {
-      const next = !v
-      if (next) {
-        // 展开后自动聚焦输入框
-        setTimeout(() => searchInputRef.current?.focus(), 50)
-      } else {
-        handleClearSearch()
-      }
-      return next
-    })
-  }, [handleClearSearch])
 
   // ── Collapse state (persisted to localStorage) ──
   const [collapsed, setCollapsed] = useState(true) // 默认折叠
@@ -208,34 +195,36 @@ export function RightPanel() {
         )}
         {collapsed ? null : (
           <>
-            {/* 搜索 / 关闭按钮 */}
-            {searchVisible ? (
-              <button
-                type="button"
-                className="notes-icon-btn"
-                onClick={handleClearSearch}
-                title="关闭搜索"
-                aria-label="关闭搜索"
-              >
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                  <line x1="5" y1="5" x2="15" y2="15"/>
-                  <line x1="15" y1="5" x2="5" y2="15"/>
-                </svg>
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="notes-icon-btn"
-                onClick={toggleSearch}
-                title="搜索笔记"
+            {/* 搜索框 — 放在标题右边，始终可见 */}
+            <div className="note-header-search">
+              <svg className="note-header-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <circle cx="9" cy="9" r="5"/>
+                <line x1="13" y1="13" x2="18" y2="18"/>
+              </svg>
+              <input
+                ref={searchInputRef}
+                type="text"
+                className="note-header-search-input"
+                placeholder="搜索笔记..."
+                value={searchInputValue}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 aria-label="搜索笔记"
-              >
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                  <circle cx="9" cy="9" r="5"/>
-                  <line x1="13" y1="13" x2="18" y2="18"/>
-                </svg>
-              </button>
-            )}
+              />
+              {searchInputValue && (
+                <button
+                  type="button"
+                  className="note-header-search-clear"
+                  onClick={handleClearSearch}
+                  title="清除搜索"
+                  aria-label="清除搜索"
+                >
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                    <line x1="5" y1="5" x2="15" y2="15"/>
+                    <line x1="15" y1="5" x2="5" y2="15"/>
+                  </svg>
+                </button>
+              )}
+            </div>
             {/* 视图切换：📌收藏 / 📅日历 / 📋列表 / ⏱时间轴 */}
             <div className="notes-view-toggle">
               <button
@@ -307,40 +296,6 @@ export function RightPanel() {
       {/* ── 展开时显示内容 ── */}
       {!collapsed && (
         <div className="app-right-panel-body" ref={bodyRef}>
-          {/* 搜索面板（脱离工具栏，独立居中） */}
-          {searchVisible && (
-            <div className="note-search-overlay">
-              <div className="note-search-overlay-input-wrap">
-                <svg className="note-search-overlay-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                  <circle cx="9" cy="9" r="5"/>
-                  <line x1="13" y1="13" x2="18" y2="18"/>
-                </svg>
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  className="note-search-overlay-input"
-                  placeholder="搜索全部笔记..."
-                  value={searchInputValue}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  aria-label="搜索全部笔记"
-                />
-                {searchInputValue && (
-                  <button
-                    type="button"
-                    className="note-search-overlay-clear"
-                    onClick={handleClearSearch}
-                    title="清除搜索"
-                    aria-label="清除搜索"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-              {!globalSearchTerm && (
-                <p className="note-search-overlay-hint">输入关键词开始搜索</p>
-              )}
-            </div>
-          )}
           {/* 全局备忘录 */}
           <ErrorBoundary>
           <NotePanel
@@ -351,7 +306,6 @@ export function RightPanel() {
             filterDate={filterDate}
             onClearFilterDate={() => setFilterDate(null)}
             searchTerm={globalSearchTerm}
-            searchVisible={searchVisible}
             loading={!notesLoaded}
             viewMode={viewMode}
             scrolledDown={scrolledDown}

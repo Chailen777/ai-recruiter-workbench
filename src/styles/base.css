@@ -572,6 +572,86 @@ html {
   border-radius: 0 var(--ds-radius-md) var(--ds-radius-md) 0;
 }
 
+/* ── Header 内联搜索框（卡片笔记右边）── */
+.note-header-search {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 240px;
+  min-width: 120px;
+  height: 32px;
+  background: var(--ds-color-bg);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  padding: 0 8px;
+  gap: 6px;
+  transition: border-color 0.2s, box-shadow 0.2s, opacity 0.2s, max-height 0.25s, padding 0.25s, margin 0.25s, width 0.25s;
+}
+.note-header-search:focus-within {
+  border-color: var(--ds-color-primary, #2563eb);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ds-color-primary, #2563eb) 15%, transparent);
+}
+.note-header-search-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--ds-color-text-tertiary);
+}
+.note-header-search:focus-within .note-header-search-icon {
+  color: var(--ds-color-primary, #2563eb);
+}
+.note-header-search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ds-color-text);
+  padding: 0;
+  line-height: 1.4;
+}
+.note-header-search-input::placeholder {
+  color: var(--ds-color-text-tertiary);
+  font-size: 12px;
+}
+.note-header-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: var(--ds-color-border);
+  color: var(--ds-color-text-secondary);
+  cursor: pointer;
+  border-radius: 50%;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+.note-header-search-clear:hover {
+  background: #ef4444;
+  color: #fff;
+  transform: scale(1.1);
+}
+.note-header-search-clear svg {
+  width: 11px;
+  height: 11px;
+}
+
+/* 滚动收起 — 搜索框也隐藏 */
+.app-right-panel.is-scrolled-down .note-header-search {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  width: 0;
+  border-width: 0;
+}
+
 /* ── 滚动时 header 收起（标题 + 搜索 / 视图按钮 / 折叠按钮淡出，tab 置顶）── */
 .app-right-panel.is-scrolled-down .app-right-panel-header {
   padding: 0;
@@ -2827,6 +2907,14 @@ td textarea {
   }
   .notes-view-toggle {
     gap: 3px;
+  }
+  .note-header-search {
+    max-width: 160px;
+    min-width: 80px;
+    height: 36px;
+  }
+  .note-header-search-input {
+    font-size: 13px;
   }
 }
 

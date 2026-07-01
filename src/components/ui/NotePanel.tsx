@@ -53,8 +53,6 @@ type NotePanelProps = {
   onClearFilterDate?: () => void
   /** 搜索关键词（全文匹配） */
   searchTerm?: string
-  /** 搜索面板是否打开（控制空白占位 + 隐藏FAB） */
-  searchVisible?: boolean
   /** 笔记列表首次加载中，显示骨架屏 */
   loading?: boolean
   /** 视图模式（由父组件控制） */
@@ -254,7 +252,7 @@ function formatRepeatLabel(repeatType: string, repeatWeekdays?: string | null): 
   return REPEAT_LABELS[repeatType] ?? repeatType
 }
 
-export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, searchVisible, loading = false, viewMode: externalViewMode, scrolledDown = false }: NotePanelProps) {
+export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false, viewMode: externalViewMode, scrolledDown = false }: NotePanelProps) {
   const [inputType, setInputType] = useState<'todo' | 'log' | 'note' | 'appointment' | 'diary'>('note')
   const [inputValue, setInputValue] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -682,7 +680,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   return (
     <div className={`note-panel${scrolledDown ? ' is-scrolled-down' : ''}`}>
       {/* ── 快速输入区（日历/收藏/搜索视图下隐藏）── */}
-      {(viewMode !== 'calendar' && viewMode !== 'bookmark' && !searchVisible) && (
+      {(viewMode !== 'calendar' && viewMode !== 'bookmark') && (
       <form
         ref={formRef}
         className="note-input-area"
@@ -696,7 +694,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         <input type="hidden" name="type" value={inputType} />
 
         {/* 类型切换（含今天 + 过滤标签） */}
-        <div className={`note-type-tabs${searchVisible ? ' no-sticky' : ''}`} role="group" aria-label="笔记类型过滤">
+        <div className="note-type-tabs" role="group" aria-label="笔记类型过滤">
           {/* 今天 — 整个输入区已在日历/收藏视图下隐藏，此处无需额外判断 */}
           <button
             type="button"
@@ -1346,9 +1344,6 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       {/* ── 笔记列表 / 时间轴 / 日历（加载中显示骨架屏）── */}
       {loading ? (
         <NoteSkeleton />
-      ) : searchVisible && !searchTerm ? (
-        /* 搜索面板已打开但未输入关键词 — 显示空白 */
-        <div className="note-search-blank" />
       ) : viewMode === 'calendar' ? (
         <CalendarView notes={notes} onChanged={onNotesChanged} searchTerm={searchTerm} />
       ) : viewMode === 'list' || viewMode === 'bookmark' ? (
