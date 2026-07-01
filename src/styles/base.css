@@ -545,6 +545,46 @@ html {
   border-radius: 0 var(--ds-radius-md) var(--ds-radius-md) 0;
 }
 
+/* ── 重复待办开关按钮 ── */
+.note-repeat-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: 1px dashed var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: transparent;
+  color: var(--ds-color-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 150ms, color 150ms, border-color 150ms;
+  white-space: nowrap;
+}
+.note-repeat-toggle-btn:hover {
+  background: color-mix(in srgb, var(--ds-color-primary, #2563eb) 8%, transparent);
+  color: var(--ds-color-primary, #2563eb);
+  border-color: var(--ds-color-primary, #2563eb);
+  border-style: solid;
+}
+.note-repeat-toggle-btn--active {
+  border-style: solid;
+  border-color: var(--ds-color-primary, #2563eb);
+  color: var(--ds-color-primary, #2563eb);
+  background: color-mix(in srgb, var(--ds-color-primary, #2563eb) 8%, transparent);
+}
+
+/* ── 重复待办配置面板 ── */
+.note-repeat-panel {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-lg);
+  background: color-mix(in srgb, var(--ds-color-card) 96%, var(--ds-color-bg));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 /* 搜索框（展开时显示） */
 .note-search-wrap {
   position: relative;
