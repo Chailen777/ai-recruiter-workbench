@@ -2991,6 +2991,12 @@
   z-index: 50;
 }
 
+/* 搜索打开时关闭 sticky，避免遮盖搜索面板 */
+.note-type-tabs.no-sticky {
+  position: relative;
+  z-index: auto;
+}
+
 /* ── 滚动时 tab 导航加上背景和底部分隔线 ── */
 .note-panel.is-scrolled-down .note-type-tabs {
   padding: 8px 0;

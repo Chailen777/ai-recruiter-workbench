@@ -696,7 +696,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         <input type="hidden" name="type" value={inputType} />
 
         {/* 类型切换（含今天 + 过滤标签） */}
-        <div className="note-type-tabs" role="group" aria-label="笔记类型过滤">
+        <div className={`note-type-tabs${searchVisible ? ' no-sticky' : ''}`} role="group" aria-label="笔记类型过滤">
           {/* 今天 — 整个输入区已在日历/收藏视图下隐藏，此处无需额外判断 */}
           <button
             type="button"
