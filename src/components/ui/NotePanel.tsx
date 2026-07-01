@@ -1846,14 +1846,14 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
   const isRecurring = !!note.repeatGroupId
   // 日记折叠状态
   const [diaryExpanded, setDiaryExpanded] = useState(false)
-  // 判断日记是否够长需要折叠（纯文本 > 120 字）
+  // 判断日记是否够长需要折叠（纯文本 > 300 字，约5行）
   const diaryPlainLength = note.type === 'diary'
     ? note.content.replace(/<[^>]+>/g, '').trim().length
     : 0
-  const diaryIsLong = diaryPlainLength > 120
-  // 待办内容折叠（非日记类型，> 60 字）
+  const diaryIsLong = diaryPlainLength > 300
+  // 待办内容折叠（非日记类型，> 150 字，约5行）
   const [contentExpanded, setContentExpanded] = useState(false)
-  const contentIsLong = note.type !== 'diary' && note.content.trim().length > 60
+  const contentIsLong = note.type !== 'diary' && note.content.trim().length > 150
 
   // ── 编辑模式全屏 ──
   const [isEditFullscreen, setIsEditFullscreen] = useState(false)

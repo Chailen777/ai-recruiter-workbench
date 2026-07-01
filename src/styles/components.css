@@ -1082,9 +1082,7 @@
   color: var(--ds-color-text-primary-dark, #f3f4f6);
 }
 
-[data-theme='dark'] .notes-calendar-note-item.is-done .notes-calendar-note-content {
-  color: var(--ds-color-text-muted-dark, #9ca3af);
-}
+/* [data-theme='dark'] .notes-calendar-note-item.is-done — 已移除，完成仅打勾 */
 
 /* ── 暗色模式：日历新组件 ── */
 [data-theme='dark'] .notes-calendar-tabs-group {
@@ -1345,10 +1343,7 @@
   word-break: break-word;
 }
 
-.notes-calendar-note-item.is-done .notes-calendar-note-content {
-  text-decoration: line-through;
-  color: var(--ds-color-text-muted);
-}
+/* .notes-calendar-note-item.is-done — 完成仅打勾，不划线不变色 */
 
 /* ── 全部笔记各类型颜色 ── */
 .notes-calendar-note-item[data-type="todo"]        { border-left-color: #c45c5c; }
@@ -3732,13 +3727,7 @@
   transition: opacity 0.2s;
 }
 
-.note-timeline-entry.is-done {
-  opacity: 0.5;
-}
-
-.note-timeline-entry.is-done .note-timeline-content {
-  text-decoration: line-through;
-}
+/* .note-timeline-entry.is-done — 完成仅打勾，不改变颜色和线条 */
 
 .note-timeline-line {
   position: relative;
@@ -4051,7 +4040,7 @@
 }
 
 .note-content-clamped {
-  max-height: 3.1em; /* 约2行 */
+  max-height: 7.75em; /* 约5行 */
   overflow: hidden;
   position: relative;
 }
@@ -4085,10 +4074,7 @@
   color: #1d4ed8;
 }
 
-.note-card.is-done .note-content {
-  text-decoration: line-through;
-  color: var(--ds-color-text-muted, #9ca3af);
-}
+/* .note-card.is-done — 完成仅打勾，不划线不变色 */
 
 /* 预约表单 */
 .note-appointment-form {
@@ -5551,7 +5537,7 @@
 
 /* 折叠状态：限制高度 + 底部渐变遮罩 */
 .note-diary-content.collapsed {
-  max-height: 140px;
+  max-height: 350px; /* 约5行日记 */
   overflow: hidden;
   position: relative;
 }
