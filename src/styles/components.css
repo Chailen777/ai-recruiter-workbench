@@ -5386,6 +5386,11 @@
 }
 
 .note-diary-fs-exit-btn:hover {
+  background: #dc2626;
+}
+
+/* 手机端：顶部栏简化 + 编辑器紧凑 */
+@media (max-width: 768px) {
   .note-diary-fs-header {
     flex-wrap: nowrap;
     gap: 6px;
