@@ -166,38 +166,31 @@ function buildTodoInfoLine(note: NoteItem): string {
 
 /** 构建待办卡片多行结构化信息（JSX 片段数组） */
 function buildTodoDetailRows(note: NoteItem) {
-  const rows: { label: string; value: string }[] = []
+  const rows: { icon: string; label: string; value: string }[] = []
   
-  // 时间
+  // 时间 ⏰
   if (note.scheduledDate) {
-    rows.push({ label: '时间', value: formatAppDateTime(note.scheduledDate) })
+    rows.push({ icon: '⏰', label: '时间', value: formatAppDateTime(note.scheduledDate) })
   }
-  // 频率
+  // 频率 🔄
   if (note.repeatType) {
     const freqLabel = formatRepeatLabel(note.repeatType, note.repeatWeekdays)
     const freqNum = note.repeatFrequency && note.repeatFrequency > 1
       ? `每${note.repeatFrequency}${note.repeatType === 'weekly' ? '周' : note.repeatType === 'monthly' ? '月' : note.repeatType === 'yearly' ? '年' : note.repeatType === 'quarterly' ? '季度' : note.repeatType === 'halfyearly' ? '半年' : '天'}`
       : ''
-    rows.push({ label: '频率', value: freqNum ? `${freqLabel} ${freqNum}` : freqLabel })
+    rows.push({ icon: '🔄', label: '频率', value: freqNum ? `${freqLabel} ${freqNum}` : freqLabel })
   }
-  // 截止
+  // 截止 📅
   if (note.repeatEndDate) {
-    rows.push({ label: '截止', value: formatAppDate(note.repeatEndDate) })
+    rows.push({ icon: '📅', label: '截止', value: formatAppDate(note.repeatEndDate) })
   }
-  // 人员
+  // 人员 👤
   if (note.repeatPerson) {
-    rows.push({ label: '人员', value: note.repeatPerson })
+    rows.push({ icon: '👤', label: '人员', value: note.repeatPerson })
   }
-  // 类型
+  // 类型 📂（生日用 🎂）
   if (note.repeatCategory) {
-    rows.push({ label: '类型', value: getCategoryDisplay(note.repeatCategory) })
-  }
-  // 内容（笔记正文）
-  if (note.content) {
-    const plain = note.content.replace(/<[^>]+>/g, '').trim()
-    if (plain) {
-      rows.push({ label: '内容', value: plain })
-    }
+    rows.push({ icon: '📂', label: '类型', value: getCategoryDisplay(note.repeatCategory) })
   }
   
   return rows
@@ -1455,7 +1448,7 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
                           <div className="note-todo-detail-card">
                             {rows.map((row, idx) => (
                               <div key={idx} className="note-todo-detail-row">
-                                <span className="note-todo-detail-label">{row.label}</span>
+                                <span className="note-todo-detail-label">{row.icon} {row.label}</span>
                                 <span className="note-todo-detail-value">{row.value}</span>
                               </div>
                             ))}
@@ -2272,7 +2265,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
               <div className="note-todo-detail-card">
                 {rows.map((row, idx) => (
                   <div key={idx} className="note-todo-detail-row">
-                    <span className="note-todo-detail-label">{row.label}</span>
+                    <span className="note-todo-detail-label">{row.icon} {row.label}</span>
                     <span className="note-todo-detail-value">{row.value}</span>
                   </div>
                 ))}

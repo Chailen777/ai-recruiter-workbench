@@ -35,6 +35,10 @@ function toNoteItem(n: Record<string, unknown>): NoteItem {
     repeatFrequency: (n.repeatFrequency as number) ?? null,
     repeatEndDate: (n.repeatEndDate as string) ?? null,
     repeatGroupId: (n.repeatGroupId as string) ?? null,
+    repeatPerson: (n.repeatPerson as string) ?? null,
+    repeatCategory: (n.repeatCategory as string) ?? null,
+    repeatWeekdays: (n.repeatWeekdays as string) ?? null,
+    repeatCustomNum: (n.repeatCustomNum as number) ?? null,
   }
 }
 
