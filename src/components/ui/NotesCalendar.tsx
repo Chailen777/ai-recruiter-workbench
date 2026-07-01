@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { getNotesCalendarData, getAppointmentList, getTodoList, type CalendarDay, type AppointmentListItem, type TodoListItem } from '@/app/actions'
+import type { NoteItem } from '@/components/ui/NotePanel'
 
 type Props = {
   onDateSelect: (dateStr: string | null) => void
@@ -10,6 +11,8 @@ type Props = {
   /** 限定范围：不传 = 全局，传入 = 仅该实体 */
   entityType?: string
   entityId?: number
+  /** 笔记数据（来自父组件），用于日历内直接展示 */
+  notes?: NoteItem[]
 }
 
 // ── 工具函数 ──
@@ -54,11 +57,20 @@ function formatApptDate(dateStr: string): string {
   return `${m}月${d}日`
 }
 
-export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId }: Props) {
+export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId, notes = [] }: Props) {
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [closing, setClosing] = useState(false)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // 日历内部日期筛选（点击日期后在本弹窗内过滤显示）
+  const [localFilterDate, setLocalFilterDate] = useState<string | null>(null)
+
+  // 预约 + 待办分页
+  const APPT_PAGE_SIZE = 5
+  const TODO_PAGE_SIZE = 5
+  const [apptPage, setApptPage] = useState(1)
+  const [todoPage, setTodoPage] = useState(1)
 
   const now = useMemo(() => new Date(), [])
   const [viewYear, setViewYear] = useState(now.getFullYear())
@@ -126,14 +138,14 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
   }, [])
 
   const handleDateClick = useCallback((dateStr: string) => {
-    if (selectedDate === dateStr) {
-      // 再次点击同一日期 → 取消筛选
-      onDateSelect(null)
+    if (localFilterDate === dateStr) {
+      // 再次点击同一日期 → 取消筛选，显示全部
+      setLocalFilterDate(null)
     } else {
-      onDateSelect(dateStr)
+      setLocalFilterDate(dateStr)
     }
-    handleClose()
-  }, [onDateSelect, selectedDate, handleClose])
+    // 不关闭弹窗，不跳转到卡片笔记
+  }, [localFilterDate])
 
   // 按日期索引
   const dayIndex = useMemo(() => {
@@ -184,6 +196,113 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
     }
     return { todos, logs, notes, appts, diaries }
   }, [calendarData])
+
+  // ── 笔记展示：过滤 + 分组 + 排序（与卡片笔记统一）──
+  const TYPE_LABELS: Record<string, string> = {
+    todo: '待办',
+    log: '沟通',
+    note: '随笔',
+    appointment: '预约',
+    diary: '日记',
+  }
+  const TYPE_COLORS: Record<string, string> = {
+    todo: 'note-type-todo',
+    log: 'note-type-log',
+    note: 'note-type-note',
+    appointment: 'note-type-appointment',
+    diary: 'note-type-diary',
+  }
+
+  function localDate(iso: string) {
+    const d = new Date(iso)
+    return d.toLocaleDateString('sv-SE')
+  }
+
+  const nowDate = new Date()
+  const todayStr = localDate(nowDate.toISOString())
+  const tomorrowStr = localDate(new Date(nowDate.getTime() + 86400000).toISOString())
+  const yesterdayStr = localDate(new Date(nowDate.getTime() - 86400000).toISOString())
+
+  // 分组日期：预约/待办用开始时间，其他用创建时间
+  function getGroupDate(n: NoteItem): string {
+    if (n.type === 'todo' && n.scheduledDate) return localDate(n.scheduledDate)
+    if (n.type === 'appointment' && n.appointmentTime) return localDate(n.appointmentTime)
+    return localDate(n.createdAt)
+  }
+
+  // 组内排序时间
+  function getSortTime(n: NoteItem): string {
+    if (n.type === 'todo' && n.scheduledDate) return n.scheduledDate
+    if (n.type === 'appointment' && n.appointmentTime) return n.appointmentTime
+    return n.createdAt
+  }
+
+  function getDayCategory(dateStr: string): number {
+    if (dateStr === todayStr) return 0
+    if (dateStr === tomorrowStr) return 1
+    if (dateStr === yesterdayStr) return 2
+    if (dateStr > todayStr) return 3
+    return 4
+  }
+
+  // 过滤 + 分组
+  const noteGroups = useMemo(() => {
+    // 先过滤
+    const filtered = localFilterDate
+      ? notes.filter((n) => getGroupDate(n) === localFilterDate)
+      : notes
+
+    // 分组
+    const grouped = new Map<string, NoteItem[]>()
+    for (const n of filtered) {
+      const d = getGroupDate(n)
+      const arr = grouped.get(d) ?? []
+      arr.push(n)
+      if (!grouped.has(d)) grouped.set(d, arr)
+    }
+
+    // 组内排序：按时间升序
+    for (const dayNotes of grouped.values()) {
+      dayNotes.sort((a, b) => new Date(getSortTime(a)).getTime() - new Date(getSortTime(b)).getTime())
+    }
+
+    // 分组排序：今天 → 明天 → 昨天 → 未来 → 过去
+    const sortedDays = Array.from(grouped.keys()).sort((a, b) => {
+      const catA = getDayCategory(a)
+      const catB = getDayCategory(b)
+      if (catA !== catB) return catA - catB
+      if (catA === 3) return a.localeCompare(b)
+      if (catA === 4) return b.localeCompare(a)
+      return a.localeCompare(b)
+    })
+
+    return { grouped, sortedDays }
+  }, [notes, localFilterDate])
+
+  // 日期标题
+  function fmtDateHeader(dateStr: string) {
+    if (dateStr === todayStr) return '今天'
+    if (dateStr === tomorrowStr) return '明天'
+    if (dateStr === yesterdayStr) return '昨天'
+    const d = new Date(dateStr + 'T00:00:00')
+    const week = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()]
+    return `${d.getMonth() + 1}月${d.getDate()}日 周${week}`
+  }
+
+  // 内容截断
+  function clipContent(s: string, max = 60) {
+    if (!s) return ''
+    const plain = s.replace(/<[^>]+>/g, '').trim()
+    return plain.length > max ? plain.slice(0, max) + '…' : plain
+  }
+
+  // ── 预约分页 ──
+  const apptTotalPages = Math.max(1, Math.ceil(appointments.length / APPT_PAGE_SIZE))
+  const apptPageItems = appointments.slice((apptPage - 1) * APPT_PAGE_SIZE, apptPage * APPT_PAGE_SIZE)
+
+  // ── 待办分页 ──
+  const todoTotalPages = Math.max(1, Math.ceil(todos.length / TODO_PAGE_SIZE))
+  const todoPageItems = todos.slice((todoPage - 1) * TODO_PAGE_SIZE, todoPage * TODO_PAGE_SIZE)
 
   // ── 渲染 ──
   const modal = (open || closing) && mounted ? createPortal(
@@ -240,8 +359,8 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
             <span className="notes-calendar-legend-item">
               <span className="notes-calendar-dot diary" />日记
             </span>
-            {selectedDate && (
-              <button className="notes-calendar-clear-btn" onClick={() => { onDateSelect(null); handleClose() }}>
+            {localFilterDate && (
+              <button className="notes-calendar-clear-btn" onClick={() => setLocalFilterDate(null)}>
                 清除筛选
               </button>
             )}
@@ -260,7 +379,7 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
             const dateStr = formatDate(viewYear, viewMonth, day)
             const info = dayIndex.get(dateStr)
             const isToday = dateStr === calendarGrid.todayStr
-            const isSelected = dateStr === selectedDate
+            const isSelected = dateStr === localFilterDate
 
             return (
               <button
@@ -289,13 +408,29 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
         {/* ── 预约列表 ── */}
         {appointments.length > 0 && (
           <div className="notes-calendar-appt-section">
-            <h3 className="notes-calendar-appt-title">📅 预约日程</h3>
+            <div className="notes-calendar-list-header">
+              <h3 className="notes-calendar-appt-title">📅 预约日程</h3>
+              {apptTotalPages > 1 && (
+                <div className="notes-calendar-pagination">
+                  <button
+                    className="notes-calendar-page-btn"
+                    disabled={apptPage <= 1}
+                    onClick={() => setApptPage(p => Math.max(1, p - 1))}
+                  >◀</button>
+                  <span className="notes-calendar-page-info">{apptPage} / {apptTotalPages}</span>
+                  <button
+                    className="notes-calendar-page-btn"
+                    disabled={apptPage >= apptTotalPages}
+                    onClick={() => setApptPage(p => Math.min(apptTotalPages, p + 1))}
+                  >▶</button>
+                </div>
+              )}
+            </div>
             <div className="notes-calendar-appt-list">
-              {/* 按日期分组 */}
               {(() => {
                 let lastDate = ''
                 const items: React.ReactNode[] = []
-                for (const a of appointments) {
+                for (const a of apptPageItems) {
                   if (a.date !== lastDate) {
                     lastDate = a.date
                     items.push(
@@ -335,12 +470,29 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
         {/* ── 待办列表 ── */}
         {todos.length > 0 && (
           <div className="notes-calendar-appt-section">
-            <h3 className="notes-calendar-appt-title">📋 待办日程</h3>
+            <div className="notes-calendar-list-header">
+              <h3 className="notes-calendar-appt-title">📋 待办日程</h3>
+              {todoTotalPages > 1 && (
+                <div className="notes-calendar-pagination">
+                  <button
+                    className="notes-calendar-page-btn"
+                    disabled={todoPage <= 1}
+                    onClick={() => setTodoPage(p => Math.max(1, p - 1))}
+                  >◀</button>
+                  <span className="notes-calendar-page-info">{todoPage} / {todoTotalPages}</span>
+                  <button
+                    className="notes-calendar-page-btn"
+                    disabled={todoPage >= todoTotalPages}
+                    onClick={() => setTodoPage(p => Math.min(todoTotalPages, p + 1))}
+                  >▶</button>
+                </div>
+              )}
+            </div>
             <div className="notes-calendar-appt-list">
               {(() => {
                 let lastDate = ''
                 const items: React.ReactNode[] = []
-                for (const t of todos) {
+                for (const t of todoPageItems) {
                   if (t.date !== lastDate) {
                     lastDate = t.date
                     items.push(
@@ -372,6 +524,48 @@ export function NotesCalendar({ onDateSelect, selectedDate, entityType, entityId
                 }
                 return items
               })()}
+            </div>
+          </div>
+        )}
+
+        {/* ── 全部笔记列表（按日期分组，与卡片笔记统一）── */}
+        {notes.length > 0 && noteGroups.sortedDays.length > 0 && (
+          <div className="notes-calendar-appt-section notes-calendar-notes-section">
+            <h3 className="notes-calendar-appt-title">
+              {localFilterDate ? `📝 ${localFilterDate} 笔记` : '📝 全部笔记'}
+              <span className="notes-calendar-notes-total">（{notes.length} 条）</span>
+            </h3>
+            <div className="notes-calendar-notes-list">
+              {noteGroups.sortedDays.map((day) => {
+                const dayNotes = noteGroups.grouped.get(day)!
+                return (
+                  <div key={day} className="notes-calendar-day-group">
+                    <div className="notes-calendar-appt-date-header">
+                      {fmtDateHeader(day)}
+                      <span className="notes-calendar-appt-date-sub">{dayNotes.length} 条</span>
+                    </div>
+                    {dayNotes.map((note) => (
+                      <div key={note.id} className={`notes-calendar-note-item${note.done && (note.type === 'todo' || note.type === 'appointment') ? ' is-done' : ''}`} data-type={note.type}>
+                        <div className="notes-calendar-note-row">
+                          <span className="notes-calendar-note-time">
+                            {new Date(getSortTime(note)).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span className={`note-type-badge ${TYPE_COLORS[note.type]}`}>
+                            {TYPE_LABELS[note.type] ?? note.type}
+                          </span>
+                          {note.repeatGroupId && <span className="calendar-note-repeat">🔄</span>}
+                          {note.done && (note.type === 'todo' || note.type === 'appointment') && (
+                            <span className="calendar-note-done">✓</span>
+                          )}
+                        </div>
+                        <div className="notes-calendar-note-content">
+                          {note.type === 'diary' ? clipContent(note.content, 80) : clipContent(note.content, 100)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}

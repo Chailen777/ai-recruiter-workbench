@@ -230,6 +230,7 @@ export function RightPanel() {
             <NotesCalendar
               onDateSelect={setFilterDate}
               selectedDate={filterDate}
+              notes={notes}
             />
             {/* 视图切换：列表 / 时间轴 */}
             <div className="notes-view-toggle">
