@@ -78,6 +78,10 @@ export function RightPanel() {
   const searchDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
+  // ── 滚动状态：用于 tab 导航置顶 ──
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const [scrolledDown, setScrolledDown] = useState(false)
+
   const handleSearchChange = useCallback((value: string) => {
     setSearchInputValue(value)
     if (searchDebounceTimer.current) {
@@ -145,6 +149,17 @@ export function RightPanel() {
     })
   }, [])
 
+  // ── 监听 body 滚动，控制 tab 置顶 ──
+  useEffect(() => {
+    const el = bodyRef.current
+    if (!el || collapsed) { setScrolledDown(false); return }
+    const handler = () => {
+      setScrolledDown(el.scrollTop > 24)
+    }
+    el.addEventListener('scroll', handler, { passive: true })
+    return () => el.removeEventListener('scroll', handler)
+  }, [collapsed])
+
   // ── Global notes (loaded client-side) ──
   const [notes, setNotes] = useState<NoteItem[]>([])
   const [notesLoaded, setNotesLoaded] = useState(false)
@@ -173,7 +188,7 @@ export function RightPanel() {
   return (
     <aside
       aria-label="全局备忘录面板"
-      className={`app-right-panel${collapsed ? ' is-collapsed' : ''}`}
+      className={`app-right-panel${collapsed ? ' is-collapsed' : ''}${scrolledDown ? ' is-scrolled-down' : ''}`}
       data-collapsed={collapsed ? 'true' : 'false'}
       id="global-note-panel"
     >
@@ -276,7 +291,7 @@ export function RightPanel() {
 
       {/* ── 展开时显示内容 ── */}
       {!collapsed && (
-        <div className="app-right-panel-body">
+        <div className="app-right-panel-body" ref={bodyRef}>
           {/* 搜索面板（脱离工具栏，独立居中） */}
           {searchVisible && (
             <div className="note-search-overlay">
@@ -324,6 +339,7 @@ export function RightPanel() {
             searchVisible={searchVisible}
             loading={!notesLoaded}
             viewMode={viewMode}
+            scrolledDown={scrolledDown}
           />
           </ErrorBoundary>
           {/* 手机端：右下角视图切换浮动按钮 */}

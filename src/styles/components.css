@@ -2988,6 +2988,25 @@
   flex-wrap: wrap;
 }
 
+/* ── 滚动时 tab 导航置顶 ── */
+.note-panel.is-scrolled-down .note-type-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 8px 0;
+  margin: -8px 0;
+  background: var(--ds-color-bg, #f8fafc);
+  border-bottom: 1px solid var(--ds-color-border, #e2e8f0);
+  transition:
+    box-shadow .3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+
+[data-theme='dark'] .note-panel.is-scrolled-down .note-type-tabs {
+  background: var(--ds-color-bg-dark, #0f172a);
+  border-bottom-color: rgba(148,163,184,.12);
+}
+
 .note-type-tab {
   position: relative;
   border: 1px solid transparent;
@@ -8093,6 +8112,28 @@
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  /* ── 滚动时 header 标题+搜索收起，tab 置顶 ── */
+  .app-right-panel.is-scrolled-down .app-right-panel-title {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    margin: 0;
+    transition: max-height .25s ease, opacity .2s ease, margin .25s ease;
+  }
+  .app-right-panel.is-scrolled-down .notes-icon-btn {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+    width: 0;
+    transition: max-height .25s ease, opacity .2s ease, padding .25s ease, margin .25s ease, width .25s ease;
+  }
+  /* 折叠按钮保持不变 */
+  .app-right-panel.is-scrolled-down .app-right-panel-toggle {
+    flex-shrink: 0;
   }
 
   /* 手机端隐藏 header 内的视图切换按钮组，改用右下角 FAB */

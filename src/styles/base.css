@@ -572,6 +572,26 @@ html {
   border-radius: 0 var(--ds-radius-md) var(--ds-radius-md) 0;
 }
 
+/* ── 滚动时 header 收起（标题 + 搜索 / 视图按钮淡出，仅保留折叠按钮）── */
+.app-right-panel.is-scrolled-down .app-right-panel-title {
+  max-height: 0;
+  opacity: 0;
+  margin: 0;
+  overflow: hidden;
+  transition: max-height .25s ease, opacity .2s ease, margin .25s ease;
+}
+.app-right-panel.is-scrolled-down .notes-icon-btn,
+.app-right-panel.is-scrolled-down .notes-view-toggle {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  width: 0;
+  border-width: 0;
+  transition: max-height .25s ease, opacity .2s ease, padding .25s ease, margin .25s ease, width .25s ease;
+}
+
 /* ── 重复待办开关按钮 ── */
 .note-repeat-toggle-btn {
   display: inline-flex;
