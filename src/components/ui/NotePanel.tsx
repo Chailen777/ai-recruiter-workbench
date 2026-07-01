@@ -940,19 +940,17 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
                     <>
                       <span className="note-todo-freq-label">第</span>
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         className="note-todo-freq-input"
                         value={repeatCustomNum === '' ? '' : repeatCustomNum}
                         onChange={(e) => {
-                          const raw = e.target.value
+                          const raw = e.target.value.replace(/\D/g, '')
                           if (raw === '') { setRepeatCustomNum(''); return }
                           const n = Number(raw)
-                          if (!isNaN(n) && n >= 1 && n <= 366) setRepeatCustomNum(n)
+                          if (n >= 1 && n <= 366) setRepeatCustomNum(n)
                         }}
                         placeholder="天"
-                        min={1}
-                        max={366}
-                        step={1}
                         style={{ width: '56px' }}
                       />
                       <span className="note-todo-freq-label">天/年/季度</span>
