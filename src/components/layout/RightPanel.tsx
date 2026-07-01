@@ -89,9 +89,21 @@ export function RightPanel() {
     setSearchExpanded(false)
   }, [searchInputValue])
 
-  // ── 滚动状态：用于 tab 导航置顶 ──
+  // ── 滚动驱动的 header 显隐 + 15s 自动隐藏 ──
   const bodyRef = useRef<HTMLDivElement>(null)
-  const [scrolledDown, setScrolledDown] = useState(false)
+  const [headerVisible, setHeaderVisible] = useState(true)
+  const headerHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const showHeaderWithTimer = useCallback(() => {
+    setHeaderVisible(true)
+    if (headerHideTimerRef.current) clearTimeout(headerHideTimerRef.current)
+    headerHideTimerRef.current = setTimeout(() => {
+      // 只在非顶部时隐藏，顶部始终显示
+      if ((bodyRef.current?.scrollTop ?? 0) > 10) {
+        setHeaderVisible(false)
+      }
+    }, 15000)
+  }, [])
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchInputValue(value)
@@ -147,16 +159,22 @@ export function RightPanel() {
     })
   }, [])
 
-  // ── 监听 body 滚动，控制 tab 置顶 ──
+  // ── 滚动时显示 header + 启动 15s 自动隐藏计时 ──
   useEffect(() => {
     const el = bodyRef.current
-    if (!el || collapsed) { setScrolledDown(false); return }
-    const handler = () => {
-      setScrolledDown(el.scrollTop > 24)
-    }
+    if (!el || collapsed) return
+
+    const handler = () => showHeaderWithTimer()
     el.addEventListener('scroll', handler, { passive: true })
-    return () => el.removeEventListener('scroll', handler)
-  }, [collapsed])
+
+    // 首次展开面板时启动计时
+    showHeaderWithTimer()
+
+    return () => {
+      el.removeEventListener('scroll', handler)
+      if (headerHideTimerRef.current) clearTimeout(headerHideTimerRef.current)
+    }
+  }, [collapsed, showHeaderWithTimer])
 
   // ── Global notes (loaded client-side) ──
   const [notes, setNotes] = useState<NoteItem[]>([])
@@ -186,7 +204,7 @@ export function RightPanel() {
   return (
     <aside
       aria-label="全局备忘录面板"
-      className={`app-right-panel${collapsed ? ' is-collapsed' : ''}${scrolledDown ? ' is-scrolled-down' : ''}`}
+      className={`app-right-panel${collapsed ? ' is-collapsed' : ''}${headerVisible ? '' : ' is-header-hidden'}`}
       data-collapsed={collapsed ? 'true' : 'false'}
       id="global-note-panel"
     >
@@ -337,7 +355,6 @@ export function RightPanel() {
             searchTerm={globalSearchTerm}
             loading={!notesLoaded}
             viewMode={viewMode}
-            scrolledDown={scrolledDown}
           />
           </ErrorBoundary>
           {/* 手机端：右下角视图切换浮动按钮 */}

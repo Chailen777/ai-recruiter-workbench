@@ -57,8 +57,6 @@ type NotePanelProps = {
   loading?: boolean
   /** 视图模式（由父组件控制） */
   viewMode?: 'calendar' | 'list' | 'timeline' | 'bookmark'
-  /** 是否已滚动（控制 tab 导航置顶） */
-  scrolledDown?: boolean
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -252,7 +250,7 @@ function formatRepeatLabel(repeatType: string, repeatWeekdays?: string | null): 
   return REPEAT_LABELS[repeatType] ?? repeatType
 }
 
-export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false, viewMode: externalViewMode, scrolledDown = false }: NotePanelProps) {
+export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false, viewMode: externalViewMode }: NotePanelProps) {
   const [inputType, setInputType] = useState<'todo' | 'log' | 'note' | 'appointment' | 'diary'>('note')
   const [inputValue, setInputValue] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -678,7 +676,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   }, [isFullscreen, updateDiaryCharCount])
 
   return (
-    <div className={`note-panel${scrolledDown ? ' is-scrolled-down' : ''}`}>
+    <div className="note-panel">
       {/* ── 快速输入区（日历/收藏/搜索视图下隐藏）── */}
       {(viewMode !== 'calendar' && viewMode !== 'bookmark') && (
       <form

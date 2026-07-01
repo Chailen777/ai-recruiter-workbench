@@ -676,22 +676,22 @@ html {
   height: 11px;
 }
 
-/* ── 滚动时 header 收起（标题 + 搜索 / 视图按钮 / 折叠按钮淡出，tab 置顶）── */
-.app-right-panel.is-scrolled-down .app-right-panel-header {
+/* ── Header 自动隐藏（15s 无滚动）── */
+.app-right-panel.is-header-hidden .app-right-panel-header {
   padding: 0;
   transition: padding .25s ease;
 }
-.app-right-panel.is-scrolled-down .app-right-panel-title,
-.app-right-panel.is-scrolled-down .app-right-panel-toggle {
+.app-right-panel.is-header-hidden .app-right-panel-title,
+.app-right-panel.is-header-hidden .app-right-panel-toggle {
   max-height: 0;
   opacity: 0;
   margin: 0;
   overflow: hidden;
   transition: max-height .25s ease, opacity .2s ease, margin .25s ease;
 }
-.app-right-panel.is-scrolled-down .notes-icon-btn,
-.app-right-panel.is-scrolled-down .notes-view-toggle,
-.app-right-panel.is-scrolled-down .note-header-search {
+.app-right-panel.is-header-hidden .notes-icon-btn,
+.app-right-panel.is-header-hidden .notes-view-toggle,
+.app-right-panel.is-header-hidden .note-header-search {
   max-height: 0;
   opacity: 0;
   overflow: hidden;
