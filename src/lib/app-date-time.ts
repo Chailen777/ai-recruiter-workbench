@@ -86,6 +86,12 @@ export function formatAppDateTime(value: string | Date): string {
   return `${year}年${month}月${day}日 ${weekday} ${hour}:${minute}`
 }
 
+/** 仅日期部分（不含时间）：2026年07月01日 周三 */
+export function formatAppDate(value: string | Date): string {
+  const { year, month, day, weekday } = getAppDateParts(value)
+  return `${year}年${month}月${day}日 ${weekday}`
+}
+
 /** 把数据库 ISO 时间转换为 datetime-local 可回显的北京时间。 */
 export function toAppDateTimeLocal(value: string | Date): string {
   const { year, month, day, hour, minute } = getAppDateParts(value)

@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { addNote, deleteNote, editNote, togglePinNote, toggleDoneNote, editNoteWithScope, deleteNoteWithScope } from '@/app/actions'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useToast } from '@/components/providers/ToastProvider'
-import { formatAppDateTime, toAppDateTimeLocal } from '@/lib/app-date-time'
+import { formatAppDateTime, formatAppDate, toAppDateTimeLocal } from '@/lib/app-date-time'
 
 export type NoteItem = {
   id: number
@@ -162,6 +162,45 @@ function buildTodoInfoLine(note: NoteItem): string {
   if (note.repeatCategory) parts.push(getCategoryDisplay(note.repeatCategory))
   if (note.scheduledDate) parts.push(formatAppDateTime(note.scheduledDate))
   return parts.join(' · ')
+}
+
+/** 构建待办卡片多行结构化信息（JSX 片段数组） */
+function buildTodoDetailRows(note: NoteItem) {
+  const rows: { label: string; value: string }[] = []
+  
+  // 时间
+  if (note.scheduledDate) {
+    rows.push({ label: '时间', value: formatAppDateTime(note.scheduledDate) })
+  }
+  // 频率
+  if (note.repeatType) {
+    const freqLabel = formatRepeatLabel(note.repeatType, note.repeatWeekdays)
+    const freqNum = note.repeatFrequency && note.repeatFrequency > 1
+      ? `每${note.repeatFrequency}${note.repeatType === 'weekly' ? '周' : note.repeatType === 'monthly' ? '月' : note.repeatType === 'yearly' ? '年' : note.repeatType === 'quarterly' ? '季度' : note.repeatType === 'halfyearly' ? '半年' : '天'}`
+      : ''
+    rows.push({ label: '频率', value: freqNum ? `${freqLabel} ${freqNum}` : freqLabel })
+  }
+  // 截止
+  if (note.repeatEndDate) {
+    rows.push({ label: '截止', value: formatAppDate(note.repeatEndDate) })
+  }
+  // 人员
+  if (note.repeatPerson) {
+    rows.push({ label: '人员', value: note.repeatPerson })
+  }
+  // 类型
+  if (note.repeatCategory) {
+    rows.push({ label: '类型', value: getCategoryDisplay(note.repeatCategory) })
+  }
+  // 内容（笔记正文）
+  if (note.content) {
+    const plain = note.content.replace(/<[^>]+>/g, '').trim()
+    if (plain) {
+      rows.push({ label: '内容', value: plain })
+    }
+  }
+  
+  return rows
 }
 
 /** 根据 repeatType 和 repeatWeekdays 生成显示文字 */
@@ -1410,20 +1449,21 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
                         )}
                       </div>
                       <p className="note-timeline-content">{note.type === 'diary' ? note.content.replace(/<[^>]+>/g, '') : note.content}</p>
-                      {/* 待办信息 */}
-                      {note.type === 'todo' && (note.scheduledDate || note.repeatType || note.repeatPerson || note.repeatCategory) && (
-                        <div className="note-timeline-appt">
-                          {(() => {
-                            const line = buildTodoInfoLine(note)
-                            if (!line) return null
-                            return (
-                              <span className={`note-timeline-appt-item${note.repeatType ? ' note-timeline-repeat-tag' : ''}`}>
-                                {note.repeatType ? line : `🕐 ${line}`}
-                              </span>
-                            )
-                          })()}
-                        </div>
-                      )}
+                      {/* 待办信息 - 多行结构化 */}
+                      {note.type === 'todo' && (() => {
+                        const rows = buildTodoDetailRows(note)
+                        if (rows.length === 0) return null
+                        return (
+                          <div className="note-todo-detail-card">
+                            {rows.map((row, idx) => (
+                              <div key={idx} className="note-todo-detail-row">
+                                <span className="note-todo-detail-label">{row.label}</span>
+                                <span className="note-todo-detail-value">{row.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      })()}
                       {/* 预约信息 */}
                       {note.type === 'appointment' && (note.appointmentTime || note.appointmentPerson || note.appointmentLocation) && (
                         <div className="note-timeline-appt">
@@ -2226,27 +2266,21 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
             </div>
           )}
 
-          {/* ── 待办信息卡 ── */}
-          {note.type === 'todo' && (note.scheduledDate || note.repeatType || note.repeatPerson || note.repeatCategory) && (
-            <div className="note-todo-bar">
-              {(() => {
-                const line = buildTodoInfoLine(note)
-                if (!line) return null
-                if (note.repeatType) {
-                  return <span className="note-todo-repeat-tag" title="重复待办">{line}</span>
-                }
-                return (
-                  <span className="note-todo-scheduled">
-                    <svg className="note-appt-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="8" cy="8" r="7"/>
-                      <polyline points="8,4 8,8 11,10"/>
-                    </svg>
-                    <span>{line}</span>
-                  </span>
-                )
-              })()}
-            </div>
-          )}
+          {/* ── 待办信息卡 - 多行结构化 ── */}
+          {note.type === 'todo' && (() => {
+            const rows = buildTodoDetailRows(note)
+            if (rows.length === 0) return null
+            return (
+              <div className="note-todo-detail-card">
+                {rows.map((row, idx) => (
+                  <div key={idx} className="note-todo-detail-row">
+                    <span className="note-todo-detail-label">{row.label}</span>
+                    <span className="note-todo-detail-value">{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
 
           {/* ── 操作按钮 ── */}
           <div className="note-card-actions">

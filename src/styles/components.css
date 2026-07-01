@@ -4006,7 +4006,75 @@
   }
 }
 
-/* ── 待办信息卡 ── */
+/* ── 待办多行结构化信息卡 ── */
+.note-todo-detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-radius: 10px;
+  border: 1px solid #bfdbfe;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.08);
+}
+
+.note-todo-detail-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  line-height: 1.5;
+}
+
+.note-todo-detail-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1d4ed8;
+  min-width: 32px;
+  flex-shrink: 0;
+}
+
+.note-todo-detail-label::after {
+  content: '：';
+}
+
+.note-todo-detail-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e3a5f;
+  word-break: break-word;
+}
+
+/* Dark mode */
+[data-theme='dark'] .note-todo-detail-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border-color: rgba(59, 130, 246, 0.2);
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.12);
+}
+
+[data-theme='dark'] .note-todo-detail-label {
+  color: #93c5fd;
+}
+
+[data-theme='dark'] .note-todo-detail-value {
+  color: #e2e8f0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .note-todo-detail-card {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%);
+    border-color: rgba(59, 130, 246, 0.2);
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.12);
+  }
+  :root:not([data-theme='light']) .note-todo-detail-label {
+    color: #93c5fd;
+  }
+  :root:not([data-theme='light']) .note-todo-detail-value {
+    color: #e2e8f0;
+  }
+}
+
+/* ── 旧版待办信息卡（保留兼容） ── */
 .note-todo-bar {
   display: flex;
   align-items: center;
