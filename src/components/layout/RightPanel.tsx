@@ -360,7 +360,7 @@ export function RightPanel() {
           {/* 手机端：右下角视图切换浮动按钮 */}
           <NoteViewFab
             viewMode={viewMode}
-            setViewMode={setViewMode}
+            setViewMode={(mode) => { handleClearSearch(); setViewMode(mode) }}
             bookmarkCount={bookmarkCount}
           />
         </div>
