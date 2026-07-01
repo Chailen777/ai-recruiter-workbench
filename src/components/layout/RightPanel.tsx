@@ -6,6 +6,7 @@ import { useMounted } from '@/hooks/useMounted'
 import { NotePanel } from '@/components/ui/NotePanel'
 import type { NoteItem } from '@/components/ui/NotePanel'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
+import { NoteViewFab } from '@/components/layout/NoteViewFab'
 import { getAllNotes } from '@/app/actions'
 import { useNotesRefresh } from '@/components/providers'
 
@@ -325,6 +326,12 @@ export function RightPanel() {
             viewMode={viewMode}
           />
           </ErrorBoundary>
+          {/* 手机端：右下角视图切换浮动按钮 */}
+          <NoteViewFab
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            bookmarkCount={bookmarkCount}
+          />
         </div>
       )}
     </aside>

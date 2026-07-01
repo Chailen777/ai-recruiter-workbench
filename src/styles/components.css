@@ -7843,6 +7843,11 @@
    Responsive — 移动端显示底部导航
    ═══════════════════════════════════════════════════════ */
 
+/* ── 右下角视图切换 FAB 默认隐藏（桌面端用 header 按钮） ── */
+.note-view-fab {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .bottom-tab-bar {
     display: flex;
@@ -8116,6 +8121,125 @@
   .app-right-panel:not(.is-collapsed) .app-right-panel-title {
     flex: 1;
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 手机端隐藏 header 内的视图切换按钮组，改用右下角 FAB */
+  .notes-view-toggle {
+    display: none;
+  }
+
+  /* ═══ 右下角视图切换浮动按钮（手机端专属） ═══ */
+  .note-view-fab {
+    position: fixed;
+    right: 16px;
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    z-index: 10100;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+  }
+
+  .note-view-fab-main {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: var(--ds-color-primary, #2563eb);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18);
+    transition: transform .25s cubic-bezier(.16,1,.3,1), background .2s;
+    pointer-events: auto;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .note-view-fab-main svg {
+    width: 22px;
+    height: 22px;
+  }
+  .note-view-fab-main:active {
+    transform: scale(.92);
+  }
+
+  /* 展开时旋转 + 变色 */
+  .note-view-fab.is-expanded .note-view-fab-main {
+    transform: rotate(45deg);
+    background: var(--ds-color-text-secondary, #64748b);
+  }
+  .note-view-fab.is-expanded .note-view-fab-main:active {
+    transform: rotate(45deg) scale(.92);
+  }
+
+  /* 选项菜单 */
+  .note-view-fab-menu {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .note-view-fab-menu .note-view-fab-option {
+    pointer-events: auto;
+  }
+
+  .note-view-fab-option {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--ds-color-border);
+    background: var(--ds-color-card);
+    color: var(--ds-color-text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    transition: transform .2s cubic-bezier(.16,1,.3,1), opacity .2s ease;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+
+    /* 默认隐藏 */
+    transform: scale(0);
+    opacity: 0;
+  }
+  .note-view-fab-option svg {
+    width: 18px;
+    height: 18px;
+  }
+  .note-view-fab-option:active {
+    transform: scale(0) !important;
+    opacity: 0 !important;
+  }
+
+  /* 展开状态：逐项弹出 */
+  .note-view-fab.is-expanded .note-view-fab-option {
+    transform: scale(1);
+    opacity: 1;
+  }
+  .note-view-fab.is-expanded .note-view-fab-option:nth-child(1) { transition-delay: .04s; }
+  .note-view-fab.is-expanded .note-view-fab-option:nth-child(2) { transition-delay: .08s; }
+  .note-view-fab.is-expanded .note-view-fab-option:nth-child(3) { transition-delay: .12s; }
+
+  /* 半透明遮罩 */
+  .note-view-fab::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.25);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+    z-index: -1;
+  }
+  .note-view-fab.is-expanded::before {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .app-right-panel:not(.is-collapsed) .note-search-wrap {
