@@ -7847,9 +7847,10 @@
     display: none;
   }
 
-  /* 手机端 note-panel 去掉 gap（tabs 已 fixed，form 已 display:none） */
+  /* 手机端 note-panel 去掉 gap 和 padding-right（tabs 用 sticky + 负 margin 全宽） */
   .app-right-panel:not(.is-collapsed) .note-panel {
     gap: 0;
+    padding-right: 0;
   }
 
   .app-right-panel:not(.is-collapsed) {
@@ -7879,7 +7880,7 @@
     min-height: 0;
     overflow-y: auto;
     padding:
-      calc(env(safe-area-inset-top, 0px) + 54px)
+      0
       max(12px, env(safe-area-inset-right))
       max(12px, env(safe-area-inset-bottom))
       max(12px, env(safe-area-inset-left));
@@ -7887,11 +7888,9 @@
 
   /*
    * 手机端卡片笔记分类导航
-   * header 已隐藏，导航条直接固定在屏幕顶部安全区下方。
+   * 使用 position: sticky 固定在滚动容器顶部，纹丝不动不抖动。
+   * 负 margin 让背景铺满屏幕宽度，padding-top 含 safe-area 覆盖状态栏。
    */
-  .app-right-panel:not(.is-collapsed) {
-    --note-mobile-nav-top: max(4px, env(safe-area-inset-top, 0px));
-  }
 
   .app-right-panel:not(.is-collapsed) .note-type-tabs {
     align-items: center;
@@ -7904,15 +7903,15 @@
     display: grid;
     gap: 2px;
     grid-template-columns: repeat(6, minmax(46px, 1fr));
-    left: 0;
-    margin: 0;
+    margin-left: calc(-1 * max(12px, env(safe-area-inset-left, 0px)));
+    margin-right: calc(-1 * max(12px, env(safe-area-inset-right, 0px)));
     overflow-x: auto;
     overscroll-behavior-x: contain;
-    padding: 8px;
-    position: fixed;
-    right: 0;
+    padding: 8px 12px;
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+    position: sticky;
+    top: 0;
     scrollbar-width: none;
-    top: var(--note-mobile-nav-top);
     z-index: 10060;
   }
 
