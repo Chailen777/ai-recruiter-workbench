@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition, useMemo, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { addNote, deleteNote, editNote, togglePinNote, toggleDoneNote, editNoteWithScope, deleteNoteWithScope } from '@/app/actions'
+import { addNote, deleteNote, editNote, togglePinNote, toggleBookmarkNote, toggleDoneNote, editNoteWithScope, deleteNoteWithScope } from '@/app/actions'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useToast } from '@/components/providers/ToastProvider'
 import { formatAppDateTime, formatAppDate, toAppDateTimeLocal } from '@/lib/app-date-time'
@@ -12,6 +12,7 @@ export type NoteItem = {
   content: string
   type: string
   pinned: boolean
+  bookmarked: boolean
   done: boolean
   entityType?: string
   entityId?: number
@@ -51,6 +52,8 @@ type NotePanelProps = {
   onClearFilterDate?: () => void
   /** 搜索关键词（全文匹配） */
   searchTerm?: string
+  /** 收藏筛选（仅显示已收藏笔记） */
+  bookmarkFilter?: boolean
   /** 笔记列表首次加载中，显示骨架屏 */
   loading?: boolean
   /** 视图模式（由父组件控制） */
@@ -248,7 +251,7 @@ function formatRepeatLabel(repeatType: string, repeatWeekdays?: string | null): 
   return REPEAT_LABELS[repeatType] ?? repeatType
 }
 
-export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false, viewMode: externalViewMode }: NotePanelProps) {
+export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, bookmarkFilter, loading = false, viewMode: externalViewMode }: NotePanelProps) {
   const [inputType, setInputType] = useState<'todo' | 'log' | 'note' | 'appointment' | 'diary'>('note')
   const [inputValue, setInputValue] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -531,6 +534,12 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       )
     })
   }, [dateFiltered, searchTerm])
+
+  // ── 收藏筛选（memoized）──
+  const finalFiltered = useMemo(() => {
+    if (!bookmarkFilter) return searchFiltered
+    return searchFiltered.filter((n) => n.bookmarked)
+  }, [searchFiltered, bookmarkFilter])
 
   // ── 未完成待办计数（memoized）──
   const undoneTodoCount = useMemo(() => {
@@ -1322,7 +1331,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         <div className="note-filter-date-bar">
           <div className="note-filter-date-left">
             <span className="filter-date-label">筛选: {filterDate}</span>
-            <span className="filter-date-count">{searchFiltered.length} 条笔记</span>
+            <span className="filter-date-count">{finalFiltered.length} 条笔记</span>
           </div>
           <button
             type="button"
@@ -1339,9 +1348,9 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       {loading ? (
         <NoteSkeleton />
       ) : viewMode === 'list' ? (
-        <ListView notes={searchFiltered} onChanged={onNotesChanged} searchTerm={searchTerm} filterDate={filterDate} filterType={filterType} showOnlyUndone={showOnlyUndone} onClearFilterDate={onClearFilterDate} />
+        <ListView notes={finalFiltered} onChanged={onNotesChanged} searchTerm={searchTerm} filterDate={filterDate} filterType={filterType} showOnlyUndone={showOnlyUndone} onClearFilterDate={onClearFilterDate} />
       ) : (
-        <TimelineView notes={searchFiltered} onChanged={onNotesChanged} searchTerm={searchTerm} filterDate={filterDate} filterType={filterType} showOnlyUndone={showOnlyUndone} onClearFilterDate={onClearFilterDate} />
+        <TimelineView notes={finalFiltered} onChanged={onNotesChanged} searchTerm={searchTerm} filterDate={filterDate} filterType={filterType} showOnlyUndone={showOnlyUndone} onClearFilterDate={onClearFilterDate} />
       )}
     </div>
   )
@@ -2734,6 +2743,16 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
               onClick={runAction(togglePinNote)}
             >
               {note.pinned ? '取消置顶' : '置顶'}
+            </button>
+
+            <button
+              type="button"
+              className={`note-action-btn ${note.bookmarked ? 'active' : ''}`}
+              title={note.bookmarked ? '取消收藏' : '收藏'}
+              disabled={isPending}
+              onClick={runAction(toggleBookmarkNote)}
+            >
+              📌 {note.bookmarked ? '已收藏' : '收藏'}
             </button>
 
             <button

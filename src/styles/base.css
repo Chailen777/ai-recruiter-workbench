@@ -528,6 +528,24 @@ html {
   background: color-mix(in srgb, var(--ds-color-primary, #2563eb) 10%, transparent);
 }
 
+/* 图标按钮上的数字角标 */
+.notes-icon-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  color: #fff;
+  background: var(--ds-color-danger, #ef4444);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
 /* 视图切换按钮组 */
 .notes-view-toggle {
   display: flex;

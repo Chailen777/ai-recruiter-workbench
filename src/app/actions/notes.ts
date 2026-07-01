@@ -145,6 +145,7 @@ async function toNoteData(note: {
   content: string
   type: string
   pinned: boolean
+  bookmarked: boolean
   done: boolean
   entityType: string
   entityId: number
@@ -171,6 +172,7 @@ async function toNoteData(note: {
     content: note.content,
     type: note.type,
     pinned: note.pinned,
+    bookmarked: note.bookmarked,
     done: note.done,
     entityType: note.entityType,
     entityId: note.entityId,
@@ -207,6 +209,7 @@ export async function getNotes(entityType: EntityType, entityId: number) {
       content: n.content,
       type: n.type,
       pinned: n.pinned,
+      bookmarked: n.bookmarked,
       done: n.done,
       entityType: n.entityType,
       entityId: n.entityId,
@@ -442,6 +445,26 @@ export async function togglePinNote(formData: FormData) {
   const updated = await prisma.note.update({
     where: { id },
     data: { pinned: !note.pinned },
+  })
+
+  // MD 文件同步到 GitHub（失败不影响核心功能）
+  try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
+  try { await githubWriteNoteMd(await toNoteData(updated)) } catch {}
+
+  revalidateForEntity(note.entityType as EntityType, note.entityId)
+}
+
+// ── 切换收藏（图钉）────────────────
+export async function toggleBookmarkNote(formData: FormData) {
+  const id = Number(formData.get('id'))
+  if (!id) return
+
+  const note = await prisma.note.findUnique({ where: { id } })
+  if (!note) return
+
+  const updated = await prisma.note.update({
+    where: { id },
+    data: { bookmarked: !note.bookmarked },
   })
 
   // MD 文件同步到 GitHub（失败不影响核心功能）
@@ -698,6 +721,7 @@ export async function getAllNotes() {
       content: n.content,
       type: n.type,
       pinned: n.pinned,
+      bookmarked: n.bookmarked,
       done: n.done,
       entityType: n.entityType,
       entityId: n.entityId,

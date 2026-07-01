@@ -351,6 +351,8 @@ model Note {
   entityId   Int      @default(0)
   // 是否置顶
   pinned     Boolean  @default(false)
+  // 是否收藏（图钉）
+  bookmarked Boolean  @default(false)
   // 是否完成 (todo 专用)
   done       Boolean  @default(false)
   // 预约字段 (appointment 专用)

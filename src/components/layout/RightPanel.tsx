@@ -18,6 +18,7 @@ function toNoteItem(n: Record<string, unknown>): NoteItem {
     content: n.content as string,
     type: n.type as string,
     pinned: Boolean(n.pinned),
+    bookmarked: Boolean(n.bookmarked),
     done: Boolean(n.done),
     entityType: n.entityType as string,
     entityId: n.entityId as number,
@@ -95,6 +96,13 @@ export function RightPanel() {
     }
   }, [])
 
+  // ── 收藏筛选 ──
+  const [bookmarkFilter, setBookmarkFilter] = useState(false)
+
+  const toggleBookmarkFilter = useCallback(() => {
+    setBookmarkFilter((v) => !v)
+  }, [])
+
   const toggleSearch = useCallback(() => {
     setSearchVisible((v) => {
       const next = !v
@@ -163,6 +171,9 @@ export function RightPanel() {
     }
   }, [collapsed, notesLoaded, loadNotes, refreshCounter])
 
+  // 收藏计数（基于已加载的笔记数据）
+  const bookmarkCount = notes.filter((n) => n.bookmarked).length
+
   if (!mounted) return null
 
   return (
@@ -200,6 +211,20 @@ export function RightPanel() {
                 <circle cx="9" cy="9" r="5"/>
                 <line x1="13" y1="13" x2="18" y2="18"/>
               </svg>
+            </button>
+            {/* 收藏按钮 + 数字角标 */}
+            <button
+              type="button"
+              className={`notes-icon-btn${bookmarkFilter ? ' is-active' : ''}`}
+              onClick={toggleBookmarkFilter}
+              title={bookmarkFilter ? '显示全部' : '查看收藏'}
+              aria-label="查看收藏"
+              style={{ position: 'relative' }}
+            >
+              📌
+              {bookmarkCount > 0 && (
+                <span className="notes-icon-badge">{bookmarkCount}</span>
+              )}
             </button>
             {/* 搜索输入框（展开时显示） */}
             {searchVisible && (
@@ -286,6 +311,7 @@ export function RightPanel() {
             filterDate={filterDate}
             onClearFilterDate={() => setFilterDate(null)}
             searchTerm={globalSearchTerm}
+            bookmarkFilter={bookmarkFilter}
             loading={!notesLoaded}
             viewMode={viewMode}
           />

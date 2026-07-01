@@ -17,6 +17,7 @@ export type NoteData = {
   content: string
   type: string
   pinned: boolean
+  bookmarked: boolean
   done: boolean
   entityType: string
   entityId: number
@@ -122,6 +123,7 @@ export function buildMdContent(note: NoteData): string {
   lines.push(`content_preview: ${yamlValue(note.content.slice(0, 80).replace(/\n/g, ' '))}`)
   lines.push(`status: ${note.type === 'todo' ? (note.done ? 'completed' : 'pending') : 'open'}`)
   lines.push(`pinned: ${note.pinned}`)
+  lines.push(`bookmarked: ${note.bookmarked}`)
   lines.push(`entity_type: ${note.entityType}`)
   lines.push(`entity_id: ${note.entityId}`)
   if (note.entityName) {
@@ -161,6 +163,7 @@ export function buildMdContent(note: NoteData): string {
     lines.push(`| ✅ 完成状态 | ${note.done ? '已完成' : '待完成'} |`)
   }
   lines.push(`| 📌 置顶 | ${note.pinned ? '是' : '否'} |`)
+  lines.push(`| 📌 收藏 | ${note.bookmarked ? '是' : '否'} |`)
   if (note.type === 'appointment') {
     if (note.appointmentTime) {
       lines.push(`| 🕐 预约时间 | ${note.appointmentTime.toLocaleString('zh-CN', { hour12: false })} |`)
