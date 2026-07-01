@@ -7847,6 +7847,11 @@
     display: none;
   }
 
+  /* 手机端 note-panel 去掉 gap（tabs 已 fixed，form 已 display:none） */
+  .app-right-panel:not(.is-collapsed) .note-panel {
+    gap: 0;
+  }
+
   .app-right-panel:not(.is-collapsed) {
     align-self: stretch;
     background: var(--ds-color-background);
@@ -7874,7 +7879,7 @@
     min-height: 0;
     overflow-y: auto;
     padding:
-      max(72px, calc(env(safe-area-inset-top, 0px) + 64px))
+      calc(env(safe-area-inset-top, 0px) + 54px)
       max(12px, env(safe-area-inset-right))
       max(12px, env(safe-area-inset-bottom))
       max(12px, env(safe-area-inset-left));
@@ -7893,24 +7898,21 @@
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     background: rgba(8, 16, 36, 0.96);
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    border-radius: 10px;
-    box-shadow:
-      0 10px 30px rgba(2, 6, 23, 0.24),
-      0 1px 0 rgba(255, 255, 255, 0.04) inset;
+    border: none;
+    border-radius: 0;
+    box-shadow: 0 4px 24px rgba(59, 130, 246, 0.25);
     display: grid;
     gap: 2px;
     grid-template-columns: repeat(6, minmax(46px, 1fr));
-    left: max(8px, env(safe-area-inset-left, 0px));
+    left: 0;
     margin: 0;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     padding: 8px;
     position: fixed;
-    right: max(8px, env(safe-area-inset-right, 0px));
+    right: 0;
     scrollbar-width: none;
     top: var(--note-mobile-nav-top);
-    transition: top 180ms ease;
     z-index: 10060;
   }
 
@@ -7920,17 +7922,9 @@
 
   /* ── 表单（快速输入区）：默认隐藏，点 FAB「笔记」时底部弹出 ── */
 
-  /* 默认：隐藏表单所有子元素（tabs 是 fixed 不受影响） */
-  .app-right-panel:not(.is-collapsed) .note-input-area:not(.is-mobile-visible) > *:not(.note-type-tabs) {
-    display: none !important;
-  }
-
-  /* 默认：表单本身也无样式 */
+  /* 默认：整个表单隐藏（tabs 已移出，不受影响） */
   .app-right-panel:not(.is-collapsed) .note-input-area:not(.is-mobile-visible) {
-    padding: 0;
-    border: none;
-    background: transparent;
-    gap: 0;
+    display: none;
   }
 
   /* 激活：表单变为底部固定栏 */

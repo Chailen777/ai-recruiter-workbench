@@ -482,9 +482,9 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   }, [])
 
   // ── 根据 filterType 过滤（memoized）──
-  // 收藏视图 / 搜索时：跳过 Tab 筛选，用全量数据
+  // 收藏视图：跳过 Tab 筛选，用全量数据；搜索时保留 filterType 关联筛选
   const filtered = useMemo(() => {
-    if (viewMode === 'bookmark' || Boolean(searchTerm)) return sorted
+    if (viewMode === 'bookmark') return sorted
     return sorted.filter((n) => {
       if (filterType === 'all') {
         // 「今天」：今天创建的笔记 + 今天预约/待办
@@ -501,12 +501,12 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       if ((filterType === 'todo' || filterType === 'appointment') && showOnlyUndone) return n.type === filterType && !n.done
       return n.type === filterType
     })
-  }, [sorted, filterType, showOnlyUndone, getLocalToday, viewMode, searchTerm])
+  }, [sorted, filterType, showOnlyUndone, getLocalToday, viewMode])
 
   // ── 按日期筛选（memoized）──
   const dateFiltered = useMemo(() => {
     // 收藏视图：跳过日期筛选，显示全量收藏
-    if (viewMode === 'bookmark' || Boolean(searchTerm) || !filterDate) return filtered
+    if (viewMode === 'bookmark' || !filterDate) return filtered
     return filtered.filter((n) => {
       const targetDate = n.type === 'todo' && n.scheduledDate
         ? n.scheduledDate
@@ -679,7 +679,78 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
 
   return (
     <div className="note-panel">
-      {/* ── 快速输入区（日历/收藏/搜索视图下隐藏）── */}
+      {/* ── 类型导航条（抽出 form 外，所有视图始终可见）── */}
+      <div className="note-type-tabs" role="group" aria-label="笔记类型过滤">
+        {/* 今天 */}
+        <button
+          type="button"
+          className={`note-type-tab ${filterType === 'all' ? 'active note-type-all' : ''}`}
+          onClick={() => handleTabClick('all')}
+        >
+          今天
+        </button>
+
+        {/* 待办 — 带未完成徽章 + 双击仅显示未完成 */}
+        <button
+          type="button"
+          className={`note-type-tab ${filterType === 'todo' ? 'active' : ''} ${filterType === 'todo' && showOnlyUndone ? 'is-undone-filter' : ''}`}
+          onClick={() => handleTabClick('todo')}
+          onDoubleClick={handleTodoDblClick}
+          title={showOnlyUndone ? '双击：显示全部待办' : '双击：仅显示未完成待办'}
+        >
+          {TYPE_LABELS.todo}
+          {undoneTodoCount > 0 && (
+            <span className="note-type-badge-count" aria-label={`${undoneTodoCount} 条未完成`}>
+              {undoneTodoCount}
+            </span>
+          )}
+        </button>
+
+        {/* 沟通 */}
+        <button
+          type="button"
+          className={`note-type-tab ${filterType === 'log' ? 'active' : ''}`}
+          onClick={() => handleTabClick('log')}
+        >
+          {TYPE_LABELS.log}
+        </button>
+
+        {/* 随笔 */}
+        <button
+          type="button"
+          className={`note-type-tab ${filterType === 'note' ? 'active' : ''}`}
+          onClick={() => handleTabClick('note')}
+        >
+          {TYPE_LABELS.note}
+        </button>
+
+        {/* 预约 — 带未完成徽章 + 双击仅显示未完成 */}
+        <button
+          type="button"
+          className={`note-type-tab ${filterType === 'appointment' ? 'active' : ''} ${filterType === 'appointment' && showOnlyUndone ? 'is-undone-filter' : ''}`}
+          onClick={() => handleTabClick('appointment')}
+          onDoubleClick={handleAppointmentDblClick}
+          title={showOnlyUndone ? '双击：显示全部预约' : '双击：仅显示未完成预约'}
+        >
+          {TYPE_LABELS.appointment}
+          {undoneAppointmentCount > 0 && (
+            <span className="note-type-badge-count" aria-label={`${undoneAppointmentCount} 个预约未完成`}>
+              {undoneAppointmentCount}
+            </span>
+          )}
+        </button>
+
+        {/* 日记 */}
+        <button
+          type="button"
+          className={`note-type-tab ${filterType === 'diary' ? 'active' : ''}`}
+          onClick={() => handleTabClick('diary')}
+        >
+          {TYPE_LABELS.diary}
+        </button>
+      </div>
+
+      {/* ── 快速输入区（日历/收藏视图下隐藏）── */}
       {(viewMode !== 'calendar' && viewMode !== 'bookmark') && (
       <form
         ref={formRef}
@@ -692,78 +763,6 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         <input type="hidden" name="entityType" value={entityType} />
         <input type="hidden" name="entityId" value={entityId} />
         <input type="hidden" name="type" value={inputType} />
-
-        {/* 类型切换（含今天 + 过滤标签） */}
-        <div className="note-type-tabs" role="group" aria-label="笔记类型过滤">
-          {/* 今天 — 整个输入区已在日历/收藏视图下隐藏，此处无需额外判断 */}
-          <button
-            type="button"
-            className={`note-type-tab ${filterType === 'all' ? 'active note-type-all' : ''}`}
-            onClick={() => handleTabClick('all')}
-          >
-            今天
-          </button>
-
-          {/* 待办 — 带未完成徽章 + 双击仅显示未完成 */}
-          <button
-            type="button"
-            className={`note-type-tab ${filterType === 'todo' ? 'active' : ''} ${filterType === 'todo' && showOnlyUndone ? 'is-undone-filter' : ''}`}
-            onClick={() => handleTabClick('todo')}
-            onDoubleClick={handleTodoDblClick}
-            title={showOnlyUndone ? '双击：显示全部待办' : '双击：仅显示未完成待办'}
-          >
-            {TYPE_LABELS.todo}
-            {undoneTodoCount > 0 && (
-              <span className="note-type-badge-count" aria-label={`${undoneTodoCount} 条未完成`}>
-                {undoneTodoCount}
-              </span>
-            )}
-          </button>
-
-          {/* 沟通 */}
-          <button
-            type="button"
-            className={`note-type-tab ${filterType === 'log' ? 'active' : ''}`}
-            onClick={() => handleTabClick('log')}
-          >
-            {TYPE_LABELS.log}
-          </button>
-
-          {/* 随笔 */}
-          <button
-            type="button"
-            className={`note-type-tab ${filterType === 'note' ? 'active' : ''}`}
-            onClick={() => handleTabClick('note')}
-          >
-            {TYPE_LABELS.note}
-          </button>
-
-          {/* 预约 — 带未完成徽章 + 双击仅显示未完成 */}
-          <button
-            type="button"
-            className={`note-type-tab ${filterType === 'appointment' ? 'active' : ''} ${filterType === 'appointment' && showOnlyUndone ? 'is-undone-filter' : ''}`}
-            onClick={() => handleTabClick('appointment')}
-            onDoubleClick={handleAppointmentDblClick}
-            title={showOnlyUndone ? '双击：显示全部预约' : '双击：仅显示未完成预约'}
-          >
-            {TYPE_LABELS.appointment}
-            {undoneAppointmentCount > 0 && (
-              <span className="note-type-badge-count" aria-label={`${undoneAppointmentCount} 个预约未完成`}>
-                {undoneAppointmentCount}
-              </span>
-            )}
-          </button>
-
-          {/* 日记 */}
-          <button
-            type="button"
-            className={`note-type-tab ${filterType === 'diary' ? 'active' : ''}`}
-            onClick={() => handleTabClick('diary')}
-          >
-            {TYPE_LABELS.diary}
-          </button>
-
-        </div>
 
         {/* 预约专用表单字段 */}
         {inputType === 'appointment' && (
