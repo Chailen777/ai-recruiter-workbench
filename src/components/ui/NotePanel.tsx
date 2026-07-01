@@ -846,35 +846,33 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
               </div>
             )}
             {/* 重复待办：人员 + 类型 */}
-            {todoRepeat && (<>
-              <div className="note-appt-row">
-                <label className="note-appt-label">人员</label>
-                <input
-                  type="text"
-                  name="repeatPerson"
-                  className="note-appt-input"
-                  value={repeatPerson}
-                  onChange={(e) => setRepeatPerson(e.target.value)}
-                  placeholder="如：陈成（选填）"
-                />
-              </div>
-              <div className="note-appt-row">
-                <label className="note-appt-label">类型</label>
-                <select
-                  name="repeatCategory"
-                  className="note-appt-select"
-                  value={repeatCategory}
-                  onChange={(e) => setRepeatCategory(e.target.value)}
-                >
-                  <option value="">无</option>
-                  <option value="birthday">生日</option>
-                  <option value="study">读书学习</option>
-                  <option value="meeting">开会</option>
-                  <option value="exercise">锻炼身体</option>
-                  <option value="other_life">其他生活事项</option>
-                </select>
-              </div>
-            </>)}
+            <div className="note-appt-row">
+              <label className="note-appt-label">人员</label>
+              <input
+                type="text"
+                name="repeatPerson"
+                className="note-appt-input"
+                value={repeatPerson}
+                onChange={(e) => setRepeatPerson(e.target.value)}
+                placeholder="如：陈成（选填）"
+              />
+            </div>
+            <div className="note-appt-row">
+              <label className="note-appt-label">类型</label>
+              <select
+                name="repeatCategory"
+                className="note-appt-select"
+                value={repeatCategory}
+                onChange={(e) => setRepeatCategory(e.target.value)}
+              >
+                <option value="">无</option>
+                <option value="birthday">生日</option>
+                <option value="study">读书学习</option>
+                <option value="meeting">开会</option>
+                <option value="exercise">锻炼身体</option>
+                <option value="other_life">其他生活事项</option>
+              </select>
+            </div>
           </div>
         )}
 
