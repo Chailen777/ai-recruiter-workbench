@@ -5439,6 +5439,31 @@
     gap: 6px;
     padding: 8px 10px;
   }
+
+  /* ── 移动端卡片间距优化 ── */
+  .note-card {
+    padding: 10px 14px;
+    border-radius: 12px;
+  }
+  .note-card-header {
+    gap: 6px;
+  }
+  .note-card-body {
+    padding: 0;
+  }
+  .note-content {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .note-card-actions {
+    gap: 6px;
+    padding: 6px 0 2px;
+  }
+  .note-input-area {
+    padding: 10px 12px;
+    border-radius: 12px;
+    gap: 6px;
+  }
 }
 
 .note-diary-fs-toolbar {
