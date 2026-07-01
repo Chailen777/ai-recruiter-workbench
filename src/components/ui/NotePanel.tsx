@@ -1150,10 +1150,12 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
     return d.toLocaleDateString('sv-SE') // YYYY-MM-DD 本地时间
   }
 
-  // 按本地创建日期分组，组内按时间升序
+  // 按待办/预约时间分组（有时间用时间，没有才用创建日期），组内按时间升序
   const grouped = new Map<string, NoteItem[]>()
   for (const n of notes) {
-    const d = localDate(n.createdAt)
+    // 待办用 scheduledDate，预约用 appointmentTime，其余用 createdAt
+    const dateSrc = n.scheduledDate || n.appointmentTime || n.createdAt
+    const d = localDate(dateSrc)
     const arr = grouped.get(d) ?? []
     arr.push(n)
     if (!grouped.has(d)) grouped.set(d, arr)
@@ -1214,7 +1216,7 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
                     </div>
                     <div className="note-timeline-body">
                       <div className="note-timeline-meta">
-                        <span className="note-timeline-time">{fmtTime(note.createdAt)}</span>
+                        <span className="note-timeline-time">{fmtTime(note.scheduledDate || note.appointmentTime || note.createdAt)}</span>
                         <span className={`note-type-badge ${TYPE_COLORS[note.type]}`}>
                           {TYPE_LABELS[note.type] ?? note.type}
                         </span>
