@@ -7,7 +7,7 @@ import type { NoteItem } from '@/components/ui/NotePanel'
 import { useNotesRefresh } from '@/components/providers'
 
 /**
- * 候选人专属卡片笔记库
+ * 候选人专属卡片笔记
  * 每个候选人拥有独立笔记空间（entityType = 'candidate'）
  */
 export function CandidateNotePanel({

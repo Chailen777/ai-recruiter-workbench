@@ -6,7 +6,7 @@ import { getNotes } from '@/app/actions'
 import { useNotesRefresh } from '@/components/providers'
 
 /**
- * 岗位专属卡片笔记库
+ * 岗位专属卡片笔记
  * 每个岗位拥有独立笔记空间（entityType = 'job'）
  */
 export function JobNotePanel({

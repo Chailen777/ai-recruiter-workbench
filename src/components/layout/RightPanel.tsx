@@ -184,7 +184,7 @@ export function RightPanel() {
           <ToggleIcon collapsed={collapsed} />
         </button>
         {!collapsed && (
-          <span className="app-right-panel-title">卡片笔记库</span>
+          <span className="app-right-panel-title">卡片笔记</span>
         )}
         {collapsed ? null : (
           <>

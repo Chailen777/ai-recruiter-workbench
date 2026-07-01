@@ -7,7 +7,7 @@ import { getNotes } from '@/app/actions'
 import { useNotesRefresh } from '@/components/providers'
 
 /**
- * 知识库专属卡片笔记库
+ * 知识库专属卡片笔记
  * 每条知识拥有独立笔记空间（entityType = 'knowledge'）
  */
 export function KnowledgeNotePanel({

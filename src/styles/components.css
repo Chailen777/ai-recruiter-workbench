@@ -4644,6 +4644,31 @@
   padding: 6px 10px;
 }
 
+/* 编辑弹窗中自定义频率输入框 */
+.note-repeat-custom-wrap {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--ds-color-text-secondary, #6b7280);
+}
+
+.note-repeat-custom-input {
+  background: var(--ds-color-surface, #ffffff);
+  border: 1px solid var(--ds-color-border, #e5e7eb);
+  border-radius: 5px;
+  color: var(--ds-color-text-primary, #111827);
+  font-size: 13px;
+  padding: 4px 8px;
+  text-align: center;
+  width: 48px;
+}
+
+.note-repeat-custom-input:focus {
+  border-color: #6366f1;
+  outline: none;
+}
+
 /* select 下拉选项确保文字清晰可见 */
 .note-edit-select option {
   background: #ffffff;
@@ -4779,6 +4804,16 @@
 
 [data-theme='dark'] .note-edit-char-count {
   color: rgba(255, 255, 255, 0.4);
+}
+
+[data-theme='dark'] .note-repeat-custom-input {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--ds-color-border-dark, #374151);
+  color: var(--ds-color-text-primary-dark, #f3f4f6);
+}
+
+[data-theme='dark'] .note-repeat-custom-input:focus {
+  border-color: #818cf8;
 }
 
 [data-theme='dark'] .note-edit-cancel {

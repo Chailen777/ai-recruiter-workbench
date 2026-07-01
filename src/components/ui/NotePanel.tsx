@@ -1734,6 +1734,11 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
   // 编辑弹窗：重复待办人员+类型
   const [editRepeatPerson, setEditRepeatPerson] = useState(note.repeatPerson ?? '')
   const [editRepeatCategory, setEditRepeatCategory] = useState(note.repeatCategory ?? '')
+  // 编辑弹窗：重复待办频率+截止（可编辑）
+  const [editRepeatType, setEditRepeatType] = useState(note.repeatType ?? '')
+  const [editRepeatFrequency, setEditRepeatFrequency] = useState(note.repeatFrequency ? String(note.repeatFrequency) : '')
+  const [editRepeatEndDate, setEditRepeatEndDate] = useState(note.repeatEndDate ? note.repeatEndDate.slice(0, 10) : '')
+  const [editRepeatWeekdays, setEditRepeatWeekdays] = useState(note.repeatWeekdays ?? '')
   // 重复待办编辑/删除范围选择
   const [editScopeOpen, setEditScopeOpen] = useState(false)
   const [editScope, setEditScope] = useState<string>('single')
@@ -1878,10 +1883,14 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
         if (note.type === 'todo' && editTodoDate) {
           fd.set('scheduledDate', editTodoDate)
         }
-        // 待办人员+类型字段（所有待办都支持）
+        // 待办人员+类型+重复字段（所有待办都支持）
         if (note.type === 'todo') {
           fd.set('repeatPerson', editRepeatPerson.trim())
           fd.set('repeatCategory', editRepeatCategory)
+          if (editRepeatType) fd.set('repeatType', editRepeatType)
+          if (editRepeatFrequency) fd.set('repeatFrequency', editRepeatFrequency)
+          if (editRepeatEndDate) fd.set('repeatEndDate', editRepeatEndDate)
+          if (editRepeatWeekdays) fd.set('repeatWeekdays', editRepeatWeekdays)
         }
         await editNote(fd)
         setIsEditing(false)
@@ -1912,10 +1921,14 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
         if (note.type === 'todo' && editTodoDate) {
           fd.set('scheduledDate', editTodoDate)
         }
-        // 待办人员+类型字段（所有待办都支持）
+        // 待办人员+类型+重复字段（所有待办都支持）
         if (note.type === 'todo') {
           fd.set('repeatPerson', editRepeatPerson.trim())
           fd.set('repeatCategory', editRepeatCategory)
+          if (editRepeatType) fd.set('repeatType', editRepeatType)
+          if (editRepeatFrequency) fd.set('repeatFrequency', editRepeatFrequency)
+          if (editRepeatEndDate) fd.set('repeatEndDate', editRepeatEndDate)
+          if (editRepeatWeekdays) fd.set('repeatWeekdays', editRepeatWeekdays)
         }
         await editNoteWithScope(fd)
         setEditScopeOpen(false)
@@ -2160,21 +2173,154 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                   onChange={(e) => setEditTodoDate(e.target.value)}
                 />
               </div>
-              {/* 重复信息（有重复则显示，只读+可编辑其他字段） */}
+              {/* 重复信息（所有待办都可编辑） */}
               {note.repeatType && (
-                <div className="note-edit-appt-row">
-                  <label className="note-edit-label">🔄 频率</label>
-                  <span className="note-edit-readonly">
-                    {formatRepeatLabel(note.repeatType, note.repeatWeekdays)}
-                    {note.repeatFrequency && note.repeatFrequency > 1 ? `（每${note.repeatFrequency}${note.repeatType === 'weekly' ? '周' : note.repeatType === 'monthly' ? '月' : '年'}）` : ''}
-                  </span>
-                </div>
+                <>
+                  <div className="note-edit-appt-row">
+                    <label className="note-edit-label">🔄 频率</label>
+                    <select
+                      className="note-edit-select"
+                      value={editRepeatType}
+                      onChange={(e) => setEditRepeatType(e.target.value)}
+                    >
+                      {Object.entries(REPEAT_LABELS).map(([key, label]) => (
+                        <option key={key} value={key}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {editRepeatType === 'weekday' && (
+                    <div className="note-edit-appt-row">
+                      <label className="note-edit-label"></label>
+                      <div className="note-weekday-row">
+                        {WEEKDAY_OPTIONS.map((opt) => {
+                          const active = editRepeatWeekdays.split(',').includes(opt.value)
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              className={`note-weekday-chip${active ? ' note-weekday-chip--active' : ''}`}
+                              onClick={() => {
+                                const parts = editRepeatWeekdays.split(',').filter(Boolean)
+                                const next = active
+                                  ? parts.filter((v) => v !== opt.value)
+                                  : [...parts, opt.value]
+                                setEditRepeatWeekdays(next.join(','))
+                              }}
+                            >
+                              {opt.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {(editRepeatType === 'custom' || (editRepeatFrequency && Number(editRepeatFrequency) > 1)) && (
+                    <div className="note-edit-appt-row">
+                      <label className="note-edit-label"></label>
+                      <span className="note-repeat-custom-wrap">
+                        每
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          className="note-repeat-custom-input"
+                          value={editRepeatFrequency}
+                          onChange={(e) => {
+                            const v = e.target.value.replace(/\D/g, '')
+                            setEditRepeatFrequency(v ? String(Math.min(Number(v), 366)) : '')
+                          }}
+                          placeholder="1"
+                          maxLength={3}
+                        />
+                        {editRepeatType === 'daily' ? '天' : editRepeatType === 'weekly' ? '周' : editRepeatType === 'monthly' ? '月' : editRepeatType === 'quarterly' ? '季度' : editRepeatType === 'halfyearly' ? '半年' : '年'}
+                      </span>
+                    </div>
+                  )}
+                  <div className="note-edit-appt-row">
+                    <label className="note-edit-label">📅 截止</label>
+                    <input
+                      type="date"
+                      className="note-edit-datetime"
+                      value={editRepeatEndDate}
+                      onChange={(e) => setEditRepeatEndDate(e.target.value)}
+                    />
+                  </div>
+                </>
               )}
-              {note.repeatEndDate && (
-                <div className="note-edit-appt-row">
-                  <label className="note-edit-label">📅 截止</label>
-                  <span className="note-edit-readonly">{formatAppDate(note.repeatEndDate)}</span>
-                </div>
+              {/* 待办没有重复类型时，也允许添加频率 */}
+              {!note.repeatType && (
+                <>
+                  <div className="note-edit-appt-row">
+                    <label className="note-edit-label">🔄 频率</label>
+                    <select
+                      className="note-edit-select"
+                      value={editRepeatType}
+                      onChange={(e) => setEditRepeatType(e.target.value)}
+                    >
+                      <option value="">不重复</option>
+                      {Object.entries(REPEAT_LABELS).map(([key, label]) => (
+                        <option key={key} value={key}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {editRepeatType === 'weekday' && (
+                    <div className="note-edit-appt-row">
+                      <label className="note-edit-label"></label>
+                      <div className="note-weekday-row">
+                        {WEEKDAY_OPTIONS.map((opt) => {
+                          const active = editRepeatWeekdays.split(',').includes(opt.value)
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              className={`note-weekday-chip${active ? ' note-weekday-chip--active' : ''}`}
+                              onClick={() => {
+                                const parts = editRepeatWeekdays.split(',').filter(Boolean)
+                                const next = active
+                                  ? parts.filter((v) => v !== opt.value)
+                                  : [...parts, opt.value]
+                                setEditRepeatWeekdays(next.join(','))
+                              }}
+                            >
+                              {opt.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {(editRepeatType === 'custom' || (editRepeatFrequency && Number(editRepeatFrequency) > 1)) && (
+                    <div className="note-edit-appt-row">
+                      <label className="note-edit-label"></label>
+                      <span className="note-repeat-custom-wrap">
+                        每
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          className="note-repeat-custom-input"
+                          value={editRepeatFrequency}
+                          onChange={(e) => {
+                            const v = e.target.value.replace(/\D/g, '')
+                            setEditRepeatFrequency(v ? String(Math.min(Number(v), 366)) : '')
+                          }}
+                          placeholder="1"
+                          maxLength={3}
+                        />
+                        {editRepeatType === 'daily' ? '天' : editRepeatType === 'weekly' ? '周' : editRepeatType === 'monthly' ? '月' : editRepeatType === 'quarterly' ? '季度' : editRepeatType === 'halfyearly' ? '半年' : '年'}
+                      </span>
+                    </div>
+                  )}
+                  {editRepeatType && (
+                    <div className="note-edit-appt-row">
+                      <label className="note-edit-label">📅 截止</label>
+                      <input
+                        type="date"
+                        className="note-edit-datetime"
+                        value={editRepeatEndDate}
+                        onChange={(e) => setEditRepeatEndDate(e.target.value)}
+                      />
+                    </div>
+                  )}
+                </>
               )}
               {/* 人员、类型：所有待办都显示 */}
               <div className="note-edit-appt-row">

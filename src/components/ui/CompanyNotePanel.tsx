@@ -6,7 +6,7 @@ import { getNotes } from '@/app/actions'
 import { useNotesRefresh } from '@/components/providers'
 
 /**
- * 企业专属卡片笔记库
+ * 企业专属卡片笔记
  * 每个企业拥有独立笔记空间（entityType = 'company'）
  */
 export function CompanyNotePanel({

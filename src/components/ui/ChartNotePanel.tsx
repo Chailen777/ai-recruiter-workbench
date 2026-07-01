@@ -7,7 +7,7 @@ import { getNotes } from '@/app/actions'
 import { useNotesRefresh } from '@/components/providers'
 
 /**
- * 图表库专属卡片笔记库
+ * 图表库专属卡片笔记
  * 每条图表拥有独立笔记空间（entityType = 'chart'）
  */
 export function ChartNotePanel({

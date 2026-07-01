@@ -7,7 +7,7 @@ import { getNotes } from '@/app/actions'
 import { useNotesRefresh } from '@/components/providers'
 
 /**
- * 学校库专属卡片笔记库
+ * 学校库专属卡片笔记
  * 每条学校拥有独立笔记空间（entityType = 'school'）
  */
 export function SchoolNotePanel({

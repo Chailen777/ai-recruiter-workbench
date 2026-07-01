@@ -512,9 +512,17 @@ export async function editNote(formData: FormData) {
     const scheduledDateStr = (formData.get('scheduledDate') as string) || null
     const repeatPerson = (formData.get('repeatPerson') as string)?.trim() || null
     const repeatCategory = (formData.get('repeatCategory') as string) || null
+    const repeatType = (formData.get('repeatType') as string) || null
+    const repeatFrequency = Number(formData.get('repeatFrequency') ?? 0) || null
+    const repeatEndDateStr = (formData.get('repeatEndDate') as string) || null
+    const repeatWeekdays = (formData.get('repeatWeekdays') as string) || null
     if (scheduledDateStr) data.scheduledDate = parseAppDateTime(scheduledDateStr)
     if (repeatPerson !== null) data.repeatPerson = repeatPerson
     if (repeatCategory !== null) data.repeatCategory = repeatCategory
+    if (repeatType !== null) data.repeatType = repeatType
+    if (repeatFrequency !== null) data.repeatFrequency = repeatFrequency
+    if (repeatEndDateStr !== null) data.repeatEndDate = parseAppEndOfDay(repeatEndDateStr)
+    if (repeatWeekdays !== null) data.repeatWeekdays = repeatWeekdays
   }
 
   const updated = await prisma.note.update({ where: { id }, data })
@@ -547,16 +555,22 @@ export async function editNoteWithScope(formData: FormData) {
   if (isTodo && scheduledDateStr) {
     updateData.scheduledDate = parseAppDateTime(scheduledDateStr)
   }
-  // 新字段：人员、类型、自定义参数
+  // 新字段：人员、类型、重复参数
   if (isTodo) {
     const repeatPerson = (formData.get('repeatPerson') as string)?.trim() || null
     const repeatCategory = (formData.get('repeatCategory') as string) || null
     const repeatCustomNum = Number(formData.get('repeatCustomNum') ?? 0) || null
     const repeatWeekdays = (formData.get('repeatWeekdays') as string) || null
+    const repeatType = (formData.get('repeatType') as string) || null
+    const repeatFrequency = Number(formData.get('repeatFrequency') ?? 0) || null
+    const repeatEndDateStr = (formData.get('repeatEndDate') as string) || null
     if (repeatPerson !== null) updateData.repeatPerson = repeatPerson
     if (repeatCategory !== null) updateData.repeatCategory = repeatCategory
     if (repeatCustomNum !== null) updateData.repeatCustomNum = repeatCustomNum
     if (repeatWeekdays !== null) updateData.repeatWeekdays = repeatWeekdays
+    if (repeatType !== null) updateData.repeatType = repeatType
+    if (repeatFrequency !== null) updateData.repeatFrequency = repeatFrequency
+    if (repeatEndDateStr !== null) updateData.repeatEndDate = parseAppEndOfDay(repeatEndDateStr)
   }
 
   if (scope === 'single' || !note.repeatGroupId) {
