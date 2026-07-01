@@ -5386,89 +5386,41 @@
 }
 
 .note-diary-fs-exit-btn:hover {
-  background: #dc2626;
-}
-
-/* 浮动退出按钮 — 固定在右上角，手机端始终可见 */
-.note-diary-fs-float-exit {
-  align-items: center;
-  background: #ef4444;
-  border: none;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  color: #ffffff;
-  cursor: pointer;
-  display: flex;
-  font-size: 13px;
-  font-weight: 600;
-  height: 36px;
-  justify-content: center;
-  padding: 0 14px;
-  position: fixed;
-  right: 12px;
-  top: 12px;
-  transition: all 0.15s;
-  white-space: nowrap;
-  z-index: 100000;
-}
-
-.note-diary-fs-float-exit:hover {
-  background: #dc2626;
-  transform: scale(1.05);
-}
-
-.note-diary-fs-float-exit:active {
-  transform: scale(0.95);
-}
-
-/* 手机端：顶部栏自适应换行 */
-@media (max-width: 768px) {
-  .note-diary-fs-float-exit {
-    font-size: 12px;
-    height: 32px;
-    padding: 0 10px;
-  }
-
   .note-diary-fs-header {
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 8px 90px 8px 12px;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 8px 10px;
   }
 
   .note-diary-fs-header-left {
-    flex: 1 1 100%;
-    flex-wrap: wrap;
-    gap: 8px;
+    flex-shrink: 1;
+    min-width: 0;
   }
 
   .note-diary-fs-title {
     font-size: 14px;
   }
 
-  .note-diary-fs-select {
-    font-size: 12px;
-    padding: 3px 6px;
-  }
-
+  /* 手机端隐藏文章类型下拉和人物输入 — 为退出按钮腾空间 */
+  .note-diary-fs-select,
   .note-diary-fs-input {
-    font-size: 12px;
-    padding: 3px 6px;
-    width: 100px;
-  }
-
-  .note-diary-fs-header-right {
-    flex: 1 1 100%;
-    justify-content: flex-end;
-  }
-
-  /* 隐藏文字版退出按钮，浮动按钮已够用 */
-  .note-diary-fs-exit-btn {
     display: none;
   }
 
-  /* 全屏编辑器内边距缩小 */
+  .note-diary-fs-header-right {
+    flex-shrink: 0;
+    gap: 6px;
+  }
+
+  /* 手机端显示行内退出按钮 */
+  .note-diary-fs-exit-btn {
+    display: inline-flex;
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
   .note-diary-fs-editor {
-    padding: 16px 16px;
+    padding: 12px;
   }
 
   .note-diary-fs-toolbar {
@@ -5480,7 +5432,7 @@
   .note-diary-fs-footer {
     flex-wrap: wrap;
     gap: 6px;
-    padding: 8px 12px;
+    padding: 8px 10px;
   }
 }
 
