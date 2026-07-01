@@ -808,7 +808,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
                 <option value="weekday">每周几</option>
                 <option value="custom">自定义</option>
               </select>
-              {todoRepeat && todoRepeat !== 'workday' && todoRepeat !== 'custom' && (
+              {todoRepeat && todoRepeat !== 'workday' && todoRepeat !== 'custom' && todoRepeat !== 'weekday' && (
                 <>
                   <span className="note-todo-freq-label">每</span>
                   <input
