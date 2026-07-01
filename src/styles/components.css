@@ -4190,71 +4190,229 @@
 
 /* ── 范围选择弹窗 ── */
 .scope-panel {
-  max-width: 360px;
+  max-width: 400px;
+}
+
+.scope-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.scope-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 2px solid var(--ds-color-border, #e5e7eb);
+  border-radius: 12px;
+  background: var(--ds-color-surface, #f9fafb);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.scope-option:hover {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.03);
+}
+
+.scope-option--active {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.06);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.scope-option-radio {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--ds-color-border-strong, #d1d5db);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  transition: all 0.2s ease;
+}
+
+.scope-option--active .scope-option-radio {
+  border-color: #6366f1;
+  background: #6366f1;
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+.scope-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.scope-option-text strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ds-color-text-primary, #111827);
+}
+
+.scope-option-text small {
+  font-size: 12px;
+  color: var(--ds-color-text-secondary, #6b7280);
+  line-height: 1.4;
 }
 
 .scope-actions {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 10px;
+  margin-top: 20px;
 }
 
 .scope-btn {
-  width: 100%;
-  padding: 10px 16px;
-  border: 1px solid var(--ds-color-border, #e5e7eb);
-  border-radius: 8px;
-  background: var(--ds-color-surface, #f9fafb);
-  color: var(--ds-color-text-primary, #111827);
-  font-size: 13px;
-  font-weight: 500;
+  flex: 1;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  transition: all 0.2s ease;
 }
 
-.scope-btn:hover:not(:disabled) {
-  background: var(--ds-color-surface-hover, #f3f4f6);
-  border-color: var(--ds-color-border-strong, #d1d5db);
+.scope-btn--confirm {
+  background: #6366f1;
+  color: #fff;
+}
+
+.scope-btn--confirm:hover:not(:disabled) {
+  background: #4f46e5;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
-.scope-btn:disabled {
-  opacity: 0.6;
+.scope-btn--confirm:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-.scope-btn.scope-danger {
-  border-color: #fca5a5;
-  color: #dc2626;
-  background: #fef2f2;
-}
-
-.scope-btn.scope-danger:hover:not(:disabled) {
-  background: #fee2e2;
-  border-color: #f87171;
-}
-
-[data-theme='dark'] .scope-btn.scope-danger {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: #f87171;
-}
-
-[data-theme='dark'] .scope-btn.scope-danger:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.15);
-}
-
-.scope-btn.scope-cancel {
-  background: transparent;
-  border-color: transparent;
+.scope-btn--cancel {
+  background: var(--ds-color-surface, #f3f4f6);
   color: var(--ds-color-text-secondary, #6b7280);
-  font-weight: 400;
+  border: 1px solid var(--ds-color-border, #e5e7eb);
 }
 
-.scope-btn.scope-cancel:hover {
-  background: var(--ds-color-surface-hover, #f3f4f6);
+.scope-btn--cancel:hover {
+  background: var(--ds-color-surface-hover, #e5e7eb);
   color: var(--ds-color-text-primary, #111827);
+}
+
+/* 危险操作按钮（删除） */
+.scope-btn--danger {
+  background: #ef4444;
+  color: #fff;
+}
+
+.scope-btn--danger:hover:not(:disabled) {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.scope-btn--danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Dark mode scope */
+[data-theme='dark'] .scope-option {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .scope-option:hover {
+  border-color: #818cf8;
+  background: rgba(99, 102, 241, 0.08);
+}
+
+[data-theme='dark'] .scope-option--active {
+  border-color: #818cf8;
+  background: rgba(99, 102, 241, 0.12);
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+}
+
+[data-theme='dark'] .scope-option-radio {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme='dark'] .scope-option--active .scope-option-radio {
+  border-color: #818cf8;
+  background: #818cf8;
+  box-shadow: inset 0 0 0 3px #1f2937;
+}
+
+[data-theme='dark'] .scope-btn--confirm {
+  background: #818cf8;
+}
+
+[data-theme='dark'] .scope-btn--confirm:hover:not(:disabled) {
+  background: #6366f1;
+  box-shadow: 0 4px 12px rgba(129, 140, 248, 0.3);
+}
+
+[data-theme='dark'] .scope-btn--cancel {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+}
+
+[data-theme='dark'] .scope-btn--cancel:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #d1d5db;
+}
+
+[data-theme='dark'] .scope-btn--danger {
+  background: #ef4444;
+}
+
+[data-theme='dark'] .scope-btn--danger:hover:not(:disabled) {
+  background: #dc2626;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .scope-option {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  :root:not([data-theme='light']) .scope-option:hover {
+    border-color: #818cf8;
+    background: rgba(99, 102, 241, 0.08);
+  }
+  :root:not([data-theme='light']) .scope-option--active {
+    border-color: #818cf8;
+    background: rgba(99, 102, 241, 0.12);
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+  }
+  :root:not([data-theme='light']) .scope-option-radio {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  :root:not([data-theme='light']) .scope-option--active .scope-option-radio {
+    border-color: #818cf8;
+    background: #818cf8;
+    box-shadow: inset 0 0 0 3px #1f2937;
+  }
+  :root:not([data-theme='light']) .scope-btn--confirm {
+    background: #818cf8;
+  }
+  :root:not([data-theme='light']) .scope-btn--confirm:hover:not(:disabled) {
+    background: #6366f1;
+  }
+  :root:not([data-theme='light']) .scope-btn--cancel {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #9ca3af;
+  }
+  :root:not([data-theme='light']) .scope-btn--danger {
+    background: #ef4444;
+  }
 }
 
 /* 操作按钮 */
@@ -4312,31 +4470,43 @@
 .note-card-edit {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 10px;
+  margin-top: 6px;
 }
 
 .note-edit-appt {
-  background: var(--ds-color-surface, #f9fafb);
-  border: 1px solid var(--ds-color-border-lightest, #f3f4f6);
-  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(99, 102, 241, 0.01) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.12);
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px 10px;
+  gap: 8px;
+  padding: 12px 14px;
 }
 
 .note-edit-appt-row {
   align-items: center;
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .note-edit-label {
   color: var(--ds-color-text-secondary, #6b7280);
   flex-shrink: 0;
-  font-size: 12px;
-  width: 32px;
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 52px;
+  text-align: right;
+}
+
+.note-edit-readonly {
+  flex: 1;
+  font-size: 13px;
+  color: var(--ds-color-text-secondary, #6b7280);
+  padding: 5px 8px;
+  background: rgba(99, 102, 241, 0.04);
+  border-radius: 5px;
+  border: 1px dashed rgba(99, 102, 241, 0.15);
 }
 
 .note-edit-datetime,
@@ -4344,12 +4514,12 @@
 .note-edit-input {
   background: var(--ds-color-surface, #ffffff);
   border: 1px solid var(--ds-color-border, #e5e7eb);
-  border-radius: 5px;
+  border-radius: 6px;
   color: var(--ds-color-text-primary, #111827);
   flex: 1;
-  font-size: 12px;
+  font-size: 13px;
   min-width: 0;
-  padding: 4px 8px;
+  padding: 6px 10px;
 }
 
 .note-edit-datetime:focus,
@@ -4367,20 +4537,22 @@
   font-size: 13px;
   line-height: 1.6;
   min-height: 60px;
-  padding: 8px 10px;
+  padding: 10px 12px;
   resize: vertical;
   width: 100%;
+  transition: border-color 0.2s;
 }
 
 .note-edit-textarea:focus {
   border-color: #6366f1;
   outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .note-edit-actions {
   align-items: center;
   display: flex;
-  gap: 6px;
+  gap: 8px;
   justify-content: flex-end;
 }
 
@@ -4391,23 +4563,25 @@
 }
 
 .note-edit-btn {
-  border: 1px solid var(--ds-color-border, #e5e7eb);
-  border-radius: 5px;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 11px;
-  padding: 3px 12px;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 18px;
+  transition: all 0.2s ease;
 }
 
 .note-edit-save {
   background: #6366f1;
-  border-color: #6366f1;
   color: #fff;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.2);
 }
 
 .note-edit-save:hover:not(:disabled) {
   background: #4f46e5;
-  border-color: #4f46e5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .note-edit-save:disabled {
@@ -4416,13 +4590,13 @@
 }
 
 .note-edit-cancel {
-  background: none;
+  background: var(--ds-color-surface, #f3f4f6);
   color: var(--ds-color-text-secondary, #6b7280);
+  border: 1px solid var(--ds-color-border, #e5e7eb);
 }
 
 .note-edit-cancel:hover:not(:disabled) {
-  background: var(--ds-color-surface, #f9fafb);
-  border-color: var(--ds-color-text-secondary, #6b7280);
+  background: var(--ds-color-surface-hover, #e5e7eb);
   color: var(--ds-color-text-primary, #111827);
 }
 
@@ -4439,8 +4613,14 @@
 }
 
 [data-theme='dark'] .note-edit-appt {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(99, 102, 241, 0.06);
+  border-color: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme='dark'] .note-edit-readonly {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
 }
 
 [data-theme='dark'] .note-edit-label {
@@ -4456,8 +4636,27 @@
   color: var(--ds-color-text-primary-dark, #f3f4f6);
 }
 
+[data-theme='dark'] .note-edit-datetime:focus,
+[data-theme='dark'] .note-edit-select:focus,
+[data-theme='dark'] .note-edit-input:focus,
+[data-theme='dark'] .note-edit-textarea:focus {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+}
+
 [data-theme='dark'] .note-edit-char-count {
   color: rgba(255, 255, 255, 0.4);
+}
+
+[data-theme='dark'] .note-edit-cancel {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+}
+
+[data-theme='dark'] .note-edit-cancel:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #d1d5db;
 }
 
 /* ── 日记富文本编辑器 ── */

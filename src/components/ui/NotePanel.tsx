@@ -1616,7 +1616,9 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
   const [editRepeatCategory, setEditRepeatCategory] = useState(note.repeatCategory ?? '')
   // 重复待办编辑/删除范围选择
   const [editScopeOpen, setEditScopeOpen] = useState(false)
+  const [editScope, setEditScope] = useState<string>('single')
   const [deleteScopeOpen, setDeleteScopeOpen] = useState(false)
+  const [deleteScope, setDeleteScope] = useState<string>('single')
   const isRecurring = !!note.repeatGroupId
   // 日记折叠状态
   const [diaryExpanded, setDiaryExpanded] = useState(false)
@@ -1753,10 +1755,10 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
         if (note.type === 'todo' && editTodoDate) {
           fd.set('scheduledDate', editTodoDate)
         }
-        // 重复待办附加字段
-        if (note.repeatType) {
-          if (editRepeatPerson.trim()) fd.set('repeatPerson', editRepeatPerson.trim())
-          if (editRepeatCategory) fd.set('repeatCategory', editRepeatCategory)
+        // 待办人员+类型字段（所有待办都支持）
+        if (note.type === 'todo') {
+          fd.set('repeatPerson', editRepeatPerson.trim())
+          fd.set('repeatCategory', editRepeatCategory)
         }
         await editNote(fd)
         setIsEditing(false)
@@ -1787,10 +1789,10 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
         if (note.type === 'todo' && editTodoDate) {
           fd.set('scheduledDate', editTodoDate)
         }
-        // 重复待办附加字段
-        if (note.repeatType) {
-          if (editRepeatPerson.trim()) fd.set('repeatPerson', editRepeatPerson.trim())
-          if (editRepeatCategory) fd.set('repeatCategory', editRepeatCategory)
+        // 待办人员+类型字段（所有待办都支持）
+        if (note.type === 'todo') {
+          fd.set('repeatPerson', editRepeatPerson.trim())
+          fd.set('repeatCategory', editRepeatCategory)
         }
         await editNoteWithScope(fd)
         setEditScopeOpen(false)
@@ -1802,6 +1804,16 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
         alert('保存失败，请稍后重试。')
       }
     })
+  }
+
+  /** 确认范围后提交编辑（从 scope 弹窗点击确定时调用） */
+  function handleEditScopeConfirm() {
+    handleEditSaveWithScope(editScope)
+  }
+
+  /** 确认删除范围后提交 */
+  function handleDeleteScopeConfirm() {
+    handleDeleteWithScope(deleteScope)
   }
 
   /** 带范围的删除（重复待办） */
@@ -2017,7 +2029,7 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
           {note.type === 'todo' && (
             <div className="note-edit-appt">
               <div className="note-edit-appt-row">
-                <label className="note-edit-label">时间</label>
+                <label className="note-edit-label">⏰ 时间</label>
                 <input
                   type="datetime-local"
                   className="note-edit-datetime"
@@ -2025,57 +2037,55 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                   onChange={(e) => setEditTodoDate(e.target.value)}
                 />
               </div>
+              {/* 重复信息（有重复则显示，只读+可编辑其他字段） */}
               {note.repeatType && (
                 <div className="note-edit-appt-row">
-                  <label className="note-edit-label">重复</label>
+                  <label className="note-edit-label">🔄 频率</label>
                   <span className="note-edit-readonly">
                     {formatRepeatLabel(note.repeatType, note.repeatWeekdays)}
                     {note.repeatFrequency && note.repeatFrequency > 1 ? `（每${note.repeatFrequency}${note.repeatType === 'weekly' ? '周' : note.repeatType === 'monthly' ? '月' : '年'}）` : ''}
-                    {note.repeatEndDate ? ` · 截止 ${new Date(note.repeatEndDate).toLocaleDateString('zh-CN')}` : ''}
-                    {note.repeatPerson ? ` · 人员 ${note.repeatPerson}` : ''}
-                    {note.repeatCategory ? ` · ${getCategoryDisplay(note.repeatCategory)}` : ''}
-                    {note.scheduledDate ? ` · ${formatAppDateTime(note.scheduledDate)}` : ''}
                   </span>
                 </div>
               )}
-              {/* 编辑弹窗：重复待办人员+类型 */}
-              {note.type === 'todo' && note.repeatType && (
-                <>
-                  <div className="note-edit-appt-row">
-                    <label className="note-edit-label">人员</label>
-                    <input
-                      type="text"
-                      className="note-edit-input"
-                      value={editRepeatPerson}
-                      onChange={(e) => setEditRepeatPerson(e.target.value)}
-                      placeholder="如：陈成（选填）"
-                      name="repeatPerson"
-                    />
-                  </div>
-                  <div className="note-edit-appt-row">
-                    <label className="note-edit-label">类型</label>
-                    <select
-                      className="note-edit-input"
-                      value={editRepeatCategory}
-                      onChange={(e) => setEditRepeatCategory(e.target.value)}
-                      name="repeatCategory"
-                    >
-                      <option value="">未分类</option>
-                      <option value="birthday">🎂 生日</option>
-                      <option value="study">📚 读书学习</option>
-                      <option value="meeting">💼 开会</option>
-                      <option value="exercise">🏃 锻炼身体</option>
-                      <option value="work">💻 工作</option>
-                      <option value="leisure">🎮 休闲</option>
-                      <option value="kids">👶 孩子</option>
-                      <option value="parents">👴 父母</option>
-                      <option value="friends">🤝 朋友</option>
-                      <option value="family">👨‍👩‍👧‍👦 家人</option>
-                      <option value="other_life">📋 其他生活事项</option>
-                    </select>
-                  </div>
-                </>
+              {note.repeatEndDate && (
+                <div className="note-edit-appt-row">
+                  <label className="note-edit-label">📅 截止</label>
+                  <span className="note-edit-readonly">{formatAppDate(note.repeatEndDate)}</span>
+                </div>
               )}
+              {/* 人员、类型：所有待办都显示 */}
+              <div className="note-edit-appt-row">
+                <label className="note-edit-label">👤 人员</label>
+                <input
+                  type="text"
+                  className="note-edit-input"
+                  value={editRepeatPerson}
+                  onChange={(e) => setEditRepeatPerson(e.target.value)}
+                  placeholder="如：陈成（选填）"
+                  maxLength={30}
+                />
+              </div>
+              <div className="note-edit-appt-row">
+                <label className="note-edit-label">📂 类型</label>
+                <select
+                  className="note-edit-select"
+                  value={editRepeatCategory}
+                  onChange={(e) => setEditRepeatCategory(e.target.value)}
+                >
+                  <option value="">未分类</option>
+                  <option value="birthday">🎂 生日</option>
+                  <option value="study">📚 读书学习</option>
+                  <option value="meeting">💼 开会</option>
+                  <option value="exercise">🏃 锻炼身体</option>
+                  <option value="work">💻 工作</option>
+                  <option value="leisure">🎮 休闲</option>
+                  <option value="kids">👶 孩子</option>
+                  <option value="parents">👴 父母</option>
+                  <option value="friends">🤝 朋友</option>
+                  <option value="family">👨‍👩‍👧‍👦 家人</option>
+                  <option value="other_life">📋 其他生活事项</option>
+                </select>
+              </div>
             </div>
           )}
           {/* 日记用富文本编辑器，其他用 textarea */}
@@ -2375,21 +2385,47 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
       {/* ── 编辑范围选择弹窗（重复待办） ── */}
       {editScopeOpen && typeof document !== 'undefined' && createPortal(
         <>
-          <div className="confirm-backdrop" onClick={() => setEditScopeOpen(false)} />
+          <div className="confirm-backdrop" onClick={() => { setEditScopeOpen(false); setEditScope('single') }} />
           <div className="confirm-panel scope-panel" role="alertdialog" aria-modal="true">
             <h2 className="confirm-title">修改范围</h2>
             <p className="confirm-message">这是一条重复待办，请选择修改范围：</p>
+            <div className="scope-options">
+              <label
+                className={`scope-option${editScope === 'single' ? ' scope-option--active' : ''}`}
+                onClick={() => setEditScope('single')}
+              >
+                <span className="scope-option-radio" />
+                <span className="scope-option-text">
+                  <strong>仅修改当条</strong>
+                  <small>当前卡片脱离重复，变成独立待办</small>
+                </span>
+              </label>
+              <label
+                className={`scope-option${editScope === 'future' ? ' scope-option--active' : ''}`}
+                onClick={() => setEditScope('future')}
+              >
+                <span className="scope-option-radio" />
+                <span className="scope-option-text">
+                  <strong>修改当前及以后</strong>
+                  <small>从当前日期开始的重复实例都将更新</small>
+                </span>
+              </label>
+              <label
+                className={`scope-option${editScope === 'all' ? ' scope-option--active' : ''}`}
+                onClick={() => setEditScope('all')}
+              >
+                <span className="scope-option-radio" />
+                <span className="scope-option-text">
+                  <strong>修改全部重复</strong>
+                  <small>所有重复实例一起更新</small>
+                </span>
+              </label>
+            </div>
             <div className="scope-actions">
-              <button className="scope-btn" type="button" disabled={isPending} onClick={() => handleEditSaveWithScope('single')}>
-                仅修改当条
+              <button className="scope-btn scope-btn--confirm" type="button" disabled={isPending} onClick={handleEditScopeConfirm}>
+                确定
               </button>
-              <button className="scope-btn" type="button" disabled={isPending} onClick={() => handleEditSaveWithScope('future')}>
-                修改当前及以后
-              </button>
-              <button className="scope-btn" type="button" disabled={isPending} onClick={() => handleEditSaveWithScope('all')}>
-                修改全部重复
-              </button>
-              <button className="scope-btn scope-cancel" type="button" onClick={() => setEditScopeOpen(false)}>
+              <button className="scope-btn scope-btn--cancel" type="button" onClick={() => { setEditScopeOpen(false); setEditScope('single') }}>
                 取消
               </button>
             </div>
@@ -2401,21 +2437,47 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
       {/* ── 删除范围选择弹窗（重复待办） ── */}
       {deleteScopeOpen && typeof document !== 'undefined' && createPortal(
         <>
-          <div className="confirm-backdrop" onClick={() => setDeleteScopeOpen(false)} />
+          <div className="confirm-backdrop" onClick={() => { setDeleteScopeOpen(false); setDeleteScope('single') }} />
           <div className="confirm-panel scope-panel" role="alertdialog" aria-modal="true">
             <h2 className="confirm-title">删除范围</h2>
             <p className="confirm-message">这是一条重复待办，请选择删除范围：</p>
+            <div className="scope-options">
+              <label
+                className={`scope-option${deleteScope === 'single' ? ' scope-option--active' : ''}`}
+                onClick={() => setDeleteScope('single')}
+              >
+                <span className="scope-option-radio" />
+                <span className="scope-option-text">
+                  <strong>仅删除当条</strong>
+                  <small>只删除当前这一条，其余保持不变</small>
+                </span>
+              </label>
+              <label
+                className={`scope-option${deleteScope === 'future' ? ' scope-option--active' : ''}`}
+                onClick={() => setDeleteScope('future')}
+              >
+                <span className="scope-option-radio" />
+                <span className="scope-option-text">
+                  <strong>删除当前及以后</strong>
+                  <small>从当前日期开始的所有重复实例都将删除</small>
+                </span>
+              </label>
+              <label
+                className={`scope-option${deleteScope === 'all' ? ' scope-option--active' : ''}`}
+                onClick={() => setDeleteScope('all')}
+              >
+                <span className="scope-option-radio" />
+                <span className="scope-option-text">
+                  <strong>删除全部重复</strong>
+                  <small>删除所有重复实例，此操作不可恢复</small>
+                </span>
+              </label>
+            </div>
             <div className="scope-actions">
-              <button className="scope-btn scope-danger" type="button" disabled={isPending} onClick={() => handleDeleteWithScope('single')}>
-                仅删除当条
+              <button className="scope-btn scope-btn--danger" type="button" disabled={isPending} onClick={handleDeleteScopeConfirm}>
+                确定删除
               </button>
-              <button className="scope-btn scope-danger" type="button" disabled={isPending} onClick={() => handleDeleteWithScope('future')}>
-                删除当前及以后
-              </button>
-              <button className="scope-btn scope-danger" type="button" disabled={isPending} onClick={() => handleDeleteWithScope('all')}>
-                删除全部重复
-              </button>
-              <button className="scope-btn scope-cancel" type="button" onClick={() => setDeleteScopeOpen(false)}>
+              <button className="scope-btn scope-btn--cancel" type="button" onClick={() => { setDeleteScopeOpen(false); setDeleteScope('single') }}>
                 取消
               </button>
             </div>

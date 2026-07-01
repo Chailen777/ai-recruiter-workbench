@@ -506,11 +506,13 @@ export async function editNote(formData: FormData) {
   if (articlePerson !== undefined) data.articlePerson = articlePerson
   if (logPerson !== undefined) data.logPerson = logPerson
 
-  // 待办重复字段（仅 todo 类型才更新）
+  // 待办字段（仅 todo 类型才更新）
   const isTodo = note.type === 'todo'
   if (isTodo) {
+    const scheduledDateStr = (formData.get('scheduledDate') as string) || null
     const repeatPerson = (formData.get('repeatPerson') as string)?.trim() || null
     const repeatCategory = (formData.get('repeatCategory') as string) || null
+    if (scheduledDateStr) data.scheduledDate = parseAppDateTime(scheduledDateStr)
     if (repeatPerson !== null) data.repeatPerson = repeatPerson
     if (repeatCategory !== null) data.repeatCategory = repeatCategory
   }
@@ -558,7 +560,10 @@ export async function editNoteWithScope(formData: FormData) {
   }
 
   if (scope === 'single' || !note.repeatGroupId) {
-    // 仅修改当条
+    // 仅修改当条：断开 repeatGroupId，变成独立待办（颜色保持不变）
+    if (note.repeatGroupId) {
+      updateData.repeatGroupId = null
+    }
     const updated = await prisma.note.update({ where: { id }, data: updateData })
     try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
     try { await writeNoteMd(await toNoteData(updated)) } catch {}
