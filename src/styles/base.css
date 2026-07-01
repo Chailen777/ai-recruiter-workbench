@@ -591,6 +591,13 @@ html {
   right: 8px;
 }
 
+/* ── 重复待办按钮栏（默认状态，右上角） ── */
+.note-repeat-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0;
+}
+
 /* 搜索框（展开时显示） */
 .note-search-wrap {
   position: relative;
