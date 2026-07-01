@@ -57,7 +57,7 @@ type NotePanelProps = {
   /** 笔记列表首次加载中，显示骨架屏 */
   loading?: boolean
   /** 视图模式（由父组件控制） */
-  viewMode?: 'list' | 'timeline'
+  viewMode?: 'calendar' | 'list' | 'timeline'
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -1344,14 +1344,249 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         </div>
       )}
 
-      {/* ── 笔记列表 / 时间轴（加载中显示骨架屏）── */}
+      {/* ── 笔记列表 / 时间轴 / 日历（加载中显示骨架屏）── */}
       {loading ? (
         <NoteSkeleton />
+      ) : viewMode === 'calendar' ? (
+        <CalendarView notes={notes} onChanged={onNotesChanged} searchTerm={searchTerm} bookmarkFilter={bookmarkFilter} />
       ) : viewMode === 'list' ? (
         <ListView notes={finalFiltered} onChanged={onNotesChanged} searchTerm={searchTerm} filterDate={filterDate} filterType={filterType} showOnlyUndone={showOnlyUndone} onClearFilterDate={onClearFilterDate} />
       ) : (
         <TimelineView notes={finalFiltered} onChanged={onNotesChanged} searchTerm={searchTerm} filterDate={filterDate} filterType={filterType} showOnlyUndone={showOnlyUndone} onClearFilterDate={onClearFilterDate} />
       )}
+    </div>
+  )
+}
+
+/* ── 日历工具函数 ── */
+function daysInMonth(year: number, month: number) {
+  return new Date(year, month + 1, 0).getDate()
+}
+function firstDayOfMonth(year: number, month: number) {
+  return new Date(year, month, 1).getDay()
+}
+function fmtCalDate(year: number, month: number, day: number) {
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+const WEEKDAY_NAMES = ['日', '一', '二', '三', '四', '五', '六']
+
+/* ── 获取分组日期（与列表视图统一）── */
+function getGroupDate(n: NoteItem): string {
+  const d = n.type === 'todo' && n.scheduledDate ? new Date(n.scheduledDate)
+    : n.type === 'appointment' && n.appointmentTime ? new Date(n.appointmentTime)
+    : new Date(n.createdAt)
+  return d.toLocaleDateString('sv-SE')
+}
+function getSortTime(n: NoteItem): string {
+  return (n.type === 'todo' && n.scheduledDate) ? n.scheduledDate
+    : (n.type === 'appointment' && n.appointmentTime) ? n.appointmentTime
+    : n.createdAt
+}
+function getDayCategory(dateStr: string, t: string, tm: string, y: string): number {
+  if (dateStr === t) return 0
+  if (dateStr === tm) return 1
+  if (dateStr === y) return 2
+  if (dateStr > t) return 3
+  return 4
+}
+
+/* ── 日历视图（内嵌在卡片笔记中） ── */
+function CalendarView({ notes, onChanged, searchTerm, bookmarkFilter }: {
+  notes: NoteItem[]
+  onChanged?: () => void
+  searchTerm?: string
+  bookmarkFilter?: boolean
+}) {
+  const [viewYear, setViewYear] = useState(() => new Date().getFullYear())
+  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth())
+  const [filterDate, setFilterDate] = useState<string | null>(null)
+  const [calendarTab, setCalendarTab] = useState<'all' | 'appointment' | 'todo'>('all')
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+
+  const now = useMemo(() => new Date(), [])
+  const todayStr = now.toLocaleDateString('sv-SE')
+  const tomorrowStr = new Date(now.getTime() + 86400000).toLocaleDateString('sv-SE')
+  const yesterdayStr = new Date(now.getTime() - 86400000).toLocaleDateString('sv-SE')
+
+  // ── 日历网格 ──
+  const calendarGrid = useMemo(() => {
+    const totalDays = daysInMonth(viewYear, viewMonth)
+    const startDay = firstDayOfMonth(viewYear, viewMonth)
+    const cells: (number | null)[] = []
+    for (let i = 0; i < startDay; i++) cells.push(null)
+    for (let d = 1; d <= totalDays; d++) cells.push(d)
+    while (cells.length % 7 !== 0) cells.push(null)
+    return { cells, todayStr: fmtCalDate(now.getFullYear(), now.getMonth(), now.getDate()) }
+  }, [viewYear, viewMonth, now])
+
+  // ── 筛选：仅含手动时间的预约/待办 ──
+  const calendarNotes = useMemo(() => {
+    let filtered = notes.filter((n) => {
+      if (n.type === 'appointment' && n.appointmentTime) return true
+      if (n.type === 'todo' && n.scheduledDate) return true
+      return false
+    })
+    // 搜索过滤
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase()
+      filtered = filtered.filter((n) => n.content.toLowerCase().includes(q))
+    }
+    // 收藏过滤
+    if (bookmarkFilter) {
+      filtered = filtered.filter((n) => n.bookmarked)
+    }
+    // Tab 过滤
+    if (calendarTab === 'appointment') filtered = filtered.filter((n) => n.type === 'appointment')
+    if (calendarTab === 'todo') filtered = filtered.filter((n) => n.type === 'todo')
+    // 日期筛选（点击日历格子）
+    if (filterDate) {
+      filtered = filtered.filter((n) => getGroupDate(n) === filterDate)
+    }
+    return filtered
+  }, [notes, searchTerm, bookmarkFilter, calendarTab, filterDate])
+
+  // ── 分组（与列表视图排序一致）──
+  const noteGroups = useMemo(() => {
+    const grouped = new Map<string, NoteItem[]>()
+    for (const n of calendarNotes) {
+      const d = getGroupDate(n)
+      const arr = grouped.get(d) ?? []
+      arr.push(n)
+      if (!grouped.has(d)) grouped.set(d, arr)
+    }
+    // 组内降序
+    for (const dayNotes of grouped.values()) {
+      dayNotes.sort((a, b) => new Date(getSortTime(b)).getTime() - new Date(getSortTime(a)).getTime())
+    }
+    // 分组排序：今天 → 明天 → 昨天 → 未来(升序) → 过去(降序)
+    const sortedDays = Array.from(grouped.keys()).sort((a, b) => {
+      const catA = getDayCategory(a, todayStr, tomorrowStr, yesterdayStr)
+      const catB = getDayCategory(b, todayStr, tomorrowStr, yesterdayStr)
+      if (catA !== catB) return catA - catB
+      if (catA === 3) return a.localeCompare(b)
+      if (catA === 4) return b.localeCompare(a)
+      return a.localeCompare(b)
+    })
+    return { grouped, sortedDays }
+  }, [calendarNotes, todayStr, tomorrowStr, yesterdayStr])
+
+  // 日期标题
+  function fmtDateHeader(dateStr: string) {
+    if (dateStr === todayStr) return '今天'
+    if (dateStr === tomorrowStr) return '明天'
+    if (dateStr === yesterdayStr) return '昨天'
+    const d = new Date(dateStr + 'T00:00:00')
+    const week = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()]
+    return `${d.getMonth() + 1}月${d.getDate()}日 周${week}`
+  }
+
+  function toggleGroup(dateStr: string) {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(dateStr)) next.delete(dateStr); else next.add(dateStr)
+      return next
+    })
+  }
+
+  // ── 每月按日期索引的笔记数量（用于日历格子角标）──
+  const monthNoteCounts = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const n of notes) {
+      if (n.type === 'appointment' && n.appointmentTime) {
+        const d = n.appointmentTime.slice(0, 10)
+        m.set(d, (m.get(d) ?? 0) + 1)
+      } else if (n.type === 'todo' && n.scheduledDate) {
+        const d = n.scheduledDate.slice(0, 10)
+        m.set(d, (m.get(d) ?? 0) + 1)
+      }
+    }
+    return m
+  }, [notes])
+
+  return (
+    <div className="note-calendar-view">
+      {/* ── 月份导航 ── */}
+      <div className="note-calendar-nav">
+        <button type="button" className="note-calendar-nav-btn" onClick={() => {
+          if (viewMonth === 0) { setViewYear(viewYear - 1); setViewMonth(11) }
+          else setViewMonth(viewMonth - 1)
+        }} title="上个月">&lt;</button>
+        <span className="note-calendar-month-label">{viewYear}年 {viewMonth + 1}月</span>
+        <button type="button" className="note-calendar-nav-btn" onClick={() => {
+          if (viewMonth === 11) { setViewYear(viewYear + 1); setViewMonth(0) }
+          else setViewMonth(viewMonth + 1)
+        }} title="下个月">&gt;</button>
+        {filterDate && (
+          <button type="button" className="note-calendar-clear-btn" onClick={() => setFilterDate(null)}>
+            清除日期
+          </button>
+        )}
+      </div>
+
+      {/* ── 日历网格 ── */}
+      <div className="note-calendar-grid-wrap">
+        <div className="note-calendar-grid">
+          {WEEKDAY_NAMES.map((w) => (
+            <div key={w} className="note-calendar-weekday">{w}</div>
+          ))}
+          {calendarGrid.cells.map((day, i) => {
+            if (day === null) return <div key={`e${i}`} className="note-calendar-cell empty" />
+            const dateStr = fmtCalDate(viewYear, viewMonth, day)
+            const count = monthNoteCounts.get(dateStr) ?? 0
+            const isToday = dateStr === calendarGrid.todayStr
+            const isSelected = dateStr === filterDate
+            return (
+              <button
+                key={dateStr}
+                type="button"
+                className={`note-calendar-cell${isToday ? ' is-today' : ''}${isSelected ? ' is-selected' : ''}${count > 0 ? ' has-notes' : ''}`}
+                onClick={() => setFilterDate(isSelected ? null : dateStr)}
+                title={count > 0 ? `${count} 条日程` : '无日程'}
+              >
+                <span className="note-calendar-day-num">{day}</span>
+                {count > 0 && <span className="note-calendar-day-dot" />}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Tab：全部 / 预约日程 / 待办日程 ── */}
+      <div className="note-calendar-tabs">
+        <button type="button" className={`note-calendar-tab${calendarTab === 'all' ? ' is-active' : ''}`} onClick={() => setCalendarTab('all')}>全部</button>
+        <button type="button" className={`note-calendar-tab${calendarTab === 'appointment' ? ' is-active' : ''}`} onClick={() => setCalendarTab('appointment')}>📅 预约日程</button>
+        <button type="button" className={`note-calendar-tab${calendarTab === 'todo' ? ' is-active' : ''}`} onClick={() => setCalendarTab('todo')}>📋 待办日程</button>
+      </div>
+
+      {/* ── 日程卡片列表 ── */}
+      <div className="note-calendar-list">
+        {noteGroups.sortedDays.length === 0 ? (
+          <div className="note-calendar-empty">
+            {filterDate ? `${filterDate} 无${calendarTab === 'appointment' ? '预约' : calendarTab === 'todo' ? '待办' : '日程'}` : `暂无${calendarTab === 'appointment' ? '预约' : calendarTab === 'todo' ? '待办' : '日程'}`}
+          </div>
+        ) : (
+          noteGroups.sortedDays.map((day) => {
+            const dayNotes = noteGroups.grouped.get(day)!
+            const isCollapsed = collapsedGroups.has(day)
+            return (
+              <div key={day} className="note-calendar-day-group">
+                <button type="button" className="note-calendar-group-header" onClick={() => toggleGroup(day)}>
+                  <span className="note-calendar-collapse-icon">{isCollapsed ? '▶' : '▼'}</span>
+                  <span className="note-calendar-group-title">{fmtDateHeader(day)}</span>
+                  <span className="note-calendar-group-count">{dayNotes.length} 条</span>
+                </button>
+                {!isCollapsed && (
+                  <div className="note-calendar-group-body">
+                    {dayNotes.map((note) => (
+                      <NoteCard key={note.id} note={note} onChanged={onChanged} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })
+        )}
+      </div>
     </div>
   )
 }

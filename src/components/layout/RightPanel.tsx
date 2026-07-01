@@ -6,7 +6,6 @@ import { useMounted } from '@/hooks/useMounted'
 import { NotePanel } from '@/components/ui/NotePanel'
 import type { NoteItem } from '@/components/ui/NotePanel'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
-import { NotesCalendar } from '@/components/ui/NotesCalendar'
 import { getAllNotes } from '@/app/actions'
 import { useNotesRefresh } from '@/components/providers'
 
@@ -96,12 +95,8 @@ export function RightPanel() {
     }
   }, [])
 
-  // ── 收藏筛选 ──
-  const [bookmarkFilter, setBookmarkFilter] = useState(false)
-
-  const toggleBookmarkFilter = useCallback(() => {
-    setBookmarkFilter((v) => !v)
-  }, [])
+  // ── 视图模式（四个互斥：日历 / 列表 / 时间轴 / 收藏）──
+  const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'timeline' | 'bookmark'>('list')
 
   const toggleSearch = useCallback(() => {
     setSearchVisible((v) => {
@@ -115,9 +110,6 @@ export function RightPanel() {
       return next
     })
   }, [handleClearSearch])
-
-  // ── 视图模式 ──
-  const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list')
 
   // ── Collapse state (persisted to localStorage) ──
   const [collapsed, setCollapsed] = useState(true) // 默认折叠
@@ -212,20 +204,6 @@ export function RightPanel() {
                 <line x1="13" y1="13" x2="18" y2="18"/>
               </svg>
             </button>
-            {/* 收藏按钮 + 数字角标 */}
-            <button
-              type="button"
-              className={`notes-icon-btn${bookmarkFilter ? ' is-active' : ''}`}
-              onClick={toggleBookmarkFilter}
-              title={bookmarkFilter ? '显示全部' : '查看收藏'}
-              aria-label="查看收藏"
-              style={{ position: 'relative' }}
-            >
-              📌
-              {bookmarkCount > 0 && (
-                <span className="notes-icon-badge">{bookmarkCount}</span>
-              )}
-            </button>
             {/* 搜索输入框（展开时显示） */}
             {searchVisible && (
               <div className="note-search-wrap">
@@ -251,14 +229,35 @@ export function RightPanel() {
                 )}
               </div>
             )}
-            {/* 日历 */}
-            <NotesCalendar
-              onDateSelect={setFilterDate}
-              selectedDate={filterDate}
-              notes={notes}
-            />
-            {/* 视图切换：列表 / 时间轴 */}
+            {/* 视图切换：📌收藏 / 📅日历 / 📋列表 / ⏱时间轴 */}
             <div className="notes-view-toggle">
+              <button
+                type="button"
+                className={`notes-icon-btn ${viewMode === 'bookmark' ? 'is-active' : ''}`}
+                onClick={() => setViewMode('bookmark')}
+                title="查看收藏"
+                aria-label="查看收藏"
+                style={{ position: 'relative' }}
+              >
+                📌
+                {bookmarkCount > 0 && (
+                  <span className="notes-icon-badge">{bookmarkCount}</span>
+                )}
+              </button>
+              <button
+                type="button"
+                className={`notes-icon-btn ${viewMode === 'calendar' ? 'is-active' : ''}`}
+                onClick={() => setViewMode('calendar')}
+                title="日历视图"
+                aria-label="日历视图"
+              >
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="3" width="16" height="15" rx="2" />
+                  <line x1="2" y1="8" x2="18" y2="8" />
+                  <line x1="7" y1="1" x2="7" y2="5" />
+                  <line x1="13" y1="1" x2="13" y2="5" />
+                </svg>
+              </button>
               <button
                 type="button"
                 className={`notes-icon-btn ${viewMode === 'list' ? 'is-active' : ''}`}
@@ -311,9 +310,9 @@ export function RightPanel() {
             filterDate={filterDate}
             onClearFilterDate={() => setFilterDate(null)}
             searchTerm={globalSearchTerm}
-            bookmarkFilter={bookmarkFilter}
+            bookmarkFilter={viewMode === 'bookmark'}
             loading={!notesLoaded}
-            viewMode={viewMode}
+            viewMode={viewMode === 'bookmark' ? 'list' : viewMode as 'calendar' | 'list' | 'timeline'}
           />
           </ErrorBoundary>
         </div>

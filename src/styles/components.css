@@ -8118,3 +8118,237 @@
     display: none;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   内嵌日历视图（卡片笔记 calendar 模式）
+   ══════════════════════════════════════════════════════════════ */
+
+.note-calendar-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 0 0;
+}
+
+/* ── 月份导航 ── */
+.note-calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.note-calendar-nav-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ds-border);
+  border-radius: 6px;
+  background: var(--ds-bg-surface);
+  color: var(--ds-color-text);
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.note-calendar-nav-btn:hover {
+  background: var(--ds-bg-hover);
+}
+
+.note-calendar-month-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ds-color-text);
+  min-width: 100px;
+  text-align: center;
+}
+
+.note-calendar-clear-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--ds-border);
+  color: var(--ds-color-text-muted);
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.note-calendar-clear-btn:hover {
+  color: var(--ds-color-primary);
+  border-color: var(--ds-color-primary);
+}
+
+/* ── 日历网格 ── */
+.note-calendar-grid-wrap {
+  padding: 0 4px;
+}
+
+.note-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.note-calendar-weekday {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ds-color-text-muted);
+  padding: 4px 0;
+}
+
+.note-calendar-cell {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--ds-color-text);
+  transition: background 0.15s;
+  position: relative;
+  padding: 2px;
+}
+.note-calendar-cell.empty {
+  pointer-events: none;
+}
+.note-calendar-cell:not(.empty):hover {
+  background: var(--ds-bg-hover);
+}
+.note-calendar-cell.is-today {
+  font-weight: 700;
+  color: var(--ds-color-primary);
+}
+.note-calendar-cell.is-today .note-calendar-day-num {
+  border-bottom: 2px solid var(--ds-color-primary);
+}
+.note-calendar-cell.is-selected {
+  background: color-mix(in srgb, var(--ds-color-primary) 15%, transparent);
+  color: var(--ds-color-primary);
+  font-weight: 600;
+}
+.note-calendar-cell.has-notes {
+  font-weight: 600;
+}
+
+.note-calendar-day-num {
+  line-height: 1.4;
+}
+
+.note-calendar-day-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ds-color-primary);
+}
+
+/* ── Tab 切换 ── */
+.note-calendar-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--ds-border);
+  margin-top: 4px;
+}
+
+.note-calendar-tab {
+  border: none;
+  background: none;
+  color: var(--ds-color-text-muted);
+  font-size: 13px;
+  padding: 8px 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.note-calendar-tab.is-active {
+  color: var(--ds-color-primary);
+  border-bottom-color: var(--ds-color-primary);
+  font-weight: 600;
+}
+.note-calendar-tab:not(.is-active):hover {
+  color: var(--ds-color-text);
+}
+
+/* ── 日程卡片列表 ── */
+.note-calendar-list {
+  padding: 0 4px;
+}
+
+.note-calendar-empty {
+  text-align: center;
+  color: var(--ds-color-text-muted);
+  font-size: 13px;
+  padding: 24px 0;
+}
+
+.note-calendar-day-group {
+  margin-bottom: 8px;
+}
+
+.note-calendar-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  border: none;
+  background: var(--ds-bg-surface);
+  color: var(--ds-color-text);
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.note-calendar-group-header:hover {
+  background: var(--ds-bg-hover);
+}
+
+.note-calendar-collapse-icon {
+  font-size: 10px;
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.note-calendar-group-title {
+  font-weight: 600;
+  flex: 1;
+  text-align: left;
+}
+
+.note-calendar-group-count {
+  font-size: 11px;
+  color: var(--ds-color-text-muted);
+  background: var(--ds-bg-hover);
+  padding: 1px 8px;
+  border-radius: 10px;
+}
+
+.note-calendar-group-body {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── 暗色模式 ── */
+[data-theme='dark'] .note-calendar-nav-btn {
+  background: var(--ds-bg-elevated);
+}
+[data-theme='dark'] .note-calendar-cell.is-selected {
+  background: color-mix(in srgb, var(--ds-color-primary) 20%, transparent);
+}
+[data-theme='dark'] .note-calendar-group-header {
+  background: var(--ds-bg-elevated);
+}
+[data-theme='dark'] .note-calendar-group-header:hover {
+  background: var(--ds-bg-inset);
+}
