@@ -37,6 +37,10 @@ export type NoteData = {
   repeatFrequency?: number | null
   repeatEndDate?: Date | null
   repeatGroupId?: string | null
+  repeatPerson?: string | null
+  repeatCategory?: string | null
+  repeatCustomNum?: number | null
+  repeatWeekdays?: string | null
 }
 
 const DATA_NOTES_DIR = join(process.cwd(), 'data', 'notes')

@@ -33,6 +33,10 @@ export type NoteItem = {
   repeatFrequency?: number | null
   repeatEndDate?: string | null
   repeatGroupId?: string | null
+  repeatPerson?: string | null
+  repeatCategory?: string | null
+  repeatCustomNum?: number | null
+  repeatWeekdays?: string | null // 如 "1,3,5"
 }
 
 type NotePanelProps = {
@@ -106,9 +110,22 @@ const APPT_TYPE_LABELS: Record<string, string> = {
 }
 
 const REPEAT_LABELS: Record<string, string> = {
+  daily: '每天',
   weekly: '每周',
   monthly: '每月',
   yearly: '每年',
+  quarterly: '每季度',
+  halfyearly: '每半年',
+  workday: '工作日',
+  custom: '自定义',
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  birthday: '生日',
+  study: '读书学习',
+  meeting: '开会',
+  exercise: '锻炼身体',
+  other_life: '其他生活事项',
 }
 
 export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false }: NotePanelProps) {
@@ -138,6 +155,12 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
 
   // ── 沟通表单字段 ──
   const [logPerson, setLogPerson] = useState('')
+
+  // 重复待办附加字段
+  const [repeatPerson, setRepeatPerson] = useState('')
+  const [repeatCategory, setRepeatCategory] = useState('')
+  const [repeatCustomNum, setRepeatCustomNum] = useState<number | ''>('')
+  const [repeatWeekdays, setRepeatWeekdays] = useState('')
 
   // ── 待办表单字段 ──
   const [todoDate, setTodoDate] = useState('')       // datetime-local 格式
@@ -264,6 +287,11 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         fd.set('repeatType', todoRepeat)
         fd.set('repeatFrequency', String(todoFreq))
         if (todoEndDate) fd.set('repeatEndDate', todoEndDate)
+        // 重复待办附加字段
+        if (repeatPerson.trim()) fd.set('repeatPerson', repeatPerson.trim())
+        if (repeatCategory) fd.set('repeatCategory', repeatCategory)
+        if (repeatCustomNum) fd.set('repeatCustomNum', String(repeatCustomNum))
+        if (repeatWeekdays.trim()) fd.set('repeatWeekdays', repeatWeekdays.trim())
       }
     }
     startTransition(async () => {
@@ -286,6 +314,10 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         setTodoRepeat('')
         setTodoFreq(1)
         setTodoEndDate('')
+        setRepeatPerson('')
+        setRepeatCategory('')
+        setRepeatCustomNum('')
+        setRepeatWeekdays('')
         if (diaryEditorRef.current) diaryEditorRef.current.innerHTML = ''
         if (fullscreenEditorRef.current) fullscreenEditorRef.current.innerHTML = ''
         setIsFullscreen(false)
@@ -768,11 +800,16 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
                 onChange={(e) => setTodoRepeat(e.target.value)}
               >
                 <option value="">不重复</option>
+                <option value="daily">每天</option>
                 <option value="weekly">每周</option>
                 <option value="monthly">每月</option>
                 <option value="yearly">每年</option>
+                <option value="quarterly">每季度</option>
+                <option value="halfyearly">每半年</option>
+                <option value="workday">工作日</option>
+                <option value="custom">自定义</option>
               </select>
-              {todoRepeat && (
+              {todoRepeat && todoRepeat !== 'workday' && (
                 <>
                   <span className="note-todo-freq-label">每</span>
                   <input
@@ -786,8 +823,13 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
                     required
                     style={{ width: '50px' }}
                   />
-                  <span className="note-todo-freq-label">{todoRepeat === 'weekly' ? '周' : todoRepeat === 'monthly' ? '月' : '年'}</span>
+                  <span className="note-todo-freq-label">
+                    {todoRepeat === 'daily' ? '天' : todoRepeat === 'weekly' ? '周' : todoRepeat === 'monthly' ? '月' : todoRepeat === 'yearly' ? '年' : todoRepeat === 'quarterly' ? '季' : todoRepeat === 'halfyearly' ? '半年' : '天'}
+                  </span>
                 </>
+              )}
+              {todoRepeat === 'workday' && (
+                <span className="note-todo-freq-label">（周一到周五）</span>
               )}
             </div>
             {todoRepeat && (
@@ -803,6 +845,36 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
                 />
               </div>
             )}
+            {/* 重复待办：人员 + 类型 */}
+            {todoRepeat && (<>
+              <div className="note-appt-row">
+                <label className="note-appt-label">人员</label>
+                <input
+                  type="text"
+                  name="repeatPerson"
+                  className="note-appt-input"
+                  value={repeatPerson}
+                  onChange={(e) => setRepeatPerson(e.target.value)}
+                  placeholder="如：陈成（选填）"
+                />
+              </div>
+              <div className="note-appt-row">
+                <label className="note-appt-label">类型</label>
+                <select
+                  name="repeatCategory"
+                  className="note-appt-select"
+                  value={repeatCategory}
+                  onChange={(e) => setRepeatCategory(e.target.value)}
+                >
+                  <option value="">无</option>
+                  <option value="birthday">生日</option>
+                  <option value="study">读书学习</option>
+                  <option value="meeting">开会</option>
+                  <option value="exercise">锻炼身体</option>
+                  <option value="other_life">其他生活事项</option>
+                </select>
+              </div>
+            </>)}
           </div>
         )}
 
@@ -1232,6 +1304,8 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
                           {note.repeatType && (
                             <span className="note-timeline-appt-item note-timeline-repeat-tag">
                               🔄 {REPEAT_LABELS[note.repeatType] ?? note.repeatType}
+                              {note.repeatPerson && ` · ${note.repeatPerson}`}
+                              {note.repeatCategory && ` · ${CATEGORY_LABELS[note.repeatCategory] ?? note.repeatCategory}`}
                             </span>
                           )}
                           <span className="note-timeline-appt-item">
@@ -1351,6 +1425,9 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
   const [editTodoDate, setEditTodoDate] = useState(
     note.scheduledDate ? toAppDateTimeLocal(note.scheduledDate) : ''
   )
+  // 编辑弹窗：重复待办人员+类型
+  const [editRepeatPerson, setEditRepeatPerson] = useState(note.repeatPerson ?? '')
+  const [editRepeatCategory, setEditRepeatCategory] = useState(note.repeatCategory ?? '')
   // 重复待办编辑/删除范围选择
   const [editScopeOpen, setEditScopeOpen] = useState(false)
   const [deleteScopeOpen, setDeleteScopeOpen] = useState(false)
@@ -1490,6 +1567,11 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
         if (note.type === 'todo' && editTodoDate) {
           fd.set('scheduledDate', editTodoDate)
         }
+        // 重复待办附加字段
+        if (note.repeatType) {
+          if (editRepeatPerson.trim()) fd.set('repeatPerson', editRepeatPerson.trim())
+          if (editRepeatCategory) fd.set('repeatCategory', editRepeatCategory)
+        }
         await editNote(fd)
         setIsEditing(false)
         setIsEditFullscreen(false)
@@ -1518,6 +1600,11 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
         fd.set('scope', scope)
         if (note.type === 'todo' && editTodoDate) {
           fd.set('scheduledDate', editTodoDate)
+        }
+        // 重复待办附加字段
+        if (note.repeatType) {
+          if (editRepeatPerson.trim()) fd.set('repeatPerson', editRepeatPerson.trim())
+          if (editRepeatCategory) fd.set('repeatCategory', editRepeatCategory)
         }
         await editNoteWithScope(fd)
         setEditScopeOpen(false)
@@ -1762,6 +1849,38 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
                   </span>
                 </div>
               )}
+              {/* 编辑弹窗：重复待办人员+类型 */}
+              {note.type === 'todo' && note.repeatType && (
+                <>
+                  <div className="note-edit-appt-row">
+                    <label className="note-edit-label">人员</label>
+                    <input
+                      type="text"
+                      className="note-edit-input"
+                      value={editRepeatPerson}
+                      onChange={(e) => setEditRepeatPerson(e.target.value)}
+                      placeholder="如：陈成（选填）"
+                      name="repeatPerson"
+                    />
+                  </div>
+                  <div className="note-edit-appt-row">
+                    <label className="note-edit-label">类型</label>
+                    <select
+                      className="note-edit-input"
+                      value={editRepeatCategory}
+                      onChange={(e) => setEditRepeatCategory(e.target.value)}
+                      name="repeatCategory"
+                    >
+                      <option value="">未分类</option>
+                      <option value="birthday">生日</option>
+                      <option value="study">读书学习</option>
+                      <option value="meeting">开会</option>
+                      <option value="exercise">锻炼身体</option>
+                      <option value="other_life">其他生活事项</option>
+                    </select>
+                  </div>
+                </>
+              )}
             </div>
           )}
           {/* 日记用富文本编辑器，其他用 textarea */}
@@ -1999,6 +2118,8 @@ function NoteCard({ note, onChanged }: { note: NoteItem; onChanged?: () => void 
               {note.repeatType && (
                 <span className="note-todo-repeat-tag" title="重复待办">
                   🔄 {REPEAT_LABELS[note.repeatType] ?? note.repeatType}
+                  {note.repeatPerson && ` · ${note.repeatPerson}`}
+                  {note.repeatCategory && ` · ${CATEGORY_LABELS[note.repeatCategory] ?? note.repeatCategory}`}
                 </span>
               )}
               <span className="note-todo-scheduled">

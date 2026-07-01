@@ -21,7 +21,9 @@ export type AddNoteResult =
   | { success: false; code: 'INVALID_CONTENT' | 'INVALID_REPEAT' | 'DATABASE_UNAVAILABLE' | 'SAVE_FAILED'; message: string }
 
 const TRANSIENT_DATABASE_CODES = new Set(['P1001', 'P2024'])
-const REPEAT_TYPES = new Set<AppRepeatType>(['weekly', 'monthly', 'yearly'])
+const REPEAT_TYPES = new Set<AppRepeatType>([
+  'daily', 'weekly', 'monthly', 'yearly', 'quarterly', 'halfyearly', 'workday', 'custom',
+])
 const MAX_REPEAT_FREQUENCY = 99
 const MAX_REPEAT_OCCURRENCES = 365
 
@@ -158,6 +160,10 @@ async function toNoteData(note: {
   repeatFrequency?: number | null
   repeatEndDate?: Date | null
   repeatGroupId?: string | null
+  repeatPerson?: string | null
+  repeatCategory?: string | null
+  repeatCustomNum?: number | null
+  repeatWeekdays?: string | null
 }): Promise<NoteData> {
   return {
     id: note.id,
@@ -181,6 +187,10 @@ async function toNoteData(note: {
     repeatFrequency: note.repeatFrequency ?? null,
     repeatEndDate: note.repeatEndDate ?? null,
     repeatGroupId: note.repeatGroupId ?? null,
+    repeatPerson: note.repeatPerson ?? null,
+    repeatCategory: note.repeatCategory ?? null,
+    repeatCustomNum: note.repeatCustomNum ?? null,
+    repeatWeekdays: note.repeatWeekdays ?? null,
   }
 }
 
@@ -212,6 +222,10 @@ export async function getNotes(entityType: EntityType, entityId: number) {
       repeatFrequency: n.repeatFrequency ?? null,
       repeatEndDate: n.repeatEndDate?.toISOString() ?? null,
       repeatGroupId: n.repeatGroupId ?? null,
+      repeatPerson: n.repeatPerson ?? null,
+      repeatCategory: n.repeatCategory ?? null,
+      repeatCustomNum: n.repeatCustomNum ?? null,
+      repeatWeekdays: n.repeatWeekdays ?? null,
     }))
   } catch {
     return []
@@ -288,6 +302,18 @@ export async function addNote(formData: FormData): Promise<AddNoteResult> {
       const groupId = randomUUID()
       const frequency = repeatFrequency
 
+      // 解析新参数
+      const repeatPerson = (formData.get('repeatPerson') as string)?.trim() || null
+      const repeatCategory = (formData.get('repeatCategory') as string) || null
+      const repeatCustomNum = Number(formData.get('repeatCustomNum') ?? 0) || null
+      const repeatWeekdaysStr = (formData.get('repeatWeekdays') as string) || null
+      const repeatWeekdays = repeatWeekdaysStr || null
+
+      // 解析 weekdayMask（如 "1,3,5" → [1,3,5]）
+      const weekdayMask = repeatWeekdaysStr
+        ? repeatWeekdaysStr.split(',').map(Number).filter((n) => n >= 1 && n <= 7)
+        : undefined
+
       // 始终从首日按第 N 个间隔计算，避免月末和闰年日期逐次漂移。
       const schedule = createAppRepeatDates(
         startDate,
@@ -295,6 +321,8 @@ export async function addNote(formData: FormData): Promise<AddNoteResult> {
         repeatType,
         frequency,
         MAX_REPEAT_OCCURRENCES,
+        repeatCustomNum ?? undefined,
+        weekdayMask && weekdayMask.length > 0 ? weekdayMask : undefined,
       )
       if (schedule.exceedsLimit) {
         return {
@@ -316,6 +344,10 @@ export async function addNote(formData: FormData): Promise<AddNoteResult> {
         repeatFrequency: frequency,
         repeatEndDate: endDate,
         repeatGroupId: groupId,
+        ...(repeatPerson ? { repeatPerson } : {}),
+        ...(repeatCategory ? { repeatCategory } : {}),
+        ...(repeatCustomNum ? { repeatCustomNum } : {}),
+        ...(repeatWeekdays ? { repeatWeekdays } : {}),
       }))
 
       const { createdCount, firstNote } = await prisma.$transaction(async (tx) => {
@@ -474,6 +506,15 @@ export async function editNote(formData: FormData) {
   if (articlePerson !== undefined) data.articlePerson = articlePerson
   if (logPerson !== undefined) data.logPerson = logPerson
 
+  // 待办重复字段（仅 todo 类型才更新）
+  const isTodo = note.type === 'todo'
+  if (isTodo) {
+    const repeatPerson = (formData.get('repeatPerson') as string)?.trim() || null
+    const repeatCategory = (formData.get('repeatCategory') as string) || null
+    if (repeatPerson !== null) data.repeatPerson = repeatPerson
+    if (repeatCategory !== null) data.repeatCategory = repeatCategory
+  }
+
   const updated = await prisma.note.update({ where: { id }, data })
 
   // MD 文件同步（Vercel 文件系统不可写时静默失败）
@@ -503,6 +544,17 @@ export async function editNoteWithScope(formData: FormData) {
   const updateData: Record<string, unknown> = { content }
   if (isTodo && scheduledDateStr) {
     updateData.scheduledDate = parseAppDateTime(scheduledDateStr)
+  }
+  // 新字段：人员、类型、自定义参数
+  if (isTodo) {
+    const repeatPerson = (formData.get('repeatPerson') as string)?.trim() || null
+    const repeatCategory = (formData.get('repeatCategory') as string) || null
+    const repeatCustomNum = Number(formData.get('repeatCustomNum') ?? 0) || null
+    const repeatWeekdays = (formData.get('repeatWeekdays') as string) || null
+    if (repeatPerson !== null) updateData.repeatPerson = repeatPerson
+    if (repeatCategory !== null) updateData.repeatCategory = repeatCategory
+    if (repeatCustomNum !== null) updateData.repeatCustomNum = repeatCustomNum
+    if (repeatWeekdays !== null) updateData.repeatWeekdays = repeatWeekdays
   }
 
   if (scope === 'single' || !note.repeatGroupId) {
@@ -661,6 +713,10 @@ export async function getAllNotes() {
       repeatFrequency: n.repeatFrequency ?? null,
       repeatEndDate: n.repeatEndDate?.toISOString() ?? null,
       repeatGroupId: n.repeatGroupId ?? null,
+      repeatPerson: n.repeatPerson ?? null,
+      repeatCategory: n.repeatCategory ?? null,
+      repeatCustomNum: n.repeatCustomNum ?? null,
+      repeatWeekdays: n.repeatWeekdays ?? null,
     }))
   } catch {
     return []

@@ -365,10 +365,14 @@ model Note {
   logPerson     String?  // 沟通人物
   // 待办重复字段 (todo 专用)
   scheduledDate    DateTime?  // 计划执行时间（年月日 + 时分）
-  repeatType       String?    // 重复类型: weekly | monthly | yearly
-  repeatFrequency  Int?       // 重复频率（每 N 周/月/年）
+  repeatType       String?    // 重复类型: daily|weekly|monthly|yearly|quarterly|halfyearly|workday|custom
+  repeatFrequency  Int?       // 重复频率（每 N 天/周/月/年）
   repeatEndDate    DateTime?  // 重复截止日期
   repeatGroupId    String?    // 重复组 ID（同一组重复待办共享此 UUID）
+  repeatPerson     String?    // 重复待办关联人员
+  repeatCategory   String?    // 重复待办生活类型: birthday|study|meeting|exercise|other_life
+  repeatCustomNum  Int?       // 自定义重复间隔数字（如每 3 天）
+  repeatWeekdays   String?    // 自定义每周几（如 "1,3,5" 代表周一三五）
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

@@ -6,7 +6,7 @@
  */
 export const APP_TIME_ZONE = 'Asia/Shanghai'
 const APP_UTC_OFFSET = '+08:00'
-export type AppRepeatType = 'weekly' | 'monthly' | 'yearly'
+export type AppRepeatType = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'quarterly' | 'halfyearly' | 'workday' | 'custom'
 
 const DATE_TIME_LOCAL_RE =
   /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/
@@ -121,13 +121,49 @@ export function addAppRepeatInterval(
   start: Date,
   repeatType: AppRepeatType,
   intervalCount: number,
+  customNum?: number,
+  weekdayMask?: number[], // [0,2,4] = 周一三五
 ): Date {
   if (!Number.isInteger(intervalCount) || intervalCount < 0) {
     throw new Error('重复间隔必须是非负整数')
   }
 
+  // 每天
+  if (repeatType === 'daily') {
+    return new Date(start.getTime() + intervalCount * 24 * 60 * 60 * 1000)
+  }
+
+  // 每周 / 自定义每周几
   if (repeatType === 'weekly') {
+    if (weekdayMask && weekdayMask.length > 0) {
+      // 按周几掩码找到第 intervalCount 个匹配的日期
+      const msPerDay = 24 * 60 * 60 * 1000
+      let d = new Date(start)
+      let matched = 0
+      // 先跳过 start 当天（不算）
+      d = new Date(d.getTime() + msPerDay)
+      while (matched < intervalCount) {
+        const wd = d.getDay() === 0 ? 7 : d.getDay() // 周日=7
+        if (weekdayMask.includes(wd)) matched++
+        if (matched < intervalCount) d = new Date(d.getTime() + msPerDay)
+      }
+      return d
+    }
     return new Date(start.getTime() + intervalCount * 7 * 24 * 60 * 60 * 1000)
+  }
+
+  // 工作日（周一到周五）
+  if (repeatType === 'workday') {
+    const msPerDay = 24 * 60 * 60 * 1000
+    let d = new Date(start)
+    let counted = 0
+    d = new Date(d.getTime() + msPerDay)
+    while (counted < intervalCount) {
+      const wd = d.getDay()
+      if (wd >= 1 && wd <= 5) counted++
+      if (counted < intervalCount) d = new Date(d.getTime() + msPerDay)
+    }
+    return d
   }
 
   const parts = getAppDateParts(start)
@@ -135,29 +171,42 @@ export function addAppRepeatInterval(
   const startMonth = Number(parts.month)
   const startDay = Number(parts.day)
 
+  // 每季度
+  if (repeatType === 'quarterly') {
+    const totalMonths = startYear * 12 + (startMonth - 1) + intervalCount * 3
+    const targetYear = Math.floor(totalMonths / 12)
+    const targetMonth = (totalMonths % 12) + 1
+    const targetDay = Math.min(startDay, daysInMonth(targetYear, targetMonth))
+    return createAppDateTime(targetYear, targetMonth, targetDay, parts.hour, parts.minute)
+  }
+
+  // 每半年
+  if (repeatType === 'halfyearly') {
+    const totalMonths = startYear * 12 + (startMonth - 1) + intervalCount * 6
+    const targetYear = Math.floor(totalMonths / 12)
+    const targetMonth = (totalMonths % 12) + 1
+    const targetDay = Math.min(startDay, daysInMonth(targetYear, targetMonth))
+    return createAppDateTime(targetYear, targetMonth, targetDay, parts.hour, parts.minute)
+  }
+
+  // 自定义（每 N 天）
+  if (repeatType === 'custom' && customNum) {
+    return new Date(start.getTime() + intervalCount * customNum * 24 * 60 * 60 * 1000)
+  }
+
+  // 每月
   if (repeatType === 'monthly') {
     const totalMonths = startYear * 12 + (startMonth - 1) + intervalCount
     const targetYear = Math.floor(totalMonths / 12)
     const targetMonth = (totalMonths % 12) + 1
     const targetDay = Math.min(startDay, daysInMonth(targetYear, targetMonth))
-    return createAppDateTime(
-      targetYear,
-      targetMonth,
-      targetDay,
-      parts.hour,
-      parts.minute,
-    )
+    return createAppDateTime(targetYear, targetMonth, targetDay, parts.hour, parts.minute)
   }
 
+  // 每年（默认）
   const targetYear = startYear + intervalCount
   const targetDay = Math.min(startDay, daysInMonth(targetYear, startMonth))
-  return createAppDateTime(
-    targetYear,
-    startMonth,
-    targetDay,
-    parts.hour,
-    parts.minute,
-  )
+  return createAppDateTime(targetYear, startMonth, targetDay, parts.hour, parts.minute)
 }
 
 /** 生成重复计划；超过上限时不返回不完整结果。 */
@@ -167,6 +216,8 @@ export function createAppRepeatDates(
   repeatType: AppRepeatType,
   frequency: number,
   maxOccurrences = 365,
+  customNum?: number,
+  weekdayMask?: number[],
 ): { dates: Date[]; exceedsLimit: boolean } {
   if (!Number.isInteger(frequency) || frequency < 1) {
     throw new Error('重复频率必须是正整数')
@@ -183,6 +234,8 @@ export function createAppRepeatDates(
       start,
       repeatType,
       occurrenceIndex * frequency,
+      customNum,
+      weekdayMask,
     )
     if (current > end) return { dates, exceedsLimit: false }
     if (dates.length >= maxOccurrences) return { dates: [], exceedsLimit: true }
