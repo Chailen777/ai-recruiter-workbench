@@ -585,34 +585,42 @@ body {
   align-items: center;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px 0 0;
+  gap: 20px;
+  padding: 24px 0 0;
+  animation: noteSearchFadeIn 0.25s ease;
+}
+
+@keyframes noteSearchFadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .note-search-overlay-input-wrap {
   align-items: center;
   background: var(--ds-color-card, #ffffff);
   border: 2px solid var(--ds-color-border, #e5e7eb);
-  border-radius: 12px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   display: flex;
-  gap: 10px;
-  max-width: 480px;
-  padding: 10px 12px;
+  gap: 12px;
+  max-width: 520px;
+  padding: 12px 16px;
   position: relative;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.25s, transform 0.2s;
   width: 100%;
 }
 
 .note-search-overlay-input-wrap:focus-within {
   border-color: var(--ds-color-primary, #2563eb);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12), 0 4px 24px rgba(37, 99, 235, 0.08);
+  transform: scale(1.02);
 }
 
 .note-search-overlay-icon {
   color: var(--ds-color-text-tertiary, #9ca3af);
   flex-shrink: 0;
-  height: 18px;
-  width: 18px;
+  height: 20px;
+  width: 20px;
 }
 
 .note-search-overlay-input {
@@ -620,13 +628,15 @@ body {
   border: none;
   color: var(--ds-color-text-primary, #111827);
   flex: 1;
-  font-size: 15px;
+  font-size: 16px;
+  font-weight: 400;
   outline: none;
   padding: 0;
 }
 
 .note-search-overlay-input::placeholder {
   color: var(--ds-color-text-tertiary, #9ca3af);
+  font-size: 15px;
 }
 
 .note-search-overlay-clear {
@@ -638,22 +648,25 @@ body {
   cursor: pointer;
   display: flex;
   flex-shrink: 0;
-  font-size: 12px;
-  height: 22px;
+  font-size: 13px;
+  font-weight: 600;
+  height: 26px;
   justify-content: center;
-  transition: background 0.15s;
-  width: 22px;
+  transition: all 0.15s;
+  width: 26px;
 }
 
 .note-search-overlay-clear:hover {
   background: #ef4444;
   color: #ffffff;
+  transform: scale(1.1);
 }
 
 .note-search-overlay-hint {
   color: var(--ds-color-text-tertiary, #9ca3af);
-  font-size: 13px;
+  font-size: 14px;
   margin: 0;
+  animation: noteSearchFadeIn 0.35s ease 0.1s both;
 }
 
 /* 搜索面板打开但未输入 — 空白占位 */
@@ -666,11 +679,12 @@ body {
 [data-theme='dark'] .note-search-overlay-input-wrap {
   background: var(--ds-color-card, #1f2937);
   border-color: var(--ds-color-border, #374151);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme='dark'] .note-search-overlay-input-wrap:focus-within {
   border-color: var(--ds-color-primary, #3b82f6);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 4px 24px rgba(59, 130, 246, 0.12);
 }
 
 [data-theme='dark'] .note-search-overlay-clear {
@@ -684,16 +698,22 @@ body {
 
 @media (max-width: 768px) {
   .note-search-overlay {
-    padding: 12px 0 0;
+    padding: 16px 0 0;
+    gap: 14px;
   }
 
   .note-search-overlay-input-wrap {
     max-width: 100%;
-    padding: 8px 10px;
+    padding: 10px 14px;
+    border-radius: 14px;
   }
 
   .note-search-overlay-input {
-    font-size: 14px;
+    font-size: 15px;
+  }
+
+  .note-search-overlay-input-wrap:focus-within {
+    transform: none;
   }
 }
 

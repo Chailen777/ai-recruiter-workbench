@@ -1350,7 +1350,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       ) : viewMode === 'calendar' ? (
         <CalendarView notes={notes} onChanged={onNotesChanged} searchTerm={searchTerm} />
       ) : viewMode === 'list' || viewMode === 'bookmark' ? (
-        <ListView notes={finalFiltered} onChanged={onNotesChanged} searchTerm={searchTerm} filterDate={filterDate} filterType={filterType} showOnlyUndone={showOnlyUndone} onClearFilterDate={onClearFilterDate} />
+        <ListView notes={finalFiltered} onChanged={onNotesChanged} searchTerm={searchTerm} filterDate={filterDate} filterType={filterType} showOnlyUndone={showOnlyUndone} onClearFilterDate={onClearFilterDate} viewMode={viewMode} />
       ) : (
         <TimelineView notes={finalFiltered} onChanged={onNotesChanged} searchTerm={searchTerm} filterDate={filterDate} filterType={filterType} showOnlyUndone={showOnlyUndone} onClearFilterDate={onClearFilterDate} />
       )}
@@ -1587,7 +1587,7 @@ function CalendarView({ notes, onChanged, searchTerm }: {
 }
 
 /* ── 列表视图（按日期分组折叠） ── */
-function ListView({ notes, onChanged, searchTerm, filterDate, filterType, showOnlyUndone, onClearFilterDate }: {
+function ListView({ notes, onChanged, searchTerm, filterDate, filterType, showOnlyUndone, onClearFilterDate, viewMode }: {
   notes: NoteItem[]
   onChanged?: () => void
   searchTerm?: string
@@ -1595,6 +1595,7 @@ function ListView({ notes, onChanged, searchTerm, filterDate, filterType, showOn
   filterType?: string
   showOnlyUndone?: boolean
   onClearFilterDate?: () => void
+  viewMode?: string
 }) {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
 
@@ -1603,7 +1604,10 @@ function ListView({ notes, onChanged, searchTerm, filterDate, filterType, showOn
     let hint = ''
     let showClearBtn = false
 
-    if (searchTerm) {
+    if (viewMode === 'bookmark') {
+      title = '还没有收藏的笔记'
+      hint = '点卡片上的 📌 按钮收藏重要笔记'
+    } else if (searchTerm) {
       title = `没有匹配"${searchTerm}"的记录`
       hint = '尝试其他关键词'
     } else if (filterDate) {

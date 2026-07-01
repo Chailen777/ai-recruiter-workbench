@@ -3142,6 +3142,12 @@
   overflow-y: auto;
   flex: 1;
   min-height: 0;
+  animation: noteViewFadeIn 0.25s ease;
+}
+
+@keyframes noteViewFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ── 列表按日期分组 ── */
@@ -3296,6 +3302,7 @@
 
 /* ── 时间轴 ── */
 .note-timeline {
+  animation: noteViewFadeIn 0.25s ease;
   padding: 12px 0 4px 0;
 }
 
@@ -3876,6 +3883,23 @@
   cursor: pointer;
   transform: translateY(0);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* 卡片类型颜色标识线 — 左边框 */
+.note-card:not(.is-pinned)[data-type="todo"] {
+  border-left: 3px solid #8b5cf6;
+}
+.note-card:not(.is-pinned)[data-type="communication"] {
+  border-left: 3px solid #10b981;
+}
+.note-card:not(.is-pinned)[data-type="note"] {
+  border-left: 3px solid #f59e0b;
+}
+.note-card:not(.is-pinned)[data-type="appointment"] {
+  border-left: 3px solid #ec4899;
+}
+.note-card:not(.is-pinned)[data-type="diary"] {
+  border-left: 3px solid #14b8a6;
 }
 
 .note-card:hover {
@@ -8118,6 +8142,7 @@
    ══════════════════════════════════════════════════════════════ */
 
 .note-calendar-view {
+  animation: noteViewFadeIn 0.25s ease;
   display: flex;
   flex-direction: column;
   gap: 12px;
