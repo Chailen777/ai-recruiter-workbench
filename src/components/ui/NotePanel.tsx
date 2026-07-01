@@ -472,20 +472,38 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
     })
   }, [notes])
 
+  // ── 本地今天日期（memoized，按天刷新）──
+  const getLocalToday = useCallback(() => {
+    return new Date().toLocaleDateString('sv-SE')
+  }, [])
+
   // ── 根据 filterType 过滤（memoized）──
   const filtered = useMemo(() => {
     return sorted.filter((n) => {
-      if (filterType === 'all') return true
+      if (filterType === 'all') {
+        // 「今天」：今天创建的笔记 + 今天预约/待办
+        const today = getLocalToday()
+        if (n.type === 'todo' && n.scheduledDate) {
+          return new Date(n.scheduledDate).toLocaleDateString('sv-SE') === today
+        }
+        if (n.type === 'appointment' && n.appointmentTime) {
+          return new Date(n.appointmentTime).toLocaleDateString('sv-SE') === today
+        }
+        // 其他类型：按创建时间判断
+        return new Date(n.createdAt).toLocaleDateString('sv-SE') === today
+      }
       if ((filterType === 'todo' || filterType === 'appointment') && showOnlyUndone) return n.type === filterType && !n.done
       return n.type === filterType
     })
-  }, [sorted, filterType, showOnlyUndone])
+  }, [sorted, filterType, showOnlyUndone, getLocalToday])
 
   // ── 按日期筛选（memoized）──
   const dateFiltered = useMemo(() => {
     if (!filterDate) return filtered
     return filtered.filter((n) => {
-      const targetDate = n.type === 'appointment' && n.appointmentTime
+      const targetDate = n.type === 'todo' && n.scheduledDate
+        ? n.scheduledDate
+        : n.type === 'appointment' && n.appointmentTime
         ? n.appointmentTime
         : n.createdAt
       return targetDate.slice(0, 10) === filterDate
@@ -531,7 +549,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
     if (type !== 'all') {
       setInputType(type)
     } else {
-      // 点击「全部」时重置输入类型为「随笔」，隐藏特定类型表单
+      // 点击「今天」时重置输入类型为「随笔」，隐藏特定类型表单
       setInputType('note')
     }
   }
@@ -661,15 +679,15 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         <input type="hidden" name="entityId" value={entityId} />
         <input type="hidden" name="type" value={inputType} />
 
-        {/* 类型切换（含全部 + 过滤标签） */}
+        {/* 类型切换（含今天 + 过滤标签） */}
         <div className="note-type-tabs" role="group" aria-label="笔记类型过滤">
-          {/* 全部 */}
+          {/* 今天 */}
           <button
             type="button"
             className={`note-type-tab ${filterType === 'all' ? 'active note-type-all' : ''}`}
             onClick={() => handleTabClick('all')}
           >
-            全部
+            今天
           </button>
 
           {/* 待办 — 带未完成徽章 + 双击仅显示未完成 */}
@@ -1363,7 +1381,7 @@ function ListView({ notes, onChanged, searchTerm, filterDate, filterType, showOn
         hint = '选择其他类型查看'
       }
     } else if (filterType === 'all') {
-      title = '还没有记录'
+      title = '今天还没有记录'
       hint = '用上面的输入框添加待办、沟通或随笔'
     }
 
@@ -1393,26 +1411,67 @@ function ListView({ notes, onChanged, searchTerm, filterDate, filterType, showOn
     return d.toLocaleDateString('sv-SE')
   }
 
-  // 按待办/预约时间分组
+  // 获取笔记用于分组的日期：预约/待办用开始时间，其他用创建时间
+  function getGroupDate(n: NoteItem): string {
+    if (n.type === 'todo' && n.scheduledDate) return localDate(n.scheduledDate)
+    if (n.type === 'appointment' && n.appointmentTime) return localDate(n.appointmentTime)
+    return localDate(n.createdAt)
+  }
+
+  // 获取笔记用于组内排序的时间
+  function getSortTime(n: NoteItem): string {
+    if (n.type === 'todo' && n.scheduledDate) return n.scheduledDate
+    if (n.type === 'appointment' && n.appointmentTime) return n.appointmentTime
+    return n.createdAt
+  }
+
+  // 日期分组类别：0=今天 1=明天 2=昨天 3=未来 4=过去
+  function getDayCategory(dateStr: string, today: string, tomorrow: string, yesterday: string): number {
+    if (dateStr === today) return 0
+    if (dateStr === tomorrow) return 1
+    if (dateStr === yesterday) return 2
+    if (dateStr > today) return 3
+    return 4
+  }
+
+  // 按日期分组
   const grouped = new Map<string, NoteItem[]>()
   for (const n of notes) {
-    const dateSrc = n.scheduledDate || n.appointmentTime || n.createdAt
-    const d = localDate(dateSrc)
+    const d = getGroupDate(n)
     const arr = grouped.get(d) ?? []
     arr.push(n)
     if (!grouped.has(d)) grouped.set(d, arr)
   }
-  // 按日期降序
-  const sortedDays = Array.from(grouped.keys()).sort().reverse()
 
+  // 组内按时间升序
+  for (const dayNotes of grouped.values()) {
+    dayNotes.sort((a, b) => new Date(getSortTime(a)).getTime() - new Date(getSortTime(b)).getTime())
+  }
+
+  // 构建今天/明天/昨天基准
+  const now = new Date()
+  const todayStr = localDate(now.toISOString())
+  const tomorrowStr = localDate(new Date(now.getTime() + 86400000).toISOString())
+  const yesterdayStr = localDate(new Date(now.getTime() - 86400000).toISOString())
+
+  // 按自定义排序：今天 → 明天 → 昨天 → 未来 → 过去
+  const sortedDays = Array.from(grouped.keys()).sort((a, b) => {
+    const catA = getDayCategory(a, todayStr, tomorrowStr, yesterdayStr)
+    const catB = getDayCategory(b, todayStr, tomorrowStr, yesterdayStr)
+    if (catA !== catB) return catA - catB
+    // 同类别内：未来升序，过去降序（最近在前）
+    if (catA === 3) return a.localeCompare(b)      // 未来：升序
+    if (catA === 4) return b.localeCompare(a)       // 过去：降序
+    return a.localeCompare(b)                       // 今天/明天/昨天
+  })
+
+  // 日期标题：今天/明天/昨天用相对，其他用绝对日期
   function fmtDateHeader(dateStr: string) {
-    const now = new Date()
-    const today = localDate(now.toISOString())
-    const yesterday = localDate(new Date(now.getTime() - 86400000).toISOString())
+    if (dateStr === todayStr) return '今天'
+    if (dateStr === tomorrowStr) return '明天'
+    if (dateStr === yesterdayStr) return '昨天'
     const d = new Date(dateStr + 'T00:00:00')
     const week = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()]
-    if (dateStr === today) return `今天 周${week}`
-    if (dateStr === yesterday) return `昨天 周${week}`
     return `${d.getMonth() + 1}月${d.getDate()}日 周${week}`
   }
 
@@ -1498,7 +1557,7 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
         hint = '选择其他类型查看'
       }
     } else if (filterType === 'all') {
-      title = '还没有记录'
+      title = '今天还没有记录'
       hint = '用上面的输入框添加待办、沟通或随笔'
     }
 
@@ -1528,29 +1587,69 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
     return d.toLocaleDateString('sv-SE') // YYYY-MM-DD 本地时间
   }
 
-  // 按待办/预约时间分组（有时间用时间，没有才用创建日期），组内按时间升序
+  // 获取笔记用于分组的日期：预约/待办用开始时间，其他用创建时间
+  function getGroupDate(n: NoteItem): string {
+    if (n.type === 'todo' && n.scheduledDate) return localDate(n.scheduledDate)
+    if (n.type === 'appointment' && n.appointmentTime) return localDate(n.appointmentTime)
+    return localDate(n.createdAt)
+  }
+
+  // 获取笔记用于组内排序的时间
+  function getSortTime(n: NoteItem): string {
+    if (n.type === 'todo' && n.scheduledDate) return n.scheduledDate
+    if (n.type === 'appointment' && n.appointmentTime) return n.appointmentTime
+    return n.createdAt
+  }
+
+  // 日期分组类别：0=今天 1=明天 2=昨天 3=未来 4=过去
+  function getDayCategory(dateStr: string, today: string, tomorrow: string, yesterday: string): number {
+    if (dateStr === today) return 0
+    if (dateStr === tomorrow) return 1
+    if (dateStr === yesterday) return 2
+    if (dateStr > today) return 3
+    return 4
+  }
+
+  // 按日期分组
   const grouped = new Map<string, NoteItem[]>()
   for (const n of notes) {
-    // 待办用 scheduledDate，预约用 appointmentTime，其余用 createdAt
-    const dateSrc = n.scheduledDate || n.appointmentTime || n.createdAt
-    const d = localDate(dateSrc)
+    const d = getGroupDate(n)
     const arr = grouped.get(d) ?? []
     arr.push(n)
     if (!grouped.has(d)) grouped.set(d, arr)
   }
-  // 按日期降序排列（今天在最上面）
-  const sortedDays = Array.from(grouped.keys()).sort().reverse()
+
+  // 组内按时间升序
+  for (const dayNotes of grouped.values()) {
+    dayNotes.sort((a, b) => new Date(getSortTime(a)).getTime() - new Date(getSortTime(b)).getTime())
+  }
+
+  // 构建今天/明天/昨天基准
+  const now = new Date()
+  const todayStr = localDate(now.toISOString())
+  const tomorrowStr = localDate(new Date(now.getTime() + 86400000).toISOString())
+  const yesterdayStr = localDate(new Date(now.getTime() - 86400000).toISOString())
+
+  // 按自定义排序：今天 → 明天 → 昨天 → 未来 → 过去
+  const sortedDays = Array.from(grouped.keys()).sort((a, b) => {
+    const catA = getDayCategory(a, todayStr, tomorrowStr, yesterdayStr)
+    const catB = getDayCategory(b, todayStr, tomorrowStr, yesterdayStr)
+    if (catA !== catB) return catA - catB
+    // 同类别内：未来升序，过去降序（最近在前）
+    if (catA === 3) return a.localeCompare(b)      // 未来：升序
+    if (catA === 4) return b.localeCompare(a)       // 过去：降序
+    return a.localeCompare(b)                       // 今天/明天/昨天
+  })
 
   function fmtTime(iso: string) {
     return new Date(iso).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
   }
 
+  // 日期标题：今天/明天/昨天用相对，其他用绝对日期
   function fmtDateHeader(dateStr: string) {
-    const now = new Date()
-    const today = localDate(now.toISOString())
-    const yesterday = localDate(new Date(now.getTime() - 86400000).toISOString())
-    if (dateStr === today) return '今天'
-    if (dateStr === yesterday) return '昨天'
+    if (dateStr === todayStr) return '今天'
+    if (dateStr === tomorrowStr) return '明天'
+    if (dateStr === yesterdayStr) return '昨天'
     const d = new Date(dateStr + 'T00:00:00')
     return d.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })
   }
