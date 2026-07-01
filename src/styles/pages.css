@@ -580,6 +580,123 @@ body {
   }
 }
 
+/* ── 搜索覆盖面板（脱离工具栏，独立居中）── */
+.note-search-overlay {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 0 0;
+}
+
+.note-search-overlay-input-wrap {
+  align-items: center;
+  background: var(--ds-color-card, #ffffff);
+  border: 2px solid var(--ds-color-border, #e5e7eb);
+  border-radius: 12px;
+  display: flex;
+  gap: 10px;
+  max-width: 480px;
+  padding: 10px 12px;
+  position: relative;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+
+.note-search-overlay-input-wrap:focus-within {
+  border-color: var(--ds-color-primary, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.note-search-overlay-icon {
+  color: var(--ds-color-text-tertiary, #9ca3af);
+  flex-shrink: 0;
+  height: 18px;
+  width: 18px;
+}
+
+.note-search-overlay-input {
+  background: transparent;
+  border: none;
+  color: var(--ds-color-text-primary, #111827);
+  flex: 1;
+  font-size: 15px;
+  outline: none;
+  padding: 0;
+}
+
+.note-search-overlay-input::placeholder {
+  color: var(--ds-color-text-tertiary, #9ca3af);
+}
+
+.note-search-overlay-clear {
+  align-items: center;
+  background: var(--ds-color-border, #e5e7eb);
+  border: none;
+  border-radius: 50%;
+  color: var(--ds-color-text-secondary, #6b7280);
+  cursor: pointer;
+  display: flex;
+  flex-shrink: 0;
+  font-size: 12px;
+  height: 22px;
+  justify-content: center;
+  transition: background 0.15s;
+  width: 22px;
+}
+
+.note-search-overlay-clear:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.note-search-overlay-hint {
+  color: var(--ds-color-text-tertiary, #9ca3af);
+  font-size: 13px;
+  margin: 0;
+}
+
+/* 搜索面板打开但未输入 — 空白占位 */
+.note-search-blank {
+  flex: 1;
+  min-height: 200px;
+}
+
+/* 暗色模式 */
+[data-theme='dark'] .note-search-overlay-input-wrap {
+  background: var(--ds-color-card, #1f2937);
+  border-color: var(--ds-color-border, #374151);
+}
+
+[data-theme='dark'] .note-search-overlay-input-wrap:focus-within {
+  border-color: var(--ds-color-primary, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+[data-theme='dark'] .note-search-overlay-clear {
+  background: var(--ds-color-border, #374151);
+  color: var(--ds-color-text-secondary, #9ca3af);
+}
+
+[data-theme='dark'] .note-search-overlay-clear:hover {
+  background: #dc2626;
+}
+
+@media (max-width: 768px) {
+  .note-search-overlay {
+    padding: 12px 0 0;
+  }
+
+  .note-search-overlay-input-wrap {
+    max-width: 100%;
+    padding: 8px 10px;
+  }
+
+  .note-search-overlay-input {
+    font-size: 14px;
+  }
+}
+
 .detail-tab-content {
   flex: 1;
   overflow-y: auto;

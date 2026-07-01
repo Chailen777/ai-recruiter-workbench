@@ -205,40 +205,14 @@ export function RightPanel() {
                 <line x1="13" y1="13" x2="18" y2="18"/>
               </svg>
             </button>
-            {/* 搜索输入框（展开时显示） */}
-            {searchVisible && (
-              <div className="note-search-wrap">
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  className="note-search-input"
-                  placeholder="搜索笔记…"
-                  value={searchInputValue}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  aria-label="搜索笔记"
-                />
-                {searchInputValue && (
-                  <button
-                    type="button"
-                    className="note-search-clear"
-                    onClick={handleClearSearch}
-                    title="清除搜索"
-                    aria-label="清除搜索"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            )}
             {/* 视图切换：📌收藏 / 📅日历 / 📋列表 / ⏱时间轴 */}
             <div className="notes-view-toggle">
               <button
                 type="button"
-                className={`notes-icon-btn ${viewMode === 'bookmark' ? 'is-active' : ''}${searchVisible ? ' notes-icon-btn-disabled' : ''}`}
-                onClick={() => { if (searchVisible) return; setViewMode('bookmark'); handleClearSearch() }}
-                title={searchVisible ? '请先关闭搜索' : '查看收藏'}
+                className={`notes-icon-btn ${viewMode === 'bookmark' ? 'is-active' : ''}`}
+                onClick={() => setViewMode('bookmark')}
+                title="查看收藏"
                 aria-label="查看收藏"
-                disabled={searchVisible}
                 style={{ position: 'relative' }}
               >
                 📌
@@ -248,11 +222,10 @@ export function RightPanel() {
               </button>
               <button
                 type="button"
-                className={`notes-icon-btn ${viewMode === 'calendar' ? 'is-active' : ''}${searchVisible ? ' notes-icon-btn-disabled' : ''}`}
-                onClick={() => { if (searchVisible) return; setViewMode('calendar'); handleClearSearch() }}
-                title={searchVisible ? '请先关闭搜索' : '日历视图'}
+                className={`notes-icon-btn ${viewMode === 'calendar' ? 'is-active' : ''}`}
+                onClick={() => setViewMode('calendar')}
+                title="日历视图"
                 aria-label="日历视图"
-                disabled={searchVisible}
               >
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="3" width="16" height="15" rx="2" />
@@ -263,11 +236,10 @@ export function RightPanel() {
               </button>
               <button
                 type="button"
-                className={`notes-icon-btn ${viewMode === 'list' ? 'is-active' : ''}${searchVisible ? ' notes-icon-btn-disabled' : ''}`}
-                onClick={() => { if (searchVisible) return; setViewMode('list'); handleClearSearch() }}
-                title={searchVisible ? '请先关闭搜索' : '列表视图'}
+                className={`notes-icon-btn ${viewMode === 'list' ? 'is-active' : ''}`}
+                onClick={() => setViewMode('list')}
+                title="列表视图"
                 aria-label="列表视图"
-                disabled={searchVisible}
               >
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="5" y1="5" x2="19" y2="5"/>
@@ -280,11 +252,10 @@ export function RightPanel() {
               </button>
               <button
                 type="button"
-                className={`notes-icon-btn ${viewMode === 'timeline' ? 'is-active' : ''}${searchVisible ? ' notes-icon-btn-disabled' : ''}`}
-                onClick={() => { if (searchVisible) return; setViewMode('timeline'); handleClearSearch() }}
-                title={searchVisible ? '请先关闭搜索' : '时间轴视图'}
+                className={`notes-icon-btn ${viewMode === 'timeline' ? 'is-active' : ''}`}
+                onClick={() => setViewMode('timeline')}
+                title="时间轴视图"
                 aria-label="时间轴视图"
-                disabled={searchVisible}
               >
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="3" cy="4" r="1.5" fill="currentColor" stroke="none"/>
@@ -305,6 +276,40 @@ export function RightPanel() {
       {/* ── 展开时显示内容 ── */}
       {!collapsed && (
         <div className="app-right-panel-body">
+          {/* 搜索面板（脱离工具栏，独立居中） */}
+          {searchVisible && (
+            <div className="note-search-overlay">
+              <div className="note-search-overlay-input-wrap">
+                <svg className="note-search-overlay-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <circle cx="9" cy="9" r="5"/>
+                  <line x1="13" y1="13" x2="18" y2="18"/>
+                </svg>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  className="note-search-overlay-input"
+                  placeholder="搜索全部笔记..."
+                  value={searchInputValue}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  aria-label="搜索全部笔记"
+                />
+                {searchInputValue && (
+                  <button
+                    type="button"
+                    className="note-search-overlay-clear"
+                    onClick={handleClearSearch}
+                    title="清除搜索"
+                    aria-label="清除搜索"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              {!globalSearchTerm && (
+                <p className="note-search-overlay-hint">输入关键词开始搜索</p>
+              )}
+            </div>
+          )}
           {/* 全局备忘录 */}
           <ErrorBoundary>
           <NotePanel
@@ -315,6 +320,7 @@ export function RightPanel() {
             filterDate={filterDate}
             onClearFilterDate={() => setFilterDate(null)}
             searchTerm={globalSearchTerm}
+            searchVisible={searchVisible}
             loading={!notesLoaded}
             viewMode={viewMode}
           />

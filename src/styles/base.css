@@ -528,20 +528,6 @@ html {
   background: color-mix(in srgb, var(--ds-color-primary, #2563eb) 10%, transparent);
 }
 
-/* 搜索模式下禁用视图切换按钮 */
-.notes-icon-btn-disabled,
-.notes-icon-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-.notes-icon-btn-disabled:hover,
-.notes-icon-btn:disabled:hover {
-  background: var(--ds-color-card);
-  color: var(--ds-color-text-secondary);
-  border-color: var(--ds-color-border);
-}
-
 /* ── 搜索关键词高亮 ── */
 .search-highlight {
   background: #fde68a;
