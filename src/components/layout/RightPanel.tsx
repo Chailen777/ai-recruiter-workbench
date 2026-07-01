@@ -98,8 +98,10 @@ export function RightPanel() {
     setHeaderVisible(true)
     if (headerHideTimerRef.current) clearTimeout(headerHideTimerRef.current)
     headerHideTimerRef.current = setTimeout(() => {
-      // 只在非顶部时隐藏，顶部始终显示
-      if ((bodyRef.current?.scrollTop ?? 0) > 10) {
+      // 只在非顶部时隐藏，顶部始终显示（同时检查 panel body 和页面滚动）
+      const bodyScrollTop = bodyRef.current?.scrollTop ?? 0
+      const pageScrollY = window.scrollY ?? 0
+      if (bodyScrollTop > 10 || pageScrollY > 10) {
         setHeaderVisible(false)
       }
     }, 15000)
@@ -165,13 +167,16 @@ export function RightPanel() {
     if (!el || collapsed) return
 
     const handler = () => showHeaderWithTimer()
+    // 桌面端：panel body 滚动；移动端：页面整体滚动；同时监听两者以兼容所有场景
     el.addEventListener('scroll', handler, { passive: true })
+    window.addEventListener('scroll', handler, { passive: true })
 
     // 首次展开面板时启动计时
     showHeaderWithTimer()
 
     return () => {
       el.removeEventListener('scroll', handler)
+      window.removeEventListener('scroll', handler)
       if (headerHideTimerRef.current) clearTimeout(headerHideTimerRef.current)
     }
   }, [collapsed, showHeaderWithTimer])

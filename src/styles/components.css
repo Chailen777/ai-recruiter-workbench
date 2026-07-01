@@ -2990,7 +2990,6 @@
   top: 0;
   z-index: 50;
   padding: 8px 0;
-  margin: -8px 0 0;
   background: var(--ds-color-bg, #f8fafc);
   border-bottom: 1px solid var(--ds-color-border, #e2e8f0);
   box-shadow: 0 2px 8px rgba(0,0,0,.04);
@@ -7895,6 +7894,96 @@
       max(12px, env(safe-area-inset-right))
       max(12px, env(safe-area-inset-bottom))
       max(12px, env(safe-area-inset-left));
+  }
+
+  /*
+   * 手机端卡片笔记分类导航
+   * 使用 fixed 而不是表单内部的 sticky，确保滚过快速输入区后仍吸附在顶部。
+   */
+  .app-right-panel:not(.is-collapsed) {
+    --note-mobile-nav-top: max(
+      60px,
+      calc(env(safe-area-inset-top, 0px) + 52px)
+    );
+  }
+
+  .app-right-panel:not(.is-collapsed) .note-type-tabs {
+    align-items: center;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(8, 16, 36, 0.96);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 10px;
+    box-shadow:
+      0 10px 30px rgba(2, 6, 23, 0.24),
+      0 1px 0 rgba(255, 255, 255, 0.04) inset;
+    display: grid;
+    gap: 2px;
+    grid-template-columns: repeat(6, minmax(46px, 1fr));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    margin: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding: 8px;
+    position: fixed;
+    right: max(8px, env(safe-area-inset-right, 0px));
+    scrollbar-width: none;
+    top: var(--note-mobile-nav-top);
+    transition: top 180ms ease;
+    z-index: 10060;
+  }
+
+  .app-right-panel:not(.is-collapsed) .note-type-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-right-panel:not(.is-collapsed).is-header-hidden .note-type-tabs {
+    top: env(safe-area-inset-top, 0px);
+  }
+
+  .app-right-panel:not(.is-collapsed) .note-input-area {
+    /* 为脱离文档流的浮动导航预留首屏位置 */
+    padding-top: 76px;
+  }
+
+  .app-right-panel:not(.is-collapsed) .note-type-tab {
+    align-items: center;
+    border-radius: 8px;
+    color: #dbe4f3;
+    display: inline-flex;
+    font-size: 15px;
+    font-weight: 600;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 46px;
+    padding: 8px 5px;
+    white-space: nowrap;
+  }
+
+  .app-right-panel:not(.is-collapsed) .note-type-tab:hover {
+    background: rgba(148, 163, 184, 0.12);
+  }
+
+  .app-right-panel:not(.is-collapsed) .note-type-tab.active {
+    background: rgba(37, 99, 235, 0.14);
+    border-color: #3978ee;
+    color: #4f8cff;
+  }
+
+  .app-right-panel:not(.is-collapsed) .note-type-tab.is-undone-filter {
+    background: rgba(196, 92, 92, 0.14) !important;
+    border-color: #d86b6b !important;
+    color: #fda4a4 !important;
+  }
+
+  .app-right-panel:not(.is-collapsed) .note-type-badge-count {
+    border: 2px solid #081024;
+    font-size: 12px;
+    height: 22px;
+    min-width: 22px;
+    padding: 0 5px;
+    right: -2px;
+    top: -7px;
   }
 
   /* 底部导航已经提供笔记入口，避免两个浮动入口互相遮挡 */

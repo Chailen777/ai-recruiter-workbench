@@ -2907,6 +2907,12 @@ td textarea {
     order: 99;
   }
 
+  /* 移动端：取消 panel body 的独立滚动，让页面自然滚动，避免"固定死"的感觉 */
+  .app-right-panel-body {
+    max-height: none;
+    overflow-y: visible;
+  }
+
   .layout-two,
   .form-grid.two,
   .match-workspace,
