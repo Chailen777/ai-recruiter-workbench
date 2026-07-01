@@ -117,8 +117,19 @@ const REPEAT_LABELS: Record<string, string> = {
   quarterly: '每季度',
   halfyearly: '每半年',
   workday: '工作日',
+  weekday: '每周几',
   custom: '自定义',
 }
+
+const WEEKDAY_OPTIONS = [
+  { value: '1', label: '周一' },
+  { value: '2', label: '周二' },
+  { value: '3', label: '周三' },
+  { value: '4', label: '周四' },
+  { value: '5', label: '周五' },
+  { value: '6', label: '周六' },
+  { value: '7', label: '周日' },
+]
 
 const CATEGORY_LABELS: Record<string, string> = {
   birthday: '生日',
@@ -160,7 +171,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   const [repeatPerson, setRepeatPerson] = useState('')
   const [repeatCategory, setRepeatCategory] = useState('')
   const [repeatCustomNum, setRepeatCustomNum] = useState<number | ''>('')
-  const [repeatWeekdays, setRepeatWeekdays] = useState('')
+  const [todoWeekdays, setTodoWeekdays] = useState<string[]>([])
 
   // ── 待办表单字段 ──
   const [todoDate, setTodoDate] = useState('')       // datetime-local 格式
@@ -291,7 +302,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         if (repeatPerson.trim()) fd.set('repeatPerson', repeatPerson.trim())
         if (repeatCategory) fd.set('repeatCategory', repeatCategory)
         if (repeatCustomNum) fd.set('repeatCustomNum', String(repeatCustomNum))
-        if (repeatWeekdays.trim()) fd.set('repeatWeekdays', repeatWeekdays.trim())
+        if (todoWeekdays.length > 0) fd.set('repeatWeekdays', todoWeekdays.join(','))
       }
     }
     startTransition(async () => {
@@ -317,7 +328,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         setRepeatPerson('')
         setRepeatCategory('')
         setRepeatCustomNum('')
-        setRepeatWeekdays('')
+        setTodoWeekdays([])
         if (diaryEditorRef.current) diaryEditorRef.current.innerHTML = ''
         if (fullscreenEditorRef.current) fullscreenEditorRef.current.innerHTML = ''
         setIsFullscreen(false)
@@ -807,16 +818,21 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
                 <option value="quarterly">每季度</option>
                 <option value="halfyearly">每半年</option>
                 <option value="workday">工作日</option>
+                <option value="weekday">每周几</option>
                 <option value="custom">自定义</option>
               </select>
-              {todoRepeat && todoRepeat !== 'workday' && (
+              {todoRepeat && todoRepeat !== 'workday' && todoRepeat !== 'custom' && (
                 <>
                   <span className="note-todo-freq-label">每</span>
                   <input
                     type="number"
                     className="note-todo-freq-input"
                     value={todoFreq}
-                    onChange={(e) => setTodoFreq(Math.min(99, Math.max(1, Number(e.target.value) || 1)))}
+                    onChange={(e) => {
+                      const raw = e.target.value
+                      if (raw === '') { setTodoFreq(1); return }
+                      setTodoFreq(Math.min(99, Math.max(1, Number(raw) || 1)))
+                    }}
                     min={1}
                     max={99}
                     step={1}
@@ -831,7 +847,69 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
               {todoRepeat === 'workday' && (
                 <span className="note-todo-freq-label">（周一到周五）</span>
               )}
+              {todoRepeat === 'custom' && (
+                <>
+                  <span className="note-todo-freq-label">第</span>
+                  <input
+                    type="number"
+                    className="note-todo-freq-input"
+                    value={repeatCustomNum === '' ? '' : repeatCustomNum}
+                    onChange={(e) => {
+                      const raw = e.target.value
+                      if (raw === '') { setRepeatCustomNum(''); return }
+                      const n = Number(raw)
+                      if (!isNaN(n) && n >= 1 && n <= 366) setRepeatCustomNum(n)
+                    }}
+                    placeholder="天"
+                    min={1}
+                    max={366}
+                    step={1}
+                    style={{ width: '56px' }}
+                  />
+                  <span className="note-todo-freq-label">天/年/季度</span>
+                </>
+              )}
             </div>
+            {todoRepeat === 'weekday' && (
+              <div className="note-appt-row" style={{ flexWrap: 'wrap', gap: '4px' }}>
+                {WEEKDAY_OPTIONS.map((opt) => {
+                  const checked = todoWeekdays.includes(opt.value)
+                  return (
+                    <label
+                      key={opt.value}
+                      className={`note-weekday-chip${checked ? ' note-weekday-chip--active' : ''}`}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        border: '1px solid var(--border)',
+                        background: checked ? 'var(--accent)' : 'transparent',
+                        color: checked ? 'var(--accent-fg, #fff)' : 'var(--foreground)',
+                        userSelect: 'none',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        value={opt.value}
+                        checked={checked}
+                        onChange={() => {
+                          setTodoWeekdays((prev) =>
+                            prev.includes(opt.value)
+                              ? prev.filter((v) => v !== opt.value)
+                              : [...prev, opt.value]
+                          )
+                        }}
+                        style={{ display: 'none' }}
+                      />
+                      {opt.label}
+                    </label>
+                  )
+                })}
+              </div>
+            )}
             {todoRepeat && (
               <div className="note-appt-row">
                 <label className="note-appt-label">截止</label>

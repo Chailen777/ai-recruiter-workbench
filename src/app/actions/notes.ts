@@ -22,7 +22,7 @@ export type AddNoteResult =
 
 const TRANSIENT_DATABASE_CODES = new Set(['P1001', 'P2024'])
 const REPEAT_TYPES = new Set<AppRepeatType>([
-  'daily', 'weekly', 'monthly', 'yearly', 'quarterly', 'halfyearly', 'workday', 'custom',
+  'daily', 'weekly', 'monthly', 'yearly', 'quarterly', 'halfyearly', 'workday', 'weekday', 'custom',
 ])
 const MAX_REPEAT_FREQUENCY = 99
 const MAX_REPEAT_OCCURRENCES = 365

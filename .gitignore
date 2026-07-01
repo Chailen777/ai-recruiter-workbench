@@ -56,3 +56,4 @@ data-export.json
 export-sqlite.py
 import-to-pg.js
 migrate-data.js
+.codex-scope-fix/

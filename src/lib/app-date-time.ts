@@ -6,7 +6,7 @@
  */
 export const APP_TIME_ZONE = 'Asia/Shanghai'
 const APP_UTC_OFFSET = '+08:00'
-export type AppRepeatType = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'quarterly' | 'halfyearly' | 'workday' | 'custom'
+export type AppRepeatType = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'quarterly' | 'halfyearly' | 'workday' | 'weekday' | 'custom'
 
 const DATE_TIME_LOCAL_RE =
   /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/
@@ -150,6 +150,21 @@ export function addAppRepeatInterval(
       return d
     }
     return new Date(start.getTime() + intervalCount * 7 * 24 * 60 * 60 * 1000)
+  }
+
+  // 每周几（自定义多选）
+  if (repeatType === 'weekday') {
+    const mask = weekdayMask && weekdayMask.length > 0 ? weekdayMask : [1, 2, 3, 4, 5]
+    const msPerDay = 24 * 60 * 60 * 1000
+    let d = new Date(start)
+    let counted = 0
+    d = new Date(d.getTime() + msPerDay)
+    while (counted < intervalCount) {
+      const wd = d.getDay() === 0 ? 7 : d.getDay() // 周日=7
+      if (mask.includes(wd)) counted++
+      if (counted < intervalCount) d = new Date(d.getTime() + msPerDay)
+    }
+    return d
   }
 
   // 工作日（周一到周五）
