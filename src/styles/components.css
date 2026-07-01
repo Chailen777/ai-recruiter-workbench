@@ -8175,9 +8175,8 @@
     pointer-events: auto;
     position: relative;
     -webkit-tap-highlight-color: transparent;
-    /* 闲置时半透明 + 略靠右隐藏 */
-    opacity: .55;
-    transform: translateX(4px);
+    /* 闲置时半透明 */
+    opacity: .75;
   }
   /* 唤醒 */
   .note-view-fab.is-awake .note-view-fab-main {
@@ -8366,7 +8365,7 @@
 
 /* 大屏幕隐藏 FAB（桌面端有侧边栏 RightPanel） */
 @media (min-width: 901px) {
-  .dn-fab {
+  .note-view-fab {
     display: none;
   }
 }
