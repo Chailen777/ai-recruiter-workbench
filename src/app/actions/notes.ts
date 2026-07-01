@@ -5,7 +5,8 @@ import { revalidatePath } from 'next/cache'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { syncNotesToMd } from '@/lib/notes-md'
-import { writeNoteMd, deleteNoteMd, type NoteData } from '@/lib/notes-data-md'
+import { type NoteData } from '@/lib/notes-data-md'
+import { githubWriteNoteMd, githubDeleteNoteMd } from '@/lib/github-md-sync'
 import {
   createAppRepeatDates,
   parseAppDateTime,
@@ -361,7 +362,7 @@ export async function addNote(formData: FormData): Promise<AddNoteResult> {
 
       try { await syncMd(entityType, entityId) } catch {}
       if (firstNote) {
-        try { await writeNoteMd(await toNoteData(firstNote)) } catch {}
+        try { await githubWriteNoteMd(await toNoteData(firstNote)) } catch {}
       }
 
       revalidateForEntity(entityType, entityId)
@@ -381,9 +382,9 @@ export async function addNote(formData: FormData): Promise<AddNoteResult> {
       ...(isTodo && scheduledDateStr ? { scheduledDate: parseAppDateTime(scheduledDateStr) } : {}),
     })
 
-    // MD 文件同步（Vercel 只读文件系统会静默失败，不影响核心功能）
+    // MD 文件同步到 GitHub 仓库（失败不影响核心功能）
     try { await syncMd(entityType, entityId) } catch { /* Vercel 文件系统不可写 */ }
-    try { await writeNoteMd(await toNoteData(note)) } catch { /* Vercel 文件系统不可写 */ }
+    try { await githubWriteNoteMd(await toNoteData(note)) } catch { /* Vercel 文件系统不可写 */ }
 
     revalidateForEntity(entityType, entityId)
     return { success: true, noteId: note.id }
@@ -423,9 +424,9 @@ export async function deleteNote(formData: FormData) {
 
   await prisma.note.delete({ where: { id } })
 
-  // MD 文件同步（Vercel 文件系统不可写时静默失败）
+  // MD 文件同步到 GitHub（失败不影响核心功能）
   try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
-  try { await deleteNoteMd(note.id) } catch {}
+  try { await githubDeleteNoteMd(note.id) } catch {}
 
   revalidateForEntity(note.entityType as EntityType, note.entityId)
 }
@@ -443,9 +444,9 @@ export async function togglePinNote(formData: FormData) {
     data: { pinned: !note.pinned },
   })
 
-  // MD 文件同步（Vercel 文件系统不可写时静默失败）
+  // MD 文件同步到 GitHub（失败不影响核心功能）
   try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
-  try { await writeNoteMd(await toNoteData(updated)) } catch {}
+  try { await githubWriteNoteMd(await toNoteData(updated)) } catch {}
 
   revalidateForEntity(note.entityType as EntityType, note.entityId)
 }
@@ -463,9 +464,9 @@ export async function toggleDoneNote(formData: FormData) {
     data: { done: !note.done },
   })
 
-  // MD 文件同步（Vercel 文件系统不可写时静默失败）
+  // MD 文件同步到 GitHub（失败不影响核心功能）
   try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
-  try { await writeNoteMd(await toNoteData(updated)) } catch {}
+  try { await githubWriteNoteMd(await toNoteData(updated)) } catch {}
 
   revalidateForEntity(note.entityType as EntityType, note.entityId)
 }
@@ -527,9 +528,9 @@ export async function editNote(formData: FormData) {
 
   const updated = await prisma.note.update({ where: { id }, data })
 
-  // MD 文件同步（Vercel 文件系统不可写时静默失败）
+  // MD 文件同步到 GitHub（失败不影响核心功能）
   try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
-  try { await writeNoteMd(await toNoteData(updated)) } catch {}
+  try { await githubWriteNoteMd(await toNoteData(updated)) } catch {}
 
   revalidateForEntity(note.entityType as EntityType, note.entityId)
 }
@@ -580,7 +581,7 @@ export async function editNoteWithScope(formData: FormData) {
     }
     const updated = await prisma.note.update({ where: { id }, data: updateData })
     try { await syncMd(note.entityType as EntityType, note.entityId) } catch {}
-    try { await writeNoteMd(await toNoteData(updated)) } catch {}
+    try { await githubWriteNoteMd(await toNoteData(updated)) } catch {}
   } else if (scope === 'future' && note.scheduledDate) {
     // 修改当前及以后重复
     await prisma.note.updateMany({
@@ -616,7 +617,7 @@ export async function deleteNoteWithScope(formData: FormData) {
   if (scope === 'single' || !note.repeatGroupId) {
     // 仅删除当条
     await prisma.note.delete({ where: { id } })
-    try { await deleteNoteMd(note.id) } catch {}
+    try { await githubDeleteNoteMd(note.id) } catch {}
   } else if (scope === 'future' && note.scheduledDate) {
     // 删除当前及以后重复
     const toDelete = await prisma.note.findMany({
@@ -630,7 +631,7 @@ export async function deleteNoteWithScope(formData: FormData) {
     if (ids.length > 0) {
       await prisma.note.deleteMany({ where: { id: { in: ids } } })
       for (const did of ids) {
-        try { await deleteNoteMd(did) } catch {}
+        try { await githubDeleteNoteMd(did) } catch {}
       }
     }
   } else if (scope === 'all') {
@@ -643,7 +644,7 @@ export async function deleteNoteWithScope(formData: FormData) {
     if (ids.length > 0) {
       await prisma.note.deleteMany({ where: { id: { in: ids } } })
       for (const did of ids) {
-        try { await deleteNoteMd(did) } catch {}
+        try { await githubDeleteNoteMd(did) } catch {}
       }
     }
   }
@@ -1032,7 +1033,7 @@ export async function syncAllNotesMd() {
   try {
     const notes = await prisma.note.findMany()
     for (const note of notes) {
-      await writeNoteMd(await toNoteData(note)).catch(() => {})
+      await githubWriteNoteMd(await toNoteData(note)).catch(() => {})
     }
     return { success: true, count: notes.length }
   } catch {

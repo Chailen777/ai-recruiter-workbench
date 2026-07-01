@@ -55,7 +55,7 @@ async function ensureDir() {
  * 从笔记内容中提取关键词作为文件名
  * 规则：取前 20 个有效字符，去除特殊符号和空白
  */
-function extractKeyword(content: string): string {
+export function extractKeyword(content: string): string {
   const cleaned = content
     .replace(/[#*`~\-\[\](){}|>'"!?,.;:/\\@#$%^&+=]/g, '')
     .replace(/\s+/g, '')
@@ -64,7 +64,7 @@ function extractKeyword(content: string): string {
   return keyword || '未命名'
 }
 
-function fileName(noteId: number, content: string): string {
+export function fileName(noteId: number, content: string): string {
   const keyword = extractKeyword(content)
   return `${noteId}-${keyword}.md`
 }
@@ -112,7 +112,7 @@ function yamlValue(raw: string): string {
 
 // ── 构建 MD 内容 ────────────────────────────────
 
-function buildMdContent(note: NoteData): string {
+export function buildMdContent(note: NoteData): string {
   const lines: string[] = []
 
   // ══════ YAML Front Matter（机器可读）══════
