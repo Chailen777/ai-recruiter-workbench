@@ -413,7 +413,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       cancelAnimationFrame(raf)
       observer.disconnect()
     }
-  }, [viewMode, finalFiltered])
+  }, [viewMode, notes.length])
 
   function handleSubmit() {
     // 日记类型从 contentEditable 获取内容
