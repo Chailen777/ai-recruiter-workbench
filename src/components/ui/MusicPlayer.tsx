@@ -11,7 +11,7 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
-export function MusicPlayer() {
+export function MusicPlayer({ onBack }: { onBack?: () => void }) {
   const {
     tracks, addCustomTracks,
     currentIndex, isPlaying, currentTime, duration,
@@ -57,6 +57,17 @@ export function MusicPlayer() {
 
   return (
     <div className="music-player">
+      {/* 顶部导航：返回按钮 */}
+      {onBack && (
+        <div className="music-header">
+          <button type="button" className="music-back-btn" onClick={onBack} title="返回笔记">
+            ← 返回
+          </button>
+          <span className="music-header-title">🎵 音乐</span>
+          <span className="music-header-spacer" />
+        </div>
+      )}
+
       {/* 当前播放信息 */}
       <div className="music-now-playing">
         {currentTrack ? (

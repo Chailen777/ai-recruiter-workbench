@@ -28,15 +28,16 @@ type MusicContextType = {
 
 const MusicContext = createContext<MusicContextType | null>(null)
 
-/* ── 内置音乐列表（用真实可播放的免版权音乐） ── */
+/* ── 内置音乐列表（用确认可播放的真实音乐链接） ── */
 const BUILT_IN_TRACKS: MusicTrack[] = [
-  { id: 'b1', name: 'Morning', artist: 'LiQWYD', url: 'https://www.free-stock-music.com/music/liqwyd-morning.mp3', type: 'light' },
-  { id: 'b2', name: 'Keeping It', artist: 'LiQWYD', url: 'https://www.free-stock-music.com/music/liqwyd-keeping-it.mp3', type: 'light' },
-  { id: 'b3', name: 'Chill Day', artist: 'LiQWYD', url: 'https://www.free-stock-music.com/music/liqwyd-chill-day.mp3', type: 'light' },
-  { id: 'c1', name: '渔舟唱晚', artist: '古筝名曲', url: 'https://www.free-stock-music.com/music/relaxing-music-vol1.mp3', type: 'chinese' },
-  { id: 'c2', name: '高山流水', artist: '古琴名曲', url: 'https://www.free-stock-music.com/music/alex-productions-epic.mp3', type: 'chinese' },
-  { id: 'r1', name: '童年', artist: '经典回忆', url: 'https://www.free-stock-music.com/music/alex-productions-vlog.mp3', type: '80s' },
-  { id: 'r2', name: '同桌的你', artist: '经典回忆', url: 'https://www.free-stock-music.com/music/alex-productions-inspiring.mp3', type: '80s' },
+  { id: 'b1', name: '轻音乐 - 清晨', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', type: 'light' },
+  { id: 'b2', name: '轻音乐 - 午后', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', type: 'light' },
+  { id: 'b3', name: '轻音乐 - 星空', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', type: 'light' },
+  { id: 'b4', name: '轻音乐 - 晚风', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', type: 'light' },
+  { id: 'c1', name: '中国风 - 山水', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3', type: 'chinese' },
+  { id: 'c2', name: '中国风 - 古道', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3', type: 'chinese' },
+  { id: 'r1', name: '80年代 - 回忆', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3', type: '80s' },
+  { id: 'r2', name: '80年代 - 青春', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3', type: '80s' },
 ]
 
 export function MusicProvider({ children }: { children: ReactNode }) {

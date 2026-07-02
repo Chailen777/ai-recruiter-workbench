@@ -62,6 +62,8 @@ type NotePanelProps = {
   mobileComposeVisible?: boolean
   /** 关闭手机端底部编辑栏 */
   onCloseMobileCompose?: () => void
+  /** 切换视图模式（供子组件如 MusicPlayer 使用） */
+  onSwitchView?: (mode: string) => void
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -283,7 +285,7 @@ function formatRepeatLabel(repeatType: string, repeatWeekdays?: string | null): 
   return REPEAT_LABELS[repeatType] ?? repeatType
 }
 
-export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false, viewMode: externalViewMode, mobileComposeVisible = false, onCloseMobileCompose }: NotePanelProps) {
+export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false, viewMode: externalViewMode, mobileComposeVisible = false, onCloseMobileCompose, onSwitchView }: NotePanelProps) {
   const [inputType, setInputType] = useState<'todo' | 'log' | 'note' | 'appointment' | 'diary'>('note')
   const [inputValue, setInputValue] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -1474,7 +1476,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       ) : viewMode === 'calendar' ? (
         <CalendarView notes={notes} onChanged={onNotesChanged} searchTerm={searchTerm} />
       ) : viewMode === 'music' ? (
-        <MusicPlayer />
+        <MusicPlayer onBack={() => onSwitchView?.('list')} />
       ) : viewMode === 'robot' ? (
         <div className="robot-coming-soon">
           <div className="robot-icon">🤖</div>

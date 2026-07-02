@@ -8936,6 +8936,45 @@
 /* ════════════════════════════════════════════════════
    🎵 音乐播放器样式
    ════════════════════════════════════════════════════ */
+
+/* ── Header 返回栏 ── */
+.music-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ds-color-border);
+  margin-bottom: 4px;
+}
+
+.music-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--ds-color-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.music-back-btn:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.music-header-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ds-color-text-primary);
+}
+
+.music-header-spacer {
+  width: 60px;
+}
+
 .music-player {
   display: flex;
   flex-direction: column;

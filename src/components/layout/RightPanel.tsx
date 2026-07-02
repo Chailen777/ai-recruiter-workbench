@@ -349,6 +349,7 @@ export function RightPanel() {
             viewMode={viewMode}
             mobileComposeVisible={mobileComposeVisible}
             onCloseMobileCompose={() => setMobileComposeVisible(false)}
+            onSwitchView={(mode) => setViewMode(mode as 'calendar' | 'list' | 'timeline' | 'bookmark' | 'music' | 'robot')}
           />
           </ErrorBoundary>
           {/* 手机端：右下角视图切换浮动按钮 */}
