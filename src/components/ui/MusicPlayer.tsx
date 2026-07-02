@@ -13,14 +13,13 @@ function formatTime(seconds: number): string {
 
 export function MusicPlayer({ onBack }: { onBack?: () => void }) {
   const {
-    tracks, addCustomTracks,
+    tracks, addCustomMusic, removeCustomTrack,
     currentIndex, isPlaying, currentTime, duration,
     play, togglePlay, prevTrack, nextTrack, seek,
   } = useMusic()
 
   const progressRef = useRef<HTMLDivElement>(null)
 
-  // 点击进度条跳转到指定位置
   const handleProgressClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!progressRef.current) return
     const rect = progressRef.current.getBoundingClientRect()
@@ -28,29 +27,17 @@ export function MusicPlayer({ onBack }: { onBack?: () => void }) {
     seek(ratio * duration)
   }, [duration, seek])
 
-  // 上传本地音乐
+  // 上传本地音乐 → 存入 IndexedDB（持久化）
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
-    if (!files) return
+    if (!files || files.length === 0) return
 
-    const newOnes: typeof tracks = []
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i]
-      if (!file.type.startsWith('audio/')) continue
-      newOnes.push({
-        id: `custom-${Date.now()}-${i}`,
-        name: file.name.replace(/\.[^.]+$/, ''),
-        artist: '本地上传',
-        url: URL.createObjectURL(file),
-        type: 'custom',
-      })
-    }
-
-    if (newOnes.length > 0) {
-      addCustomTracks(newOnes)
+    const audioFiles = Array.from(files).filter((f) => f.type.startsWith('audio/'))
+    if (audioFiles.length > 0) {
+      addCustomMusic(audioFiles)
     }
     e.target.value = ''
-  }, [tracks, addCustomTracks])
+  }, [addCustomMusic])
 
   const currentTrack = currentIndex >= 0 ? tracks[currentIndex] : null
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
@@ -120,6 +107,20 @@ export function MusicPlayer({ onBack }: { onBack?: () => void }) {
             <span className="music-list-icon">{i === currentIndex && isPlaying ? '🎵' : '♪'}</span>
             <span className="music-list-name">{track.name}</span>
             <span className="music-list-artist">{track.artist}</span>
+            {/* 只有自定义音乐才显示删除按钮 */}
+            {track.type === 'custom' && (
+              <button
+                type="button"
+                className="music-delete-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  removeCustomTrack(track.id)
+                }}
+                title="删除这首音乐"
+              >
+                🗑
+              </button>
+            )}
           </div>
         ))}
       </div>

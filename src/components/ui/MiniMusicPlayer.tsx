@@ -29,15 +29,12 @@ export function MiniMusicPlayer() {
 
   const currentTrack: MusicTrack | null = currentIndex >= 0 ? tracks[currentIndex] : null
 
-  // 有选中的曲目才显示
+  // 有曲目就显示（即使没在播放）
   useEffect(() => {
-    if (currentIndex >= 0) {
+    if (tracks.length > 0) {
       setVisible(true)
-    } else {
-      setVisible(false)
-      setExpanded(false)
     }
-  }, [currentIndex])
+  }, [tracks.length])
 
   // 展开后 4 秒自动收起
   useEffect(() => {
@@ -46,21 +43,27 @@ export function MiniMusicPlayer() {
     return () => clearTimeout(timer)
   }, [expanded, isPlaying])
 
-  if (!visible || !currentTrack) return null
+  // 有音乐就显示迷你播放器（即使没在播放）
+  // tracks.length === 0 时不显示
+  if (!visible) return null
 
   return (
-    <div className={`mini-music-player ${expanded ? 'is-expanded' : ''} ${isPlaying ? 'is-playing' : ''}`}>
+    <div className={`mini-music-player ${expanded ? 'is-expanded' : ''} ${isPlaying ? 'is-playing' : ''} ${currentIndex < 0 ? 'is-idle' : ''}`}>
       {/* 收起状态：小圆形 */}
       <button
         type="button"
         className="mini-toggle"
         onClick={() => setExpanded(!expanded)}
-        title={currentTrack.name}
+        title={currentTrack ? currentTrack.name : '音乐'}
       >
-        <AudioBars playing={isPlaying} />
+        {isPlaying ? (
+          <AudioBars playing={true} />
+        ) : (
+          <span className="mini-music-note">♪</span>
+        )}
       </button>
 
-      {/* 展开状态：完整信息 */}
+      {/* 展开状态 */}
       <div className="mini-info">
         <button
           type="button"
@@ -69,24 +72,30 @@ export function MiniMusicPlayer() {
         >
           ×
         </button>
-        <div className="mini-track-name">{currentTrack.name}</div>
-        <div className="mini-track-artist">{currentTrack.artist}</div>
-        <div className="mini-controls">
-          <button type="button" onClick={(e) => { e.stopPropagation(); prevTrack() }} title="上一首">
-            ⏮
-          </button>
-          <button
-            type="button"
-            className="mini-play-btn"
-            onClick={(e) => { e.stopPropagation(); togglePlay() }}
-            title={isPlaying ? '暂停' : '播放'}
-          >
-            {isPlaying ? '⏸' : '▶'}
-          </button>
-          <button type="button" onClick={(e) => { e.stopPropagation(); nextTrack() }} title="下一首">
-            ⏭
-          </button>
-        </div>
+        {currentTrack ? (
+          <>
+            <div className="mini-track-name">{currentTrack.name}</div>
+            <div className="mini-track-artist">{currentTrack.artist}</div>
+            <div className="mini-controls">
+              <button type="button" onClick={(e) => { e.stopPropagation(); prevTrack() }} title="上一首">
+                ⏮
+              </button>
+              <button
+                type="button"
+                className="mini-play-btn"
+                onClick={(e) => { e.stopPropagation(); togglePlay() }}
+                title={isPlaying ? '暂停' : '播放'}
+              >
+                {isPlaying ? '⏸' : '▶'}
+              </button>
+              <button type="button" onClick={(e) => { e.stopPropagation(); nextTrack() }} title="下一首">
+                ⏭
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="mini-track-name">点击音乐图标</div>
+        )}
       </div>
     </div>
   )
