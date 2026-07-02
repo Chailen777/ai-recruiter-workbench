@@ -51,6 +51,8 @@ type NotePanelProps = {
   filterDate?: string | null
   /** 清除日期筛选回调 */
   onClearFilterDate?: () => void
+  /** 设置日期筛选回调（动态 tab 点击后调用） */
+  onFilterDate?: (date: string | null) => void
   /** 搜索关键词（全文匹配） */
   searchTerm?: string
   /** 笔记列表首次加载中，显示骨架屏 */
@@ -69,6 +71,18 @@ const TYPE_LABELS: Record<string, string> = {
   note: '随笔',
   appointment: '预约',
   diary: '日记',
+}
+
+/** 格式化日期标签（今天/昨天/6月29日） */
+function formatDateLabel(dateStr: string | null): string {
+  if (!dateStr) return '今天'
+  const now = new Date()
+  const todayStr = now.toLocaleDateString('sv-SE')
+  const yesterdayStr = new Date(now.getTime() - 86400000).toLocaleDateString('sv-SE')
+  if (dateStr === todayStr) return '今天'
+  if (dateStr === yesterdayStr) return '昨天'
+  const d = new Date(dateStr + 'T00:00:00')
+  return `${d.getMonth() + 1}月${d.getDate()}日`
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -254,7 +268,7 @@ function formatRepeatLabel(repeatType: string, repeatWeekdays?: string | null): 
   return REPEAT_LABELS[repeatType] ?? repeatType
 }
 
-export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false, viewMode: externalViewMode, mobileComposeVisible = false, onCloseMobileCompose }: NotePanelProps) {
+export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, onFilterDate, searchTerm, loading = false, viewMode: externalViewMode, mobileComposeVisible = false, onCloseMobileCompose }: NotePanelProps) {
   const [inputType, setInputType] = useState<'todo' | 'log' | 'note' | 'appointment' | 'diary'>('note')
   const [inputValue, setInputValue] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -737,13 +751,21 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
     <div className="note-panel">
       {/* ── 类型导航条（抽出 form 外，所有视图始终可见）── */}
       <div className="note-type-tabs" role="group" aria-label="笔记类型过滤">
-        {/* 今天 */}
+        {/* 动态日期 */}
         <button
           type="button"
-          className={`note-type-tab ${filterType === 'all' ? 'active note-type-all' : ''}`}
-          onClick={() => handleTabClick('all')}
+          className={`note-type-tab ${filterDate ? 'active note-type-all' : ''}`}
+          onClick={() => {
+            if (filterDate) {
+              onClearFilterDate?.()
+            } else if (activeDateGroup && onFilterDate) {
+              onFilterDate(activeDateGroup)
+            } else {
+              handleTabClick('all')
+            }
+          }}
         >
-          今天
+          {filterDate ? formatDateLabel(filterDate) : activeDateGroup ? formatDateLabel(activeDateGroup) : '今天'}
         </button>
 
         {/* 待办 — 带未完成徽章 + 双击仅显示未完成 */}
@@ -1407,13 +1429,6 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
           >
             × 取消
           </button>
-        </div>
-      )}
-
-      {/* ── 吸顶日期指示器（滚动时显示当前日期组）── */}
-      {activeDateGroup && viewMode !== 'calendar' && (
-        <div className="note-date-indicator">
-          {fmtActiveDateHeader(activeDateGroup)}
         </div>
       )}
 
