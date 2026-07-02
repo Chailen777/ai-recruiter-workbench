@@ -7949,35 +7949,34 @@
     gap: 10px;
   }
 
-  /* 手机端输入框外部右上角圆形关闭按钮 */
+  /* 手机端输入框左上角 macOS 风格关闭按钮 */
   .note-compose-close-btn {
-    position: fixed;
-    bottom: calc(68vh + max(12px, env(safe-area-inset-bottom)) + 4px);
-    right: max(12px, env(safe-area-inset-right));
-    width: 34px;
-    height: 34px;
+    position: absolute;
+    top: -26px;
+    left: 12px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     border: none;
-    background: #fff;
-    color: #1e293b;
+    background: #ff5f57;
+    color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 10080;
+    z-index: 10085;
     -webkit-tap-highlight-color: transparent;
-    box-shadow: 0 2px 12px rgba(2, 6, 23, 0.45);
-    transition: background .2s ease, transform .15s ease;
+    box-shadow: 0 1px 4px rgba(0,0,0,.18);
+    transition: background .15s ease, transform .15s ease;
   }
   .note-compose-close-btn:active {
-    background: #4f8cff;
-    color: #fff;
-    transform: scale(0.92);
+    background: #e0443e;
+    transform: scale(0.88);
   }
   .note-compose-close-btn svg {
-    width: 18px;
-    height: 18px;
-    stroke-width: 2.5;
+    width: 12px;
+    height: 12px;
+    stroke-width: 2.8;
   }
 
   /* 激活：隐藏表单内的 tabs（已在顶部 fixed） */
@@ -8612,10 +8611,13 @@
 
   /* ═══ 径向菜单模式（长按触发） ═══ */
 
-  /* 径向模式背景模糊遮罩 */
+  /* 径向模式背景模糊遮罩（从导航条下方开始，不遮盖导航条） */
   .note-view-fab-radial-overlay {
     position: fixed;
-    inset: 0;
+    top: 52px;
+    right: 0;
+    bottom: 0;
+    left: 0;
     background: rgba(15, 23, 42, 0.3);
     z-index: -1;
     pointer-events: none;
@@ -8627,10 +8629,10 @@
     display: none;
   }
 
-  /* 径向模式主按钮不旋转，保持笔图标 */
+  /* 径向模式主按钮原地不动，不缩放不变形 */
   .note-view-fab.is-radial .note-view-fab-main {
     opacity: 1;
-    transform: translateX(0) scale(1.1);
+    transform: none;
     background: rgba(79, 140, 255, 0.9);
     color: #fff;
     box-shadow: 0 4px 20px rgba(79, 140, 255, 0.4);
