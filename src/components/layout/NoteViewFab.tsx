@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 
-type ViewMode = 'calendar' | 'list' | 'timeline' | 'bookmark'
+type ViewMode = 'calendar' | 'list' | 'timeline' | 'bookmark' | 'music' | 'robot'
 
 /* ── 图标 ── */
 const PEN_ICON = (
@@ -68,6 +68,24 @@ const TIMELINE_ICON = (
   </svg>
 )
 
+const ROBOT_ICON = (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="14" height="10" rx="3"/>
+    <circle cx="7" cy="8" r="1.2" fill="currentColor"/>
+    <circle cx="13" cy="8" r="1.2" fill="currentColor"/>
+    <path d="M6 13V16M14 13V16"/>
+    <rect x="8" y="14" width="4" height="3" rx="1"/>
+  </svg>
+)
+
+const MUSIC_ICON = (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M8 16V4L17 2V14"/>
+    <circle cx="5" cy="16" r="3"/>
+    <circle cx="14" cy="14" r="3"/>
+  </svg>
+)
+
 /* ── 音效：短促 "咔" 声 ── */
 let audioCtx: AudioContext | null = null
 function playTick() {
@@ -98,7 +116,7 @@ function vibrate(ms: number = 8) {
 const FAN_ARC_R = 200
 const ANGLE_START = 90
 const ANGLE_END = 200
-const ITEM_COUNT = 7
+const ITEM_COUNT = 9
 const FAN_ANGLES = Array.from({ length: ITEM_COUNT }, (_, i) =>
   ANGLE_START + (ANGLE_END - ANGLE_START) * (i / (ITEM_COUNT - 1))
 )
@@ -177,7 +195,7 @@ export function NoteViewFab({
     backToIdle()
   }, [radialActive, backToIdle])
 
-  /* 构建菜单项（始终7项，固定顺序） */
+  /* 构建菜单项（始终9项，固定顺序） */
   const allFanItems: FanItem[] = [
     { id: 'home', label: '首页', svg: HOME_ICON, onClick: () => onHome?.() },
     { id: 'search', label: '搜索', svg: SEARCH_ICON, onClick: () => onSearch?.(), active: searchActive },
@@ -186,6 +204,8 @@ export function NoteViewFab({
     { id: 'calendar', label: '日历', svg: CALENDAR_ICON, onClick: () => setViewMode('calendar'), isCurrent: viewMode === 'calendar' },
     { id: 'list', label: '列表', svg: LIST_ICON, onClick: () => setViewMode('list'), isCurrent: viewMode === 'list' },
     { id: 'timeline', label: '时间轴', svg: TIMELINE_ICON, onClick: () => setViewMode('timeline'), isCurrent: viewMode === 'timeline' },
+    { id: 'music', label: '音乐', svg: MUSIC_ICON, onClick: () => setViewMode('music'), isCurrent: viewMode === 'music' },
+    { id: 'robot', label: 'AI助手', svg: ROBOT_ICON, onClick: () => setViewMode('robot'), isCurrent: viewMode === 'robot' },
   ]
 
   /* 计算触摸角度 → 菜单项索引 */

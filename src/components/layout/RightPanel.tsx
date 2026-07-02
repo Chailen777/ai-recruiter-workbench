@@ -133,8 +133,8 @@ export function RightPanel() {
     }
   }, [])
 
-  // ── 视图模式（四个互斥：日历 / 列表 / 时间轴 / 收藏）──
-  const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'timeline' | 'bookmark'>('list')
+  // ── 视图模式（六个互斥：日历 / 列表 / 时间轴 / 收藏 / 音乐 / AI助手）──
+  const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'timeline' | 'bookmark' | 'music' | 'robot'>('list')
 
   // ── Collapse state (persisted to localStorage) ──
   const [collapsed, setCollapsed] = useState(true) // 默认折叠

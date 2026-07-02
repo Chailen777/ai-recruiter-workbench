@@ -56,7 +56,7 @@ type NotePanelProps = {
   /** 笔记列表首次加载中，显示骨架屏 */
   loading?: boolean
   /** 视图模式（由父组件控制） */
-  viewMode?: 'calendar' | 'list' | 'timeline' | 'bookmark'
+  viewMode?: 'calendar' | 'list' | 'timeline' | 'bookmark' | 'music' | 'robot'
   /** 手机端底部编辑栏是否可见 */
   mobileComposeVisible?: boolean
   /** 关闭手机端底部编辑栏 */
@@ -1467,11 +1467,20 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         </div>
       )}
 
-      {/* ── 笔记列表 / 时间轴 / 日历（加载中显示骨架屏）── */}
+      {/* ── 笔记列表 / 时间轴 / 日历 / 音乐 / AI助手（加载中显示骨架屏）── */}
       {loading ? (
         <NoteSkeleton />
       ) : viewMode === 'calendar' ? (
         <CalendarView notes={notes} onChanged={onNotesChanged} searchTerm={searchTerm} />
+      ) : viewMode === 'music' ? (
+        <MusicPlayer />
+      ) : viewMode === 'robot' ? (
+        <div className="robot-coming-soon">
+          <div className="robot-icon">🤖</div>
+          <h2>AI 助手正在开发中</h2>
+          <p>即将为您带来智能笔记助手功能</p>
+          <p className="robot-hint">将支持：智能摘要、自动分类、写作建议等</p>
+        </div>
       ) : viewMode === 'list' || viewMode === 'bookmark' ? (
         <ListView notes={finalFiltered} onChanged={onNotesChanged} searchTerm={searchTerm} filterDate={filterDate} filterType={filterType} showOnlyUndone={showOnlyUndone} onClearFilterDate={onClearFilterDate} viewMode={viewMode} />
       ) : (
