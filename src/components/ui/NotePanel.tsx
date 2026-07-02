@@ -665,6 +665,10 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
 
   // ── 标签点击：设置过滤类型 + 输入类型 ──
   function handleTabClick(type: 'all' | 'todo' | 'log' | 'note' | 'appointment' | 'diary') {
+    // 从音乐/机器人视图切换回笔记列表
+    if (viewMode === 'music' || viewMode === 'robot') {
+      onSwitchView?.('list')
+    }
     setFilterType(type)
     setShowOnlyUndone(false)
     if (type !== 'all') {

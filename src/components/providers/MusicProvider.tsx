@@ -23,7 +23,7 @@ export type LoopMode = 'none' | 'one' | 'all'
 type MusicContextType = {
   tracks: MusicTrack[]
   folders: MusicFolder[]
-  addCustomMusic: (files: File[]) => Promise<void>
+  addCustomMusic: (files: File[], folderId?: string) => Promise<void>
   removeCustomTrack: (id: string) => void
   addFolder: (name: string) => void
   removeFolder: (id: string) => void
@@ -57,6 +57,7 @@ const BUILT_IN_TRACKS: MusicTrack[] = []
 export function MusicProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const loopModeRef = useRef<LoopMode>('all') // 用 ref 避免闭包陈旧问题
+  const tracksRef = useRef<MusicTrack[]>(BUILT_IN_TRACKS) // 用 ref 保持最新 tracks
   const [tracks, setTracks] = useState<MusicTrack[]>(BUILT_IN_TRACKS)
   const [folders, setFolders] = useState<MusicFolder[]>(DEFAULT_FOLDERS)
   const [customMeta, setCustomMeta] = useState<MusicTrack[]>([])
@@ -113,6 +114,11 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     }
   }, [isPlaying])
 
+  // ── 同步 tracks 到 ref（供 onEnded 闭包使用）──
+  useEffect(() => {
+    tracksRef.current = tracks
+  }, [tracks])
+
   // ── 音频事件监听 ──
   useEffect(() => {
     const audio = audioRef.current
@@ -131,11 +137,11 @@ export function MusicProvider({ children }: { children: ReactNode }) {
           audio.play().catch(() => {})
         }
       } else if (mode === 'all') {
-        // 列表循环 → 下一首
+        // 列表循环 → 下一首（用 ref 避免闭包陈旧）
         setCurrentIndex((prev) => {
-          const tracks = BUILT_IN_TRACKS.concat(customMeta as any) // 需要当前 tracks
-          if (tracks.length === 0) return prev
-          return prev < tracks.length - 1 ? prev + 1 : 0
+          const curTracks = tracksRef.current
+          if (curTracks.length === 0) return prev
+          return prev < curTracks.length - 1 ? prev + 1 : 0
         })
       }
       // 'none' → 停止
@@ -170,7 +176,8 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   }, [currentIndex])
 
   // ── 添加自定义音乐 ──
-  const addCustomMusic = useCallback(async (files: File[]) => {
+  const addCustomMusic = useCallback(async (files: File[], targetFolderId?: string) => {
+    const folderId = targetFolderId || DEFAULT_FOLDER_ID
     const newMeta: MusicTrack[] = []
     const newTracks: MusicTrack[] = []
 
@@ -184,8 +191,8 @@ export function MusicProvider({ children }: { children: ReactNode }) {
 
       await saveMusicFile(id, file)
 
-      newMeta.push({ id, name, artist: '本地上传', url: blobUrl, type: 'custom', folderId: DEFAULT_FOLDER_ID })
-      newTracks.push({ id, name, artist: '本地上传', url: blobUrl, type: 'custom', folderId: DEFAULT_FOLDER_ID })
+      newMeta.push({ id, name, artist: '本地上传', url: blobUrl, type: 'custom', folderId })
+      newTracks.push({ id, name, artist: '本地上传', url: blobUrl, type: 'custom', folderId })
     }
 
     if (newMeta.length === 0) return

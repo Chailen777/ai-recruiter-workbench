@@ -77,10 +77,10 @@ export function MiniMusicPlayer({ onSwitchView }: { onSwitchView?: () => void })
     }, 350)
   }, [onSwitchView])
 
-  // 展开后 8 秒自动收起（比之前长，因为内容多了）
+  // 展开后 16 秒自动收起
   useEffect(() => {
     if (!expanded) return
-    const timer = setTimeout(() => setExpanded(false), 8000)
+    const timer = setTimeout(() => setExpanded(false), 16000)
     return () => clearTimeout(timer)
   }, [expanded, isPlaying])
 

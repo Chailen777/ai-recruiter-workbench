@@ -53,9 +53,9 @@ export function MusicPlayer({ onBack }: { onBack?: () => void }) {
     const files = e.target.files
     if (!files || files.length === 0) return
     const audioFiles = Array.from(files).filter((f) => f.type.startsWith('audio/'))
-    if (audioFiles.length > 0) addCustomMusic(audioFiles)
+    if (audioFiles.length > 0) addCustomMusic(audioFiles, activeFolder)
     e.target.value = ''
-  }, [addCustomMusic])
+  }, [addCustomMusic, activeFolder])
 
   // ── 文件夹操作 ──
   const handleAddFolder = () => {
