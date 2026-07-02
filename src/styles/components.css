@@ -7954,29 +7954,30 @@
     position: fixed;
     bottom: calc(68vh + max(12px, env(safe-area-inset-bottom)) + 4px);
     right: max(12px, env(safe-area-inset-right));
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     border: none;
-    background: rgba(30, 41, 59, 0.92);
-    color: #e2e8f0;
+    background: #fff;
+    color: #1e293b;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     z-index: 10080;
     -webkit-tap-highlight-color: transparent;
-    box-shadow: 0 2px 12px rgba(2, 6, 23, 0.35);
+    box-shadow: 0 2px 12px rgba(2, 6, 23, 0.45);
     transition: background .2s ease, transform .15s ease;
   }
   .note-compose-close-btn:active {
-    background: rgba(79, 140, 255, 0.9);
+    background: #4f8cff;
+    color: #fff;
     transform: scale(0.92);
   }
   .note-compose-close-btn svg {
-    width: 16px;
-    height: 16px;
-    stroke-width: 2.2;
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5;
   }
 
   /* 激活：隐藏表单内的 tabs（已在顶部 fixed） */
@@ -8522,10 +8523,9 @@
     color: #4f8cff;
   }
 
-  /* 展开：扇形定位 */
+  /* 展开：显示 */
   .note-view-fab.is-expanded .note-view-fab-option {
     pointer-events: auto;
-    transform: translate(var(--fx), var(--fy)) scale(1);
     opacity: 1;
   }
 

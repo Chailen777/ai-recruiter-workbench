@@ -7,9 +7,10 @@ type ViewMode = 'calendar' | 'list' | 'timeline' | 'bookmark'
 
 /* ── 图标 ── */
 const PEN_ICON = (
-  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14 2L18 6L8 16L4 17L5 13L14 2Z" />
-    <path d="M13 3L17 7" />
+  <svg viewBox="0 0 20 20" fill="currentColor" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+    {/* 笔尖填充 + 描边，双保险确保可见 */}
+    <path d="M14 2L18 6L8 16L4 17L5 13L14 2Z" fill="currentColor" stroke="currentColor" strokeWidth="1.2"/>
+    <path d="M13 3L17 7" stroke="currentColor" strokeWidth="1.8" fill="none"/>
   </svg>
 )
 
@@ -305,33 +306,44 @@ export function NoteViewFab({
       )}
 
       {/* 扇形菜单项 */}
-      <div className="note-view-fab-menu">
-        {allFanItems.map((item, i) => (
-          <button
-            key={item.id}
-            type="button"
-            className={`note-view-fab-option${i === activeIndex ? ' is-radial-active' : ''}${item.active ? ' is-action-active' : ''}${item.isCurrent ? ' is-current' : ''}`}
-            style={{
-              '--fx': `${FAN_POSITIONS[i].x}px`,
-              '--fy': `${FAN_POSITIONS[i].y}px`,
-              transitionDelay: radialActive
-                ? `${0.03 + i * 0.02}s`
-                : `${0.06 - i * 0.008}s`,
-            } as React.CSSProperties}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => {
-              item.onClick()
-              setRadialActive(false)
-              setActiveIndex(-1)
-            }}
-          >
-            <span className="note-view-fab-opt-icon">{item.svg}</span>
-            <span className="note-view-fab-opt-label">{item.label}</span>
-            {item.id === 'bookmark' && bookmarkCount > 0 && (
-              <span className="note-view-fab-badge">{bookmarkCount}</span>
-            )}
-          </button>
-        ))}
+      <div className="note-view-fab-menu" style={{ zIndex: 10090 }}>
+        {allFanItems.map((item, i) => {
+          const pos = FAN_POSITIONS[i]
+          const isActive = i === activeIndex
+          const isVisible = radialActive
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className={`note-view-fab-option${isActive ? ' is-radial-active' : ''}${item.active ? ' is-action-active' : ''}${item.isCurrent ? ' is-current' : ''}`}
+              style={{
+                transform: isVisible
+                  ? `translate(${pos.x}px, ${pos.y}px) scale(1)`
+                  : 'translate(0, 0) scale(0.35)',
+                opacity: isVisible ? 1 : 0,
+                transition: `
+                  transform ${isVisible ? '0.32s' : '0.18s'} cubic-bezier(.16,1,.3,1)
+                  ${isVisible ? `${Math.min(i * 28, 180)}ms` : `${Math.max(0, (5 - i) * 18)}ms`},
+                  opacity ${isVisible ? '0.25s' : '0.12s'} ease
+                  ${isVisible ? `${Math.min(i * 28, 180)}ms` : '0ms'}
+                `,
+                pointerEvents: isVisible ? 'auto' : 'none',
+              } as React.CSSProperties}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => {
+                item.onClick()
+                setRadialActive(false)
+                setActiveIndex(-1)
+              }}
+            >
+              <span className="note-view-fab-opt-icon">{item.svg}</span>
+              <span className="note-view-fab-opt-label">{item.label}</span>
+              {item.id === 'bookmark' && bookmarkCount > 0 && (
+                <span className="note-view-fab-badge">{bookmarkCount}</span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {/* 主触发按钮 — 笔图标 */}
