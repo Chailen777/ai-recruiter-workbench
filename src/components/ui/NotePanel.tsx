@@ -6,6 +6,7 @@ import { addNote, deleteNote, editNote, togglePinNote, toggleBookmarkNote, toggl
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useToast } from '@/components/providers/ToastProvider'
 import { formatAppDateTime, formatAppDate, toAppDateTimeLocal } from '@/lib/app-date-time'
+import { MusicPlayer } from '@/components/ui/MusicPlayer'
 
 export type NoteItem = {
   id: number

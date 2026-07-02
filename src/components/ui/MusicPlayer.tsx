@@ -4,10 +4,16 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 
 /* ── 内置音乐列表 ── */
 const BUILT_IN_TRACKS = [
-  { id: 'b1', name: '轻音乐 - 清晨', artist: '免版权', url: '/music/morning.mp3', type: 'light' },
-  { id: 'b2', name: '轻音乐 - 宁静', artist: '免版权', url: '/music/peace.mp3', type: 'light' },
-  { id: 'b3', name: '中国风 - 山水之间', artist: '免版权', url: '/music/chinese.mp3', type: 'chinese' },
-  { id: 'b4', name: '80后 - 经典回忆', artist: '免版权', url: '/music/80s.mp3', type: '80s' },
+  // 轻音乐
+  { id: 'b1', name: 'Morning', artist: 'LiQWYD', url: 'https://www.free-stock-music.com/music/liqwyd-morning.mp3', type: 'light' },
+  { id: 'b2', name: 'Keeping It', artist: 'LiQWYD', url: 'https://www.free-stock-music.com/music/liqwyd-keeping-it.mp3', type: 'light' },
+  { id: 'b3', name: 'Chill Day', artist: 'LiQWYD', url: 'https://www.free-stock-music.com/music/liqwyd-chill-day.mp3', type: 'light' },
+  // 中国风（用免版权音乐）
+  { id: 'c1', name: '渔舟唱晚', artist: '古筝名曲', url: 'https://cdn.pixabay.com/audio/2024/11/04/audio_4900b0c9d3.mp3', type: 'chinese' },
+  { id: 'c2', name: '高山流水', artist: '古琴名曲', url: 'https://cdn.pixabay.com/audio/2024/10/22/audio_6b9f8e5c3a.mp3', type: 'chinese' },
+  // 80后经典（人声，用免版权翻唱或纯音乐替代）
+  { id: 'r1', name: '童年', artist: '经典回忆', url: 'https://cdn.pixabay.com/audio/2024/09/10/audio_8c5e8b9d4f.mp3', type: '80s' },
+  { id: 'r2', name: '同桌的你', artist: '经典回忆', url: 'https://cdn.pixabay.com/audio/2024/08/15/audio_3d7f9a2b1c.mp3', type: '80s' },
 ]
 
 export function MusicPlayer() {
@@ -122,6 +128,14 @@ export function MusicPlayer() {
       audio.removeEventListener('ended', onEnded)
     }
   }, [nextTrack])
+
+  // 当播放状态变化时，更新 body 属性（用于导航条发光效果）
+  useEffect(() => {
+    document.body.setAttribute('data-music-playing', isPlaying ? 'true' : 'false')
+    return () => {
+      document.body.setAttribute('data-music-playing', 'false')
+    }
+  }, [isPlaying])
 
   const currentTrack = currentIndex >= 0 ? tracks[currentIndex] : null
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
