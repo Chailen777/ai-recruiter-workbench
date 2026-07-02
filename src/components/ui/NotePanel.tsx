@@ -400,7 +400,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
 
     const observer = new IntersectionObserver(handleObserver, {
       root: null,
-      rootMargin: '-48px 0px 0px 0px',
+      rootMargin: '-44px 0px 0px 0px',
       threshold: [0, 0.5, 1],
     })
 
