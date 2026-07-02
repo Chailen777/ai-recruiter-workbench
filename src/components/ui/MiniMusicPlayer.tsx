@@ -21,7 +21,7 @@ function AudioBars({ playing }: { playing: boolean }) {
 export function MiniMusicPlayer() {
   const {
     tracks, currentIndex, isPlaying,
-    togglePlay, prevTrack, nextTrack,
+    togglePlay, prevTrack, nextTrack, stop,
   } = useMusic()
 
   const [expanded, setExpanded] = useState(false)
@@ -68,7 +68,7 @@ export function MiniMusicPlayer() {
         <button
           type="button"
           className="mini-close"
-          onClick={() => setExpanded(false)}
+          onClick={() => { setExpanded(false); stop() }}
         >
           ×
         </button>

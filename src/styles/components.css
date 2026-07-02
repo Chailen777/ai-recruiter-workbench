@@ -9339,10 +9339,14 @@
   min-width: 160px;
   max-width: 200px;
   box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
-  display: flex;
+  display: none;          /* 默认隐藏，展开时才显示 */
   flex-direction: column;
   gap: 8px;
   animation: miniSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.mini-music-player.is-expanded .mini-info {
+  display: flex;
 }
 
 @keyframes miniSlideIn {

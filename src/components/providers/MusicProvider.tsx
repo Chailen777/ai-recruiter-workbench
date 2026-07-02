@@ -26,6 +26,7 @@ type MusicContextType = {
   prevTrack: () => void
   nextTrack: () => void
   seek: (time: number) => void
+  stop: () => void
 }
 
 const MusicContext = createContext<MusicContextType | null>(null)
@@ -209,6 +210,13 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     }
   }, [isPlaying, play, pause])
 
+  const stop = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
+  }, [])
+
   const prevTrack = useCallback(() => {
     if (tracks.length === 0) return
     const newIndex = currentIndex > 0 ? currentIndex - 1 : tracks.length - 1
@@ -231,7 +239,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     <MusicContext.Provider value={{
       tracks, addCustomMusic, removeCustomTrack,
       currentIndex, isPlaying, currentTime, duration,
-      play, pause, togglePlay, prevTrack, nextTrack, seek,
+      play, pause, togglePlay, prevTrack, nextTrack, seek, stop,
     }}>
       {/* 全局共享的 audio 元素 */}
       <audio ref={audioRef} preload="metadata" style={{ display: 'none' }} />
