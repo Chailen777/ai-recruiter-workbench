@@ -63,3 +63,4 @@ npm.cmd run dev
 - 技能关键词匹配：20 分
 
 评分规则在 `src/lib/matching.ts` 中，后续可以替换为 AI 解析或更细的规则。
+
