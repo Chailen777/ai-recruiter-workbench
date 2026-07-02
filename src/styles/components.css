@@ -8916,3 +8916,19 @@
   background: var(--ds-bg-inset);
 }
 
+
+/* ── 动态日期 tab 动画（淡入 + 上滑）── */
+.date-tab-animate {
+  animation: dateTabIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes dateTabIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 0.85;
+    transform: translateY(0);
+  }
+}

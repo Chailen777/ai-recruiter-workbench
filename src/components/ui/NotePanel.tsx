@@ -71,16 +71,18 @@ const TYPE_LABELS: Record<string, string> = {
   diary: '日记',
 }
 
-/** 格式化日期标签（今天/昨天/6月29日） */
+/** 格式化日期标签（今天 周四/昨天 周三/6月29日 周一） */
 function formatDateLabel(dateStr: string | null): string {
   if (!dateStr) return '今天'
   const now = new Date()
   const todayStr = now.toLocaleDateString('sv-SE')
   const yesterdayStr = new Date(now.getTime() - 86400000).toLocaleDateString('sv-SE')
-  if (dateStr === todayStr) return '今天'
-  if (dateStr === yesterdayStr) return '昨天'
-  const d = new Date(dateStr + 'T00:00:00')
-  return `${d.getMonth() + 1}月${d.getDate()}日`
+  const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  const d = new Date((dateStr || todayStr) + 'T00:00:00')
+  const weekDay = weekDays[d.getDay()]
+  if (dateStr === todayStr) return `今天 ${weekDay}`
+  if (dateStr === yesterdayStr) return `昨天 ${weekDay}`
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${weekDay}`
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -803,7 +805,8 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       <div className="note-type-tabs" role="group" aria-label="笔记类型过滤">
         {/* 动态日期（只显示，不筛选） */}
         <span
-          className="note-type-tab note-type-all"
+          key={activeDateGroup ?? 'today'}
+          className="note-type-tab note-type-all date-tab-animate"
           style={{ cursor: 'default', opacity: 0.85 }}
         >
           {activeDateGroup ? formatDateLabel(activeDateGroup) : '今天'}
