@@ -85,6 +85,20 @@ function formatDateLabel(dateStr: string | null): string {
   return `${d.getMonth() + 1}月${d.getDate()}日 ${weekDay}`
 }
 
+// 拆分日期标签为 { date, weekDay } 两部分（用于上下排版）
+function getDateParts(dateStr: string | null): { date: string; weekDay: string } {
+  if (!dateStr) return { date: '今天', weekDay: '' }
+  const now = new Date()
+  const todayStr = now.toLocaleDateString('sv-SE')
+  const yesterdayStr = new Date(now.getTime() - 86400000).toLocaleDateString('sv-SE')
+  const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  const d = new Date((dateStr || todayStr) + 'T00:00:00')
+  const weekDay = weekDays[d.getDay()]
+  if (dateStr === todayStr) return { date: '今天', weekDay }
+  if (dateStr === yesterdayStr) return { date: '昨天', weekDay }
+  return { date: `${d.getMonth() + 1}月${d.getDate()}日`, weekDay }
+}
+
 const TYPE_COLORS: Record<string, string> = {
   todo: 'note-type-todo',
   log: 'note-type-log',
@@ -397,88 +411,57 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       return
     }
 
-    // 用 IntersectionObserver 监听日期头部是否穿过导航条底部（44px）
     const NAV_HEIGHT = 44
-    let currentActive = ''
 
-    const handleObserver = (entries: IntersectionObserverEntry[]) => {
-      // 找到所有"头部顶部在导航条下方附近"的条目
-      for (const entry of entries) {
-        const el = entry.target as HTMLElement
-        const day = el.dataset.date
-        if (!day) continue
-
-        // 头部的顶部刚好在导航条下面（rect.top 在 0~NAV_HEIGHT+50 范围内）
-        const rect = el.getBoundingClientRect()
-        if (rect.top >= 0 && rect.top <= NAV_HEIGHT + 80) {
-          if (day !== currentActive) {
-            currentActive = day
-            setActiveDateGroup(day)
-          }
-        }
-      }
-    }
-
-    const observer = new IntersectionObserver(handleObserver, {
-      root: null,
-      // 只观察视口顶部 44+80=124px 的区域
-      rootMargin: `-${NAV_HEIGHT + 80}px 0px 0px 0px`,
-      threshold: [0, 0.1, 0.5, 1],
-    })
-
-    // 备用：scroll 事件也更新（更可靠）
     const handleScroll = () => {
       const headers = document.querySelectorAll<HTMLElement>('.note-list-date-header, .note-timeline-date-header')
       if (!headers.length) return
 
-      // 找"头部顶部"最靠近导航条底部（44px）的那个
+      // 找到最接近导航条底部的那个头部
+      // 策略：找到第一个"顶部 <= 导航条高度 + 偏移量"的头部
       let bestDay = ''
-      let bestDist = Infinity
+      let bestDiff = Infinity
 
       headers.forEach((el) => {
         const rect = el.getBoundingClientRect()
-        // 头部顶部在视口内，且在导航条下面
-        if (rect.top >= NAV_HEIGHT && rect.top < bestDist) {
-          bestDist = rect.top
-          bestDay = el.dataset.date ?? ''
+        // 头部的顶部在视口内
+        if (rect.top <= NAV_HEIGHT + 80) {
+          const diff = Math.abs(rect.top - NAV_HEIGHT)
+          if (diff < bestDiff) {
+            bestDiff = diff
+            bestDay = el.dataset.date ?? ''
+          }
         }
       })
 
-      // 如果没找到（说明已经滚过去了），取最后一个"头部底部在导航条上面"的
+      // 如果没找到（说明所有头部都在导航条上面，已经滚过去了）
+      // 用最后一个头部
       if (!bestDay) {
-        for (let i = headers.length - 1; i >= 0; i--) {
-          const rect = headers[i].getBoundingClientRect()
-          if (rect.bottom <= NAV_HEIGHT) {
-            bestDay = headers[i].dataset.date ?? ''
-            break
-          }
-        }
+        bestDay = headers[headers.length - 1].dataset.date ?? ''
       }
 
-      // 还是没找到，用第一个
-      if (!bestDay && headers[0]) {
-        bestDay = headers[0].dataset.date ?? ''
-      }
-
-      if (bestDay && bestDay !== currentActive) {
-        currentActive = bestDay
+      if (bestDay && bestDay !== activeDateGroup) {
         setActiveDateGroup(bestDay)
       }
     }
 
-    const raf = requestAnimationFrame(() => {
-      const headers = document.querySelectorAll<HTMLElement>('.note-list-date-header, .note-timeline-date-header')
-      headers.forEach((el) => observer.observe(el))
-      handleScroll() // 初始计算
-    })
+    // 初始计算一次
+    handleScroll()
 
-    window.addEventListener('scroll', handleScroll, { passive: true })
-
-    return () => {
-      cancelAnimationFrame(raf)
-      observer.disconnect()
-      window.removeEventListener('scroll', handleScroll)
+    // 用 requestAnimationFrame 节流，更流畅
+    let ticking = false
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true
+        requestAnimationFrame(() => {
+          handleScroll()
+          ticking = false
+        })
+      }
     }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [viewMode, notes.length])
 
   function handleSubmit() {
@@ -807,9 +790,17 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         <span
           key={activeDateGroup ?? 'today'}
           className="note-type-tab note-type-all date-tab-animate"
-          style={{ cursor: 'default', opacity: 0.85 }}
+          style={{ cursor: 'default', opacity: 0.85, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', lineHeight: 1.2, minWidth: 44, padding: '6px 8px' }}
         >
-          {activeDateGroup ? formatDateLabel(activeDateGroup) : '今天'}
+          {(() => {
+            const parts = getDateParts(activeDateGroup)
+            return (
+              <>
+                <span style={{ fontSize: 12, fontWeight: 600 }}>{parts.date}</span>
+                <span style={{ fontSize: 10, opacity: 0.7, marginTop: 1 }}>{parts.weekDay}</span>
+              </>
+            )
+          })()}
         </span>
 
         {/* 待办 — 带未完成徽章 + 双击仅显示未完成 */}
