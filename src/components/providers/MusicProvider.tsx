@@ -10,16 +10,31 @@ export type MusicTrack = {
   artist: string
   url: string
   type: string
+  folderId: string  // 所属文件夹
 }
+
+export type MusicFolder = {
+  id: string
+  name: string
+}
+
+export type LoopMode = 'none' | 'one' | 'all'
 
 type MusicContextType = {
   tracks: MusicTrack[]
+  folders: MusicFolder[]
   addCustomMusic: (files: File[]) => Promise<void>
   removeCustomTrack: (id: string) => void
+  addFolder: (name: string) => void
+  removeFolder: (id: string) => void
+  renameFolder: (id: string, name: string) => void
+  moveTrackToFolder: (trackId: string, folderId: string) => void
   currentIndex: number
   isPlaying: boolean
   currentTime: number
   duration: number
+  loopMode: LoopMode
+  setLoopMode: (mode: LoopMode) => void
   play: (index?: number) => void
   pause: () => void
   togglePlay: () => void
@@ -31,27 +46,31 @@ type MusicContextType = {
 
 const MusicContext = createContext<MusicContextType | null>(null)
 
-/* ── 内置音乐列表 ── */
-const BUILT_IN_TRACKS: MusicTrack[] = [
-  { id: 'b1', name: '轻音乐 - 清晨', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', type: 'light' },
-  { id: 'b2', name: '轻音乐 - 午后', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', type: 'light' },
-  { id: 'b3', name: '轻音乐 - 星空', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', type: 'light' },
-  { id: 'b4', name: '轻音乐 - 晚风', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', type: 'light' },
-  { id: 'c1', name: '中国风 - 山水', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3', type: 'chinese' },
-  { id: 'c2', name: '中国风 - 古道', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3', type: 'chinese' },
-  { id: 'r1', name: '80年代 - 回忆', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3', type: '80s' },
-  { id: 'r2', name: '80年代 - 青春', artist: 'SoundHelix', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3', type: '80s' },
+const DEFAULT_FOLDER_ID = 'default'
+const DEFAULT_FOLDERS: MusicFolder[] = [
+  { id: DEFAULT_FOLDER_ID, name: '我的音乐' },
 ]
+
+// ═══ 系统不再内置音乐，全部由用户自己上传 ═══
+const BUILT_IN_TRACKS: MusicTrack[] = []
 
 export function MusicProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement>(null)
+  const loopModeRef = useRef<LoopMode>('all') // 用 ref 避免闭包陈旧问题
   const [tracks, setTracks] = useState<MusicTrack[]>(BUILT_IN_TRACKS)
-  const [customMeta, setCustomMeta] = useState<MusicTrack[]>([]) // 元数据（url 为占位符，运行时从 IndexedDB 加载）
+  const [folders, setFolders] = useState<MusicFolder[]>(DEFAULT_FOLDERS)
+  const [customMeta, setCustomMeta] = useState<MusicTrack[]>([])
   const [currentIndex, setCurrentIndex] = useState(-1)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
+  const [loopMode, _setLoopMode] = useState<LoopMode>('all')
   const [ready, setReady] = useState(false)
+
+  const setLoopMode = useCallback((mode: LoopMode) => {
+    loopModeRef.current = mode
+    _setLoopMode(mode)
+  }, [])
 
   // ── 启动时：从 localStorage 加载元数据 + 从 IndexedDB 重建 Blob URL ──
   useEffect(() => {
@@ -59,17 +78,22 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     ;(async () => {
       try {
         const saved = localStorage.getItem('custom-music-meta')
+        const savedFolders = localStorage.getItem('custom-music-folders')
+
+        if (savedFolders) {
+          const f: MusicFolder[] = JSON.parse(savedFolders)
+          setFolders(f.length > 0 ? f : DEFAULT_FOLDERS)
+        }
+
         if (!saved) { setReady(true); return }
 
         const meta: MusicTrack[] = JSON.parse(saved)
-        // 为每首自定义音乐从 IndexedDB 重建 blob URL
         const restored: MusicTrack[] = []
         for (const m of meta) {
           const blobUrl = await loadMusicFile(m.id)
           if (blobUrl) {
-            restored.push({ ...m, url: blobUrl })
+            restored.push({ ...m, url: blobUrl, folderId: m.folderId || DEFAULT_FOLDER_ID })
           }
-          // 如果 IndexedDB 中找不到文件（被清除），跳过该项
         }
 
         if (cancelled) return
@@ -81,7 +105,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     return () => { cancelled = true }
   }, [])
 
-  // ── 当播放状态变化时，更新 body 属性（导航条发光效果）──
+  // ── 播放状态变化 → body 发光属性 ──
   useEffect(() => {
     document.body.setAttribute('data-music-playing', isPlaying ? 'true' : 'false')
     return () => {
@@ -98,7 +122,24 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     const onLoadedMetadata = () => setDuration(audio.duration)
     const onPlay = () => setIsPlaying(true)
     const onPause = () => setIsPlaying(false)
-    const onEnded = () => nextTrack()
+    const onEnded = () => {
+      const mode = loopModeRef.current
+      if (mode === 'one') {
+        // 单曲循环
+        if (audio) {
+          audio.currentTime = 0
+          audio.play().catch(() => {})
+        }
+      } else if (mode === 'all') {
+        // 列表循环 → 下一首
+        setCurrentIndex((prev) => {
+          const tracks = BUILT_IN_TRACKS.concat(customMeta as any) // 需要当前 tracks
+          if (tracks.length === 0) return prev
+          return prev < tracks.length - 1 ? prev + 1 : 0
+        })
+      }
+      // 'none' → 停止
+    }
 
     audio.addEventListener('timeupdate', onTimeUpdate)
     audio.addEventListener('loadedmetadata', onLoadedMetadata)
@@ -115,7 +156,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // ── 当 currentIndex 变化时，加载音乐 ──
+  // ── currentIndex 变化时加载音源 ──
   useEffect(() => {
     if (currentIndex < 0 || !audioRef.current) return
     const track = tracks[currentIndex]
@@ -128,7 +169,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     })
   }, [currentIndex])
 
-  // ── 添加自定义音乐（接收 File[]，存入 IndexedDB）──
+  // ── 添加自定义音乐 ──
   const addCustomMusic = useCallback(async (files: File[]) => {
     const newMeta: MusicTrack[] = []
     const newTracks: MusicTrack[] = []
@@ -141,11 +182,10 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       const blobUrl = URL.createObjectURL(file)
       const name = file.name.replace(/\.[^.]+$/, '')
 
-      // 保存文件到 IndexedDB
       await saveMusicFile(id, file)
 
-      newMeta.push({ id, name, artist: '本地上传', url: blobUrl, type: 'custom' })
-      newTracks.push({ id, name, artist: '本地上传', url: blobUrl, type: 'custom' })
+      newMeta.push({ id, name, artist: '本地上传', url: blobUrl, type: 'custom', folderId: DEFAULT_FOLDER_ID })
+      newTracks.push({ id, name, artist: '本地上传', url: blobUrl, type: 'custom', folderId: DEFAULT_FOLDER_ID })
     }
 
     if (newMeta.length === 0) return
@@ -158,10 +198,8 @@ export function MusicProvider({ children }: { children: ReactNode }) {
 
   // ── 删除自定义音乐 ──
   const removeCustomTrack = useCallback((id: string) => {
-    // 从 IndexedDB 删除文件
     deleteMusicFile(id).catch(() => {})
 
-    // 从状态中移除
     setCustomMeta((prev) => {
       const updated = prev.filter((t) => t.id !== id)
       localStorage.setItem('custom-music-meta', JSON.stringify(updated))
@@ -170,19 +208,58 @@ export function MusicProvider({ children }: { children: ReactNode }) {
 
     setTracks((prev) => {
       const updated = prev.filter((t) => t.id !== id)
-      // 如果当前正在播放被删除的曲目，停掉
       const idx = prev.findIndex((t) => t.id === id)
       if (idx >= 0 && idx === currentIndex) {
         audioRef.current?.pause()
         setCurrentIndex(-1)
-      } else if (idx >= 0 && idx < currentIndex) {
-        // 删除的项在当前播放项之前，索引需要调整
-        setCurrentIndex((ci) => Math.max(0, ci - 1))
       }
       return updated
     })
   }, [currentIndex])
 
+  // ── 文件夹操作 ──
+  const addFolder = useCallback((name: string) => {
+    setFolders((prev) => {
+      const updated = [...prev, { id: `folder-${Date.now()}`, name }]
+      localStorage.setItem('custom-music-folders', JSON.stringify(updated))
+      return updated
+    })
+  }, [])
+
+  const removeFolder = useCallback((id: string) => {
+    if (id === DEFAULT_FOLDER_ID) return // 不能删除默认文件夹
+    setFolders((prev) => {
+      const updated = prev.filter((f) => f.id !== id)
+      localStorage.setItem('custom-music-folders', JSON.stringify(updated))
+      return updated
+    })
+    // 把该文件夹里的音乐移到默认文件夹
+    setTracks((prev) => prev.map((t) => (t.folderId === id ? { ...t, folderId: DEFAULT_FOLDER_ID } : t)))
+    setCustomMeta((prev) => {
+      const updated = prev.map((t) => (t.folderId === id ? { ...t, folderId: DEFAULT_FOLDER_ID } : t))
+      localStorage.setItem('custom-music-meta', JSON.stringify(updated))
+      return updated
+    })
+  }, [])
+
+  const renameFolder = useCallback((id: string, name: string) => {
+    setFolders((prev) => {
+      const updated = prev.map((f) => (f.id === id ? { ...f, name } : f))
+      localStorage.setItem('custom-music-folders', JSON.stringify(updated))
+      return updated
+    })
+  }, [])
+
+  const moveTrackToFolder = useCallback((trackId: string, folderId: string) => {
+    setTracks((prev) => prev.map((t) => (t.id === trackId ? { ...t, folderId } : t)))
+    setCustomMeta((prev) => {
+      const updated = prev.map((t) => (t.id === trackId ? { ...t, folderId } : t))
+      localStorage.setItem('custom-music-meta', JSON.stringify(updated))
+      return updated
+    })
+  }, [])
+
+  // ── 播放控制 ──
   const play = useCallback((index?: number) => {
     if (!audioRef.current) return
     if (index !== undefined && index >= 0 && index < tracks.length) {
@@ -215,6 +292,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       audioRef.current.pause()
       audioRef.current.currentTime = 0
     }
+    setIsPlaying(false)
   }, [])
 
   const prevTrack = useCallback(() => {
@@ -237,11 +315,12 @@ export function MusicProvider({ children }: { children: ReactNode }) {
 
   return (
     <MusicContext.Provider value={{
-      tracks, addCustomMusic, removeCustomTrack,
+      tracks, folders, addCustomMusic, removeCustomTrack,
+      addFolder, removeFolder, renameFolder, moveTrackToFolder,
       currentIndex, isPlaying, currentTime, duration,
+      loopMode, setLoopMode,
       play, pause, togglePlay, prevTrack, nextTrack, seek, stop,
     }}>
-      {/* 全局共享的 audio 元素 */}
       <audio ref={audioRef} preload="metadata" style={{ display: 'none' }} />
       {children}
     </MusicContext.Provider>

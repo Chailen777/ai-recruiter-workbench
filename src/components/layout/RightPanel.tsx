@@ -354,7 +354,7 @@ export function RightPanel() {
           />
           </ErrorBoundary>
           {/* 迷你音乐播放器（仅在笔记面板内显示） */}
-          <MiniMusicPlayer />
+          <MiniMusicPlayer onSwitchView={() => setViewMode('music')} />
           {/* 手机端：右下角视图切换浮动按钮 */}
           <NoteViewFab
             viewMode={viewMode}
