@@ -3149,10 +3149,7 @@
   transition: background 0.15s;
   border-radius: 6px;
   margin-bottom: 4px;
-  position: sticky;
-  top: 0;
   background: var(--ds-color-bg-primary, #f8fafc);
-  z-index: 2;
 }
 
 .note-list-date-header:hover {
@@ -3642,10 +3639,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 0 6px 0;
-  position: sticky;
-  top: 0;
   background: var(--ds-color-bg);
-  z-index: 1;
   border-bottom: 1px solid var(--ds-color-border);
   margin-bottom: 6px;
   cursor: pointer;

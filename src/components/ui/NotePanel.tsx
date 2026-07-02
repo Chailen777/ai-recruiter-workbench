@@ -390,43 +390,56 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
     return () => clearTimeout(timer)
   }, [inputType, articleType, articlePerson, draftVersion, isFullscreen])
 
-  // ── 滚动监听：IntersectionObserver 驱动吸顶日期指示器 ──
+  // ── 滚动监听：更新导航条第一个 tab 的日期显示 ──
   useEffect(() => {
     if (viewMode !== 'list' && viewMode !== 'timeline' && viewMode !== 'bookmark') {
       setActiveDateGroup(null)
       return
     }
 
-    const handleObserver = (entries: IntersectionObserverEntry[]) => {
-      let bestEntry: IntersectionObserverEntry | null = null
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          if (!bestEntry || entry.boundingClientRect.top < bestEntry.boundingClientRect.top) {
-            bestEntry = entry
+    const handleScroll = () => {
+      const headers = document.querySelectorAll<HTMLElement>('.note-list-date-header, .note-timeline-date-header')
+      if (!headers.length) return
+
+      // 找最靠近导航条底部（44px）的日期头部
+      let bestDay: string | null = null
+      let bestTop = Infinity
+      const navBottom = 44 // 导航条高度
+
+      headers.forEach((el) => {
+        const rect = el.getBoundingClientRect()
+        // 头部的顶部在导航条下面、且在视口内
+        if (rect.top >= navBottom && rect.top < bestTop) {
+          bestTop = rect.top
+          bestDay = el.dataset.date ?? null
+        }
+      })
+
+      // 如果所有头部都在导航条上面（已经滚过去了），取最后一个
+      if (!bestDay) {
+        for (let i = headers.length - 1; i >= 0; i--) {
+          const rect = headers[i].getBoundingClientRect()
+          if (rect.bottom < navBottom) {
+            bestDay = headers[i].dataset.date ?? null
+            break
           }
         }
       }
-      if (bestEntry) {
-        const day = (bestEntry.target as HTMLElement).dataset.date
-        if (day) setActiveDateGroup(day)
+
+      // 如果还是没找到，用第一个
+      if (!bestDay && headers[0]) {
+        bestDay = headers[0].dataset.date ?? null
       }
+
+      if (bestDay) setActiveDateGroup(bestDay)
     }
 
-    const observer = new IntersectionObserver(handleObserver, {
-      root: null,
-      rootMargin: '-44px 0px 0px 0px',
-      threshold: [0, 0.5, 1],
-    })
+    // 初始计算一次
+    handleScroll()
 
-    const raf = requestAnimationFrame(() => {
-      const headers = document.querySelectorAll<HTMLElement>('.note-list-date-header, .note-timeline-date-header')
-      headers.forEach((el) => observer.observe(el))
-    })
-
-    return () => {
-      cancelAnimationFrame(raf)
-      observer.disconnect()
-    }
+    // 监听滚动
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [viewMode, notes.length])
 
   function handleSubmit() {
