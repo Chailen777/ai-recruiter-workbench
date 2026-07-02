@@ -311,6 +311,21 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
   const [diaryCharCount, setDiaryCharCount] = useState(0)
   const MAX_DIARY_CHARS = 10000
 
+  // ── 滚动监听：当前可视日期组（用于吸顶日期指示器）──
+  const [activeDateGroup, setActiveDateGroup] = useState<string | null>(null)
+  function fmtActiveDateHeader(dateStr: string): string {
+    const now = new Date()
+    const todayStr = now.toLocaleDateString('sv-SE')
+    const tomorrowStr = new Date(now.getTime() + 86400000).toLocaleDateString('sv-SE')
+    const yesterdayStr = new Date(now.getTime() - 86400000).toLocaleDateString('sv-SE')
+    if (dateStr === todayStr) return '今天'
+    if (dateStr === tomorrowStr) return '明天'
+    if (dateStr === yesterdayStr) return '昨天'
+    const d = new Date(dateStr + 'T00:00:00')
+    const week = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()]
+    return `${d.getMonth() + 1}月${d.getDate()}日 周${week}`
+  }
+
   /** 更新字数统计 */
   const updateDiaryCharCount = useCallback(() => {
     const ref = isFullscreen ? fullscreenEditorRef : diaryEditorRef
@@ -360,6 +375,45 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
     }, 2000)
     return () => clearTimeout(timer)
   }, [inputType, articleType, articlePerson, draftVersion, isFullscreen])
+
+  // ── 滚动监听：IntersectionObserver 驱动吸顶日期指示器 ──
+  useEffect(() => {
+    if (viewMode !== 'list' && viewMode !== 'timeline' && viewMode !== 'bookmark') {
+      setActiveDateGroup(null)
+      return
+    }
+
+    const handleObserver = (entries: IntersectionObserverEntry[]) => {
+      let bestEntry: IntersectionObserverEntry | null = null
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          if (!bestEntry || entry.boundingClientRect.top < bestEntry.boundingClientRect.top) {
+            bestEntry = entry
+          }
+        }
+      }
+      if (bestEntry) {
+        const day = (bestEntry.target as HTMLElement).dataset.date
+        if (day) setActiveDateGroup(day)
+      }
+    }
+
+    const observer = new IntersectionObserver(handleObserver, {
+      root: null,
+      rootMargin: '-48px 0px 0px 0px',
+      threshold: [0, 0.5, 1],
+    })
+
+    const raf = requestAnimationFrame(() => {
+      const headers = document.querySelectorAll<HTMLElement>('.note-list-date-header, .note-timeline-date-header')
+      headers.forEach((el) => observer.observe(el))
+    })
+
+    return () => {
+      cancelAnimationFrame(raf)
+      observer.disconnect()
+    }
+  }, [viewMode, finalFiltered])
 
   function handleSubmit() {
     // 日记类型从 contentEditable 获取内容
@@ -1356,6 +1410,13 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
         </div>
       )}
 
+      {/* ── 吸顶日期指示器（滚动时显示当前日期组）── */}
+      {activeDateGroup && viewMode !== 'calendar' && (
+        <div className="note-date-indicator">
+          {fmtActiveDateHeader(activeDateGroup)}
+        </div>
+      )}
+
       {/* ── 笔记列表 / 时间轴 / 日历（加载中显示骨架屏）── */}
       {loading ? (
         <NoteSkeleton />
@@ -1748,6 +1809,7 @@ function ListView({ notes, onChanged, searchTerm, filterDate, filterType, showOn
           <div key={day} className={`note-list-group ${isCollapsed ? 'is-collapsed' : ''}`}>
             <div
               className="note-list-date-header"
+              data-date={day}
               onClick={() => toggleGroup(day)}
               role="button"
               tabIndex={0}
@@ -1928,6 +1990,7 @@ function TimelineView({ notes, onChanged: _onChanged, searchTerm, filterDate, fi
           <div key={day} className={`note-timeline-group ${isCollapsed ? 'is-collapsed' : ''}`}>
             <div
               className="note-timeline-date-header"
+              data-date={day}
               onClick={() => toggleGroup(day)}
               role="button"
               tabIndex={0}

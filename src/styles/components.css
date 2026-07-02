@@ -8921,3 +8921,40 @@
 [data-theme='dark'] .note-calendar-group-header:hover {
   background: var(--ds-bg-inset);
 }
+
+/* ── 吸顶日期指示器（滚动时显示当前日期组）── */
+.note-date-indicator {
+  position: sticky;
+  top: 48px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ds-color-text-primary);
+  background: rgba(248, 250, 252, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--ds-color-border, rgba(148, 163, 184, 0.15));
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: background 0.2s ease;
+}
+
+[data-theme='dark'] .note-date-indicator {
+  background: rgba(15, 23, 42, 0.88);
+  border-bottom-color: rgba(148, 163, 184, 0.12);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* 手机端：导航条高度 44–48px */
+@media (max-width: 768px) {
+  .note-date-indicator {
+    top: 44px;
+    font-size: 14px;
+    padding: 8px 16px;
+    letter-spacing: 0.02em;
+  }
+}
