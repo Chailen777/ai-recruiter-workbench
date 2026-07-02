@@ -348,6 +348,7 @@ export function RightPanel() {
             loading={!notesLoaded}
             viewMode={viewMode}
             mobileComposeVisible={mobileComposeVisible}
+            onCloseMobileCompose={() => setMobileComposeVisible(false)}
           />
           </ErrorBoundary>
           {/* 手机端：右下角视图切换浮动按钮 */}

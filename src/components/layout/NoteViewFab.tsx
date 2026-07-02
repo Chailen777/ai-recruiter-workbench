@@ -5,89 +5,120 @@ import { createPortal } from 'react-dom'
 
 type ViewMode = 'calendar' | 'list' | 'timeline' | 'bookmark'
 
-interface ViewOption {
-  id: ViewMode
-  label: string
-  svg: React.ReactNode
+/* ── 图标 ── */
+const PEN_ICON = (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2L18 6L8 16L4 17L5 13L14 2Z" />
+    <path d="M13 3L17 7" />
+  </svg>
+)
+
+const HOME_ICON = (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 10L10 3L17 10" />
+    <path d="M5 9V16C5 16.5523 5.44772 17 6 17H14C14.5523 17 15 16.5523 15 16V9" />
+    <path d="M8 17V12H12V17" />
+  </svg>
+)
+
+const SEARCH_ICON = (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+    <circle cx="9" cy="9" r="5"/>
+    <line x1="13" y1="13" x2="18" y2="18"/>
+  </svg>
+)
+
+const BOOKMARK_ICON = (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M5 4C5 2.89543 5.89543 2 7 2H17C18.1046 2 19 2.89543 19 4V18L12 14L5 18V4Z" />
+  </svg>
+)
+
+const CALENDAR_ICON = (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="3" width="16" height="15" rx="2" />
+    <line x1="2" y1="8" x2="18" y2="8" />
+    <line x1="7" y1="1" x2="7" y2="5" />
+    <line x1="13" y1="1" x2="13" y2="5" />
+  </svg>
+)
+
+const LIST_ICON = (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="5" y1="5" x2="19" y2="5"/>
+    <line x1="5" y1="10" x2="19" y2="10"/>
+    <line x1="5" y1="15" x2="19" y2="15"/>
+    <circle cx="2" cy="5" r="1.2" fill="currentColor" stroke="none"/>
+    <circle cx="2" cy="10" r="1.2" fill="currentColor" stroke="none"/>
+    <circle cx="2" cy="15" r="1.2" fill="currentColor" stroke="none"/>
+  </svg>
+)
+
+const TIMELINE_ICON = (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="3" cy="4" r="1.5" fill="currentColor" stroke="none"/>
+    <line x1="6" y1="4" x2="19" y2="4"/>
+    <circle cx="3" cy="10" r="1.5" fill="currentColor" stroke="none"/>
+    <line x1="6" y1="10" x2="19" y2="10"/>
+    <circle cx="3" cy="16" r="1.5" fill="currentColor" stroke="none"/>
+    <line x1="6" y1="16" x2="19" y2="16"/>
+    <line x1="3" y1="5.5" x2="3" y2="8.5" strokeWidth="1.2"/>
+    <line x1="3" y1="11.5" x2="3" y2="14.5" strokeWidth="1.2"/>
+  </svg>
+)
+
+/* ── 音效：短促 "咔" 声 ── */
+let audioCtx: AudioContext | null = null
+function playTick() {
+  try {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume()
+    const osc = audioCtx.createOscillator()
+    const gain = audioCtx.createGain()
+    osc.frequency.value = 1800
+    osc.type = 'sine'
+    gain.gain.setValueAtTime(0.06, audioCtx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04)
+    osc.connect(gain)
+    gain.connect(audioCtx.destination)
+    osc.start()
+    osc.stop(audioCtx.currentTime + 0.04)
+  } catch { /* noop */ }
 }
 
-/* ── 操作项（非视图模式）── */
-interface ActionItem {
-  id: string
-  label: string
-  svg: React.ReactNode
-  onClick: () => void
-  active?: boolean
+/* ── 触觉反馈 ── */
+function vibrate(ms: number = 8) {
+  try { if (navigator.vibrate) navigator.vibrate(ms) } catch { /* noop */ }
 }
 
-const VIEW_OPTIONS: ViewOption[] = [
-  {
-    id: 'bookmark',
-    label: '收藏',
-    svg: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M5 4C5 2.89543 5.89543 2 7 2H17C18.1046 2 19 2.89543 19 4V18L12 14L5 18V4Z" />
-      </svg>
-    ),
-  },
-  {
-    id: 'calendar',
-    label: '日历',
-    svg: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="3" width="16" height="15" rx="2" />
-        <line x1="2" y1="8" x2="18" y2="8" />
-        <line x1="7" y1="1" x2="7" y2="5" />
-        <line x1="13" y1="1" x2="13" y2="5" />
-      </svg>
-    ),
-  },
-  {
-    id: 'list',
-    label: '列表',
-    svg: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="5" y1="5" x2="19" y2="5"/>
-        <line x1="5" y1="10" x2="19" y2="10"/>
-        <line x1="5" y1="15" x2="19" y2="15"/>
-        <circle cx="2" cy="5" r="1.2" fill="currentColor" stroke="none"/>
-        <circle cx="2" cy="10" r="1.2" fill="currentColor" stroke="none"/>
-        <circle cx="2" cy="15" r="1.2" fill="currentColor" stroke="none"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'timeline',
-    label: '时间轴',
-    svg: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="3" cy="4" r="1.5" fill="currentColor" stroke="none"/>
-        <line x1="6" y1="4" x2="19" y2="4"/>
-        <circle cx="3" cy="10" r="1.5" fill="currentColor" stroke="none"/>
-        <line x1="6" y1="10" x2="19" y2="10"/>
-        <circle cx="3" cy="16" r="1.5" fill="currentColor" stroke="none"/>
-        <line x1="6" y1="16" x2="19" y2="16"/>
-        <line x1="3" y1="5.5" x2="3" y2="8.5" strokeWidth="1.2"/>
-        <line x1="3" y1="11.5" x2="3" y2="14.5" strokeWidth="1.2"/>
-      </svg>
-    ),
-  },
-]
-
-/*
- * 扇形位置：7 项沿圆弧展开，圆心在右下角（FAB 按钮位置）。
- * 角度从 90°（正上方·首页）到 200°（靠近底部·时间轴），等分 6 段。
- * 半径 R = 200px，公式：x = -R*|cos(θ)|, y = -R*sin(θ)
- */
+/* ── 扇形位置计算 ── */
 const FAN_ARC_R = 200
-const FAN_POSITIONS = Array.from({ length: 7 }, (_, i) => {
-  const angle = 90 + (200 - 90) * (i / 6) // 90° → 200°，均匀分布
+const ANGLE_START = 90
+const ANGLE_END = 200
+const ITEM_COUNT = 7
+const FAN_ANGLES = Array.from({ length: ITEM_COUNT }, (_, i) =>
+  ANGLE_START + (ANGLE_END - ANGLE_START) * (i / (ITEM_COUNT - 1))
+)
+const FAN_POSITIONS = FAN_ANGLES.map((angle) => {
   const rad = (angle * Math.PI) / 180
   return {
     x: Math.round(-FAN_ARC_R * Math.abs(Math.cos(rad))),
     y: Math.round(-FAN_ARC_R * Math.sin(rad)),
   }
 })
+
+const LONG_PRESS_MS = 400
+
+interface FanItem {
+  id: string
+  label: string
+  svg: React.ReactNode
+  onClick: () => void
+  active?: boolean
+  isCurrent?: boolean
+}
 
 export function NoteViewFab({
   viewMode,
@@ -108,12 +139,21 @@ export function NoteViewFab({
   searchActive?: boolean
   composeActive?: boolean
 }) {
-  const [expanded, setExpanded] = useState(false)
+  const [radialActive, setRadialActive] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
   const [awake, setAwake] = useState(false)
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const fabRef = useRef<HTMLDivElement>(null)
+  const mainBtnRef = useRef<HTMLButtonElement>(null)
+  const activeIndexRef = useRef(-1)
+  const radialActiveRef = useRef(false)
+  const pointerDownRef = useRef(false)
 
-  /* 唤醒：touch / hover 触发 */
+  useEffect(() => { activeIndexRef.current = activeIndex }, [activeIndex])
+  useEffect(() => { radialActiveRef.current = radialActive }, [radialActive])
+
+  /* 唤醒 */
   const wakeUp = useCallback(() => {
     setAwake(true)
     if (idleTimer.current) {
@@ -122,125 +162,168 @@ export function NoteViewFab({
     }
   }, [])
 
-  /* 3 秒无操作后回到半透明 */
   const backToIdle = useCallback(() => {
-    if (expanded) return
+    if (radialActive) return
     if (idleTimer.current) clearTimeout(idleTimer.current)
     idleTimer.current = setTimeout(() => setAwake(false), 3000)
-  }, [expanded])
+  }, [radialActive])
 
   useEffect(() => {
-    if (expanded) {
+    if (radialActive) {
       setAwake(true)
       return
     }
     backToIdle()
-  }, [expanded, backToIdle])
+  }, [radialActive, backToIdle])
 
-  /* 点击外部关闭 */
-  const handleOutsideClick = useCallback((e: MouseEvent | TouchEvent) => {
-    if (fabRef.current && !fabRef.current.contains(e.target as Node)) {
-      setExpanded(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!expanded) return
-    document.addEventListener('mousedown', handleOutsideClick)
-    document.addEventListener('touchstart', handleOutsideClick)
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick)
-      document.removeEventListener('touchstart', handleOutsideClick)
-    }
-  }, [expanded, handleOutsideClick])
-
-  const handleSelectView = useCallback((mode: ViewMode) => {
-    setViewMode(mode)
-    setExpanded(false)
-  }, [setViewMode])
-
-  const handleAction = useCallback((action: () => void) => {
-    action()
-    setExpanded(false)
-  }, [])
-
-  const currentOption = VIEW_OPTIONS.find((o) => o.id === viewMode) || VIEW_OPTIONS[2]
-  const otherViewOptions = VIEW_OPTIONS.filter((o) => o.id !== viewMode)
-
-  /* 构建操作项列表 */
-  const actionItems: ActionItem[] = [
-    {
-      id: 'home',
-      label: '首页',
-      svg: (
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 10L10 3L17 10" />
-          <path d="M5 9V16C5 16.5523 5.44772 17 6 17H14C14.5523 17 15 16.5523 15 16V9" />
-          <path d="M8 17V12H12V17" />
-        </svg>
-      ),
-      onClick: () => onHome?.(),
-    },
-    {
-      id: 'search',
-      label: '搜索',
-      svg: (
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-          <circle cx="9" cy="9" r="5"/>
-          <line x1="13" y1="13" x2="18" y2="18"/>
-        </svg>
-      ),
-      onClick: () => onSearch?.(),
-      active: searchActive,
-    },
-    {
-      id: 'compose',
-      label: '笔记',
-      svg: (
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14 2L18 6L8 16L4 17L5 13L14 2Z" />
-          <path d="M13 3L17 7" />
-        </svg>
-      ),
-      onClick: () => onCompose?.(),
-      active: composeActive,
-    },
+  /* 构建菜单项（始终7项，固定顺序） */
+  const allFanItems: FanItem[] = [
+    { id: 'home', label: '首页', svg: HOME_ICON, onClick: () => onHome?.() },
+    { id: 'search', label: '搜索', svg: SEARCH_ICON, onClick: () => onSearch?.(), active: searchActive },
+    { id: 'compose', label: '笔记', svg: PEN_ICON, onClick: () => onCompose?.(), active: composeActive },
+    { id: 'bookmark', label: '收藏', svg: BOOKMARK_ICON, onClick: () => setViewMode('bookmark'), isCurrent: viewMode === 'bookmark' },
+    { id: 'calendar', label: '日历', svg: CALENDAR_ICON, onClick: () => setViewMode('calendar'), isCurrent: viewMode === 'calendar' },
+    { id: 'list', label: '列表', svg: LIST_ICON, onClick: () => setViewMode('list'), isCurrent: viewMode === 'list' },
+    { id: 'timeline', label: '时间轴', svg: TIMELINE_ICON, onClick: () => setViewMode('timeline'), isCurrent: viewMode === 'timeline' },
   ]
 
-  /* 合并：操作项 + 视图项 */
-  const allFanItems = [
-    ...actionItems,
-    ...otherViewOptions.map((o) => ({
-      id: o.id,
-      label: o.label,
-      svg: o.svg,
-      onClick: () => handleSelectView(o.id),
-      isView: true,
-    })),
-  ]
+  /* 计算触摸角度 → 菜单项索引 */
+  const getAngleFromPoint = useCallback((clientX: number, clientY: number): number => {
+    if (!mainBtnRef.current) return -1
+    const rect = mainBtnRef.current.getBoundingClientRect()
+    const cx = rect.left + rect.width / 2
+    const cy = rect.top + rect.height / 2
+    const dx = clientX - cx
+    const dy = clientY - cy
+    // 距离太近，不判定
+    const dist = Math.sqrt(dx * dx + dy * dy)
+    if (dist < 30) return activeIndexRef.current
+    // angle: 0° = up, 90° = left, 110° = below-left
+    const angleFromUp = Math.atan2(-dx, -dy) * 180 / Math.PI
+    return 90 + angleFromUp
+  }, [])
+
+  const angleToIndex = useCallback((angle: number): number => {
+    if (angle < ANGLE_START - 15 || angle > ANGLE_END + 15) return -1
+    const clamped = Math.max(ANGLE_START, Math.min(ANGLE_END, angle))
+    let nearest = 0
+    let minDist = Infinity
+    for (let i = 0; i < FAN_ANGLES.length; i++) {
+      const dist = Math.abs(FAN_ANGLES[i] - clamped)
+      if (dist < minDist) {
+        minDist = dist
+        nearest = i
+      }
+    }
+    return nearest
+  }, [])
+
+  /* ── 指针事件（统一处理鼠标+触摸） ── */
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault()
+    pointerDownRef.current = true
+    wakeUp()
+
+    const startX = e.clientX
+    const startY = e.clientY
+
+    longPressTimer.current = setTimeout(() => {
+      setRadialActive(true)
+      vibrate(15)
+      const angle = getAngleFromPoint(startX, startY)
+      const idx = angleToIndex(angle)
+      if (idx >= 0) {
+        setActiveIndex(idx)
+        playTick()
+      }
+    }, LONG_PRESS_MS)
+  }, [wakeUp, getAngleFromPoint, angleToIndex])
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!pointerDownRef.current) return
+    if (!radialActiveRef.current) return
+
+    const angle = getAngleFromPoint(e.clientX, e.clientY)
+    const idx = angleToIndex(angle)
+    if (idx !== activeIndexRef.current) {
+      setActiveIndex(idx)
+      if (idx >= 0) {
+        playTick()
+        vibrate(8)
+      }
+    }
+  }, [getAngleFromPoint, angleToIndex])
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    pointerDownRef.current = false
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+
+    if (radialActiveRef.current) {
+      const idx = activeIndexRef.current
+      setRadialActive(false)
+      setActiveIndex(-1)
+      if (idx >= 0 && allFanItems[idx]) {
+        allFanItems[idx].onClick()
+      }
+    } else {
+      // 短按 → 弹出笔记输入框
+      onCompose?.()
+    }
+  }, [onCompose, allFanItems])
+
+  const handlePointerCancel = useCallback(() => {
+    pointerDownRef.current = false
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+    setRadialActive(false)
+    setActiveIndex(-1)
+  }, [])
+
+  /* 模糊级别：根据高亮项变化 */
+  const blurLevel = radialActive
+    ? (activeIndex >= 0 ? Math.max(2, 14 - activeIndex * 1.8) : 14)
+    : 0
 
   return createPortal(
     <div
-      className={`note-view-fab${expanded ? ' is-expanded' : ''}${awake ? ' is-awake' : ''}`}
+      className={`note-view-fab${radialActive ? ' is-radial' : ''}${awake ? ' is-awake' : ''}`}
       ref={fabRef}
       onMouseEnter={wakeUp}
       onTouchStart={wakeUp}
     >
+      {/* 背景模糊遮罩 */}
+      {radialActive && (
+        <div
+          className="note-view-fab-radial-overlay"
+          style={{ backdropFilter: `blur(${blurLevel}px)`, WebkitBackdropFilter: `blur(${blurLevel}px)` }}
+        />
+      )}
+
       {/* 扇形菜单项 */}
       <div className="note-view-fab-menu">
         {allFanItems.map((item, i) => (
           <button
             key={item.id}
             type="button"
-            className={`note-view-fab-option${'active' in item && item.active ? ' is-action-active' : ''}`}
+            className={`note-view-fab-option${i === activeIndex ? ' is-radial-active' : ''}${item.active ? ' is-action-active' : ''}${item.isCurrent ? ' is-current' : ''}`}
             style={{
               '--fx': `${FAN_POSITIONS[i].x}px`,
               '--fy': `${FAN_POSITIONS[i].y}px`,
-              transitionDelay: expanded
-                ? `${0.04 + i * 0.04}s`
-                : `${0.08 - i * 0.01}s`,
+              transitionDelay: radialActive
+                ? `${0.03 + i * 0.02}s`
+                : `${0.06 - i * 0.008}s`,
             } as React.CSSProperties}
-            onClick={() => handleAction(item.onClick)}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => {
+              item.onClick()
+              setRadialActive(false)
+              setActiveIndex(-1)
+            }}
           >
             <span className="note-view-fab-opt-icon">{item.svg}</span>
             <span className="note-view-fab-opt-label">{item.label}</span>
@@ -251,16 +334,24 @@ export function NoteViewFab({
         ))}
       </div>
 
-      {/* 主触发按钮 */}
+      {/* 主触发按钮 — 笔图标 */}
       <button
         type="button"
+        ref={mainBtnRef}
         className="note-view-fab-main"
-        onClick={() => setExpanded((v) => !v)}
-        aria-label={`切换视图，当前${currentOption.label}`}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onPointerLeave={(e) => {
+          if (!pointerDownRef.current) return
+          handlePointerMove(e)
+        }}
+        aria-label="笔记"
       >
-        {currentOption.svg}
-        {viewMode === 'bookmark' && bookmarkCount > 0 && (
-          <span className="note-view-fab-main-badge">{bookmarkCount}</span>
+        {PEN_ICON}
+        {composeActive && (
+          <span className="note-view-fab-main-dot" />
         )}
       </button>
     </div>,

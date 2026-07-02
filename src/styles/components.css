@@ -7949,6 +7949,34 @@
     gap: 10px;
   }
 
+  /* 手机端输入框右上角圆形关闭按钮 */
+  .note-compose-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    -webkit-tap-highlight-color: transparent;
+    transition: background .2s ease, color .2s ease;
+  }
+  .note-compose-close-btn:active {
+    background: rgba(148, 163, 184, 0.3);
+    transform: scale(0.92);
+  }
+  .note-compose-close-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
   /* 激活：隐藏表单内的 tabs（已在顶部 fixed） */
   .app-right-panel:not(.is-collapsed) .note-input-area.is-mobile-visible > .note-type-tabs {
     display: none !important;
@@ -8578,6 +8606,62 @@
   }
   [data-theme='dark'] .note-view-fab::before {
     background: rgba(0,0,0,.35);
+  }
+
+  /* ═══ 径向菜单模式（长按触发） ═══ */
+
+  /* 径向模式背景模糊遮罩 */
+  .note-view-fab-radial-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.3);
+    z-index: -1;
+    pointer-events: none;
+    transition: backdrop-filter .2s ease;
+  }
+
+  /* 径向模式下隐藏旧的 ::before 遮罩 */
+  .note-view-fab.is-radial::before {
+    display: none;
+  }
+
+  /* 径向模式主按钮不旋转，保持笔图标 */
+  .note-view-fab.is-radial .note-view-fab-main {
+    opacity: 1;
+    transform: translateX(0) scale(1.1);
+    background: rgba(79, 140, 255, 0.9);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(79, 140, 255, 0.4);
+  }
+
+  /* 径向高亮项 */
+  .note-view-fab-option.is-radial-active {
+    background: rgba(79, 140, 255, 0.95) !important;
+    border-color: rgba(79, 140, 255, 1) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 16px rgba(79, 140, 255, 0.4);
+    transform: translate(var(--fx), var(--fy)) scale(1.15) !important;
+  }
+  .note-view-fab-option.is-radial-active .note-view-fab-opt-label {
+    color: #fff !important;
+  }
+
+  /* 当前视图标记 */
+  .note-view-fab-option.is-current {
+    border-color: rgba(79, 140, 255, 0.4);
+  }
+
+  /* 笔图标激活小圆点 */
+  .note-view-fab-main-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #3978ee;
+    border: 1.5px solid rgba(255, 255, 255, 0.9);
+    pointer-events: none;
   }
 
   .app-right-panel:not(.is-collapsed) .note-search-wrap {

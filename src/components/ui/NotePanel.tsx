@@ -59,6 +59,8 @@ type NotePanelProps = {
   viewMode?: 'calendar' | 'list' | 'timeline' | 'bookmark'
   /** 手机端底部编辑栏是否可见 */
   mobileComposeVisible?: boolean
+  /** 关闭手机端底部编辑栏 */
+  onCloseMobileCompose?: () => void
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -252,7 +254,7 @@ function formatRepeatLabel(repeatType: string, repeatWeekdays?: string | null): 
   return REPEAT_LABELS[repeatType] ?? repeatType
 }
 
-export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false, viewMode: externalViewMode, mobileComposeVisible = false }: NotePanelProps) {
+export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false, viewMode: externalViewMode, mobileComposeVisible = false, onCloseMobileCompose }: NotePanelProps) {
   const [inputType, setInputType] = useState<'todo' | 'log' | 'note' | 'appointment' | 'diary'>('note')
   const [inputValue, setInputValue] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -760,6 +762,20 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
           handleSubmit()
         }}
       >
+        {/* 手机端关闭按钮 */}
+        {mobileComposeVisible && onCloseMobileCompose && (
+          <button
+            type="button"
+            className="note-compose-close-btn"
+            onClick={onCloseMobileCompose}
+            aria-label="关闭输入框"
+          >
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="5" y1="5" x2="15" y2="15"/>
+              <line x1="15" y1="5" x2="5" y2="15"/>
+            </svg>
+          </button>
+        )}
         <input type="hidden" name="entityType" value={entityType} />
         <input type="hidden" name="entityId" value={entityId} />
         <input type="hidden" name="type" value={inputType} />
