@@ -9,7 +9,6 @@ import { Sidebar } from './Sidebar'
 import { BottomTabBar } from './BottomTabBar'
 import { DeskNoteFab } from './DeskNoteFab'
 import { ToastContainer } from '@/components/ui'
-import { MiniMusicPlayer } from '@/components/ui/MiniMusicPlayer'
 import { NotesRefreshProvider } from '@/components/providers'
 import { isAuthenticated, login, isLocked, lockScreen, unlockScreen } from '@/lib/auth'
 
@@ -183,7 +182,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           <ToastContainer />
           <BottomTabBar />
           <DeskNoteFab />
-          <MiniMusicPlayer />
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import { useMounted } from '@/hooks/useMounted'
 import { NotePanel } from '@/components/ui/NotePanel'
 import type { NoteItem } from '@/components/ui/NotePanel'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
+import { MiniMusicPlayer } from '@/components/ui/MiniMusicPlayer'
 import { NoteViewFab } from '@/components/layout/NoteViewFab'
 import { getAllNotes } from '@/app/actions'
 import { useNotesRefresh } from '@/components/providers'
@@ -352,6 +353,8 @@ export function RightPanel() {
             onSwitchView={(mode) => setViewMode(mode as 'calendar' | 'list' | 'timeline' | 'bookmark' | 'music' | 'robot')}
           />
           </ErrorBoundary>
+          {/* 迷你音乐播放器（仅在笔记面板内显示） */}
+          <MiniMusicPlayer />
           {/* 手机端：右下角视图切换浮动按钮 */}
           <NoteViewFab
             viewMode={viewMode}
