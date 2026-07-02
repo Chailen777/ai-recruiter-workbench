@@ -344,7 +344,6 @@ export function RightPanel() {
             onNotesChanged={loadNotes}
             filterDate={filterDate}
             onClearFilterDate={() => setFilterDate(null)}
-            onFilterDate={setFilterDate}
             searchTerm={globalSearchTerm}
             loading={!notesLoaded}
             viewMode={viewMode}

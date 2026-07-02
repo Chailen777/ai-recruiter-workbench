@@ -51,8 +51,6 @@ type NotePanelProps = {
   filterDate?: string | null
   /** 清除日期筛选回调 */
   onClearFilterDate?: () => void
-  /** 设置日期筛选回调（动态 tab 点击后调用） */
-  onFilterDate?: (date: string | null) => void
   /** 搜索关键词（全文匹配） */
   searchTerm?: string
   /** 笔记列表首次加载中，显示骨架屏 */
@@ -268,7 +266,7 @@ function formatRepeatLabel(repeatType: string, repeatWeekdays?: string | null): 
   return REPEAT_LABELS[repeatType] ?? repeatType
 }
 
-export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, onFilterDate, searchTerm, loading = false, viewMode: externalViewMode, mobileComposeVisible = false, onCloseMobileCompose }: NotePanelProps) {
+export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterDate, onClearFilterDate, searchTerm, loading = false, viewMode: externalViewMode, mobileComposeVisible = false, onCloseMobileCompose }: NotePanelProps) {
   const [inputType, setInputType] = useState<'todo' | 'log' | 'note' | 'appointment' | 'diary'>('note')
   const [inputValue, setInputValue] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -397,49 +395,88 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
       return
     }
 
+    // 用 IntersectionObserver 监听日期头部是否穿过导航条底部（44px）
+    const NAV_HEIGHT = 44
+    let currentActive = ''
+
+    const handleObserver = (entries: IntersectionObserverEntry[]) => {
+      // 找到所有"头部顶部在导航条下方附近"的条目
+      for (const entry of entries) {
+        const el = entry.target as HTMLElement
+        const day = el.dataset.date
+        if (!day) continue
+
+        // 头部的顶部刚好在导航条下面（rect.top 在 0~NAV_HEIGHT+50 范围内）
+        const rect = el.getBoundingClientRect()
+        if (rect.top >= 0 && rect.top <= NAV_HEIGHT + 80) {
+          if (day !== currentActive) {
+            currentActive = day
+            setActiveDateGroup(day)
+          }
+        }
+      }
+    }
+
+    const observer = new IntersectionObserver(handleObserver, {
+      root: null,
+      // 只观察视口顶部 44+80=124px 的区域
+      rootMargin: `-${NAV_HEIGHT + 80}px 0px 0px 0px`,
+      threshold: [0, 0.1, 0.5, 1],
+    })
+
+    // 备用：scroll 事件也更新（更可靠）
     const handleScroll = () => {
       const headers = document.querySelectorAll<HTMLElement>('.note-list-date-header, .note-timeline-date-header')
       if (!headers.length) return
 
-      // 找最靠近导航条底部（44px）的日期头部
-      let bestDay: string | null = null
-      let bestTop = Infinity
-      const navBottom = 44 // 导航条高度
+      // 找"头部顶部"最靠近导航条底部（44px）的那个
+      let bestDay = ''
+      let bestDist = Infinity
 
       headers.forEach((el) => {
         const rect = el.getBoundingClientRect()
-        // 头部的顶部在导航条下面、且在视口内
-        if (rect.top >= navBottom && rect.top < bestTop) {
-          bestTop = rect.top
-          bestDay = el.dataset.date ?? null
+        // 头部顶部在视口内，且在导航条下面
+        if (rect.top >= NAV_HEIGHT && rect.top < bestDist) {
+          bestDist = rect.top
+          bestDay = el.dataset.date ?? ''
         }
       })
 
-      // 如果所有头部都在导航条上面（已经滚过去了），取最后一个
+      // 如果没找到（说明已经滚过去了），取最后一个"头部底部在导航条上面"的
       if (!bestDay) {
         for (let i = headers.length - 1; i >= 0; i--) {
           const rect = headers[i].getBoundingClientRect()
-          if (rect.bottom < navBottom) {
-            bestDay = headers[i].dataset.date ?? null
+          if (rect.bottom <= NAV_HEIGHT) {
+            bestDay = headers[i].dataset.date ?? ''
             break
           }
         }
       }
 
-      // 如果还是没找到，用第一个
+      // 还是没找到，用第一个
       if (!bestDay && headers[0]) {
-        bestDay = headers[0].dataset.date ?? null
+        bestDay = headers[0].dataset.date ?? ''
       }
 
-      if (bestDay) setActiveDateGroup(bestDay)
+      if (bestDay && bestDay !== currentActive) {
+        currentActive = bestDay
+        setActiveDateGroup(bestDay)
+      }
     }
 
-    // 初始计算一次
-    handleScroll()
+    const raf = requestAnimationFrame(() => {
+      const headers = document.querySelectorAll<HTMLElement>('.note-list-date-header, .note-timeline-date-header')
+      headers.forEach((el) => observer.observe(el))
+      handleScroll() // 初始计算
+    })
 
-    // 监听滚动
     window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+
+    return () => {
+      cancelAnimationFrame(raf)
+      observer.disconnect()
+      window.removeEventListener('scroll', handleScroll)
+    }
   }, [viewMode, notes.length])
 
   function handleSubmit() {
@@ -764,22 +801,13 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
     <div className="note-panel">
       {/* ── 类型导航条（抽出 form 外，所有视图始终可见）── */}
       <div className="note-type-tabs" role="group" aria-label="笔记类型过滤">
-        {/* 动态日期 */}
-        <button
-          type="button"
-          className={`note-type-tab ${filterDate ? 'active note-type-all' : ''}`}
-          onClick={() => {
-            if (filterDate) {
-              onClearFilterDate?.()
-            } else if (activeDateGroup && onFilterDate) {
-              onFilterDate(activeDateGroup)
-            } else {
-              handleTabClick('all')
-            }
-          }}
+        {/* 动态日期（只显示，不筛选） */}
+        <span
+          className="note-type-tab note-type-all"
+          style={{ cursor: 'default', opacity: 0.85 }}
         >
-          {filterDate ? formatDateLabel(filterDate) : activeDateGroup ? formatDateLabel(activeDateGroup) : '今天'}
-        </button>
+          {activeDateGroup ? formatDateLabel(activeDateGroup) : '今天'}
+        </span>
 
         {/* 待办 — 带未完成徽章 + 双击仅显示未完成 */}
         <button
