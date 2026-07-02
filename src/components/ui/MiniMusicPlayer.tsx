@@ -55,9 +55,6 @@ export function MiniMusicPlayer({ onSwitchView }: { onSwitchView?: () => void })
     }
   }, [tracks.length])
 
-  // 没有音乐或已 dismiss 时不显示
-  if (tracks.length === 0 || dismissed) return null
-
   const nextLoop = () => {
     const order: LoopMode[] = ['all', 'one', 'none']
     const idx = order.indexOf(loopMode)
@@ -86,6 +83,9 @@ export function MiniMusicPlayer({ onSwitchView }: { onSwitchView?: () => void })
     const timer = setTimeout(() => setExpanded(false), 8000)
     return () => clearTimeout(timer)
   }, [expanded, isPlaying])
+
+  // 没有音乐或已 dismiss 时不显示（必须放在所有 hooks 之后）
+  if (tracks.length === 0 || dismissed) return null
 
   return (
     <div className={`mini-music-player ${expanded ? 'is-expanded' : ''} ${isPlaying ? 'is-playing' : ''}`}>
