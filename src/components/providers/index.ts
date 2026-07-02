@@ -1,4 +1,6 @@
 export { KeyboardShortcutProvider } from './KeyboardShortcutProvider'
+export { MusicProvider, useMusic } from './MusicProvider'
+export type { MusicTrack } from './MusicProvider'
 export { NotesRefreshProvider, useNotesRefresh } from './NotesRefreshProvider'
 export { ThemeProvider, useTheme } from './ThemeProvider'
 export { ToastProvider, useToast } from './ToastProvider'

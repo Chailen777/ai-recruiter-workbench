@@ -1,149 +1,62 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useCallback, useRef } from 'react'
+import { useMusic } from '@/components/providers/MusicProvider'
 
-/* ── 内置音乐列表 ── */
-const BUILT_IN_TRACKS = [
-  // 轻音乐
-  { id: 'b1', name: 'Morning', artist: 'LiQWYD', url: 'https://www.free-stock-music.com/music/liqwyd-morning.mp3', type: 'light' },
-  { id: 'b2', name: 'Keeping It', artist: 'LiQWYD', url: 'https://www.free-stock-music.com/music/liqwyd-keeping-it.mp3', type: 'light' },
-  { id: 'b3', name: 'Chill Day', artist: 'LiQWYD', url: 'https://www.free-stock-music.com/music/liqwyd-chill-day.mp3', type: 'light' },
-  // 中国风（用免版权音乐）
-  { id: 'c1', name: '渔舟唱晚', artist: '古筝名曲', url: 'https://cdn.pixabay.com/audio/2024/11/04/audio_4900b0c9d3.mp3', type: 'chinese' },
-  { id: 'c2', name: '高山流水', artist: '古琴名曲', url: 'https://cdn.pixabay.com/audio/2024/10/22/audio_6b9f8e5c3a.mp3', type: 'chinese' },
-  // 80后经典（人声，用免版权翻唱或纯音乐替代）
-  { id: 'r1', name: '童年', artist: '经典回忆', url: 'https://cdn.pixabay.com/audio/2024/09/10/audio_8c5e8b9d4f.mp3', type: '80s' },
-  { id: 'r2', name: '同桌的你', artist: '经典回忆', url: 'https://cdn.pixabay.com/audio/2024/08/15/audio_3d7f9a2b1c.mp3', type: '80s' },
-]
+/** 时间格式化 */
+function formatTime(seconds: number): string {
+  if (isNaN(seconds) || seconds < 0) return '0:00'
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
 
 export function MusicPlayer() {
-  const [tracks, setTracks] = useState(BUILT_IN_TRACKS)
-  const [currentIndex, setCurrentIndex] = useState(-1)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const audioRef = useRef<HTMLAudioElement>(null)
-  const [customTracks, setCustomTracks] = useState<typeof BUILT_IN_TRACKS>([])
+  const {
+    tracks, addCustomTracks,
+    currentIndex, isPlaying, currentTime, duration,
+    play, togglePlay, prevTrack, nextTrack, seek,
+  } = useMusic()
 
-  // 加载本地存储的自定义音乐
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('custom-music-tracks')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        setCustomTracks(parsed)
-        setTracks([...BUILT_IN_TRACKS, ...parsed])
-      }
-    } catch {}
-  }, [])
+  const progressRef = useRef<HTMLDivElement>(null)
 
-  // 播放/暂停
-  const togglePlay = useCallback(() => {
-    if (!audioRef.current) return
-    if (isPlaying) {
-      audioRef.current.pause()
-    } else {
-      if (currentIndex < 0) {
-        setCurrentIndex(0)
-        return
-      }
-      audioRef.current.play()
-    }
-    setIsPlaying(!isPlaying)
-  }, [isPlaying, currentIndex])
-
-  // 上一首
-  const prevTrack = useCallback(() => {
-    if (tracks.length === 0) return
-    const newIndex = currentIndex > 0 ? currentIndex - 1 : tracks.length - 1
-    setCurrentIndex(newIndex)
-    setIsPlaying(true)
-  }, [currentIndex, tracks.length])
-
-  // 下一首
-  const nextTrack = useCallback(() => {
-    if (tracks.length === 0) return
-    const newIndex = currentIndex < tracks.length - 1 ? currentIndex + 1 : 0
-    setCurrentIndex(newIndex)
-    setIsPlaying(true)
-  }, [currentIndex, tracks.length])
+  // 点击进度条跳转到指定位置
+  const handleProgressClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!progressRef.current) return
+    const rect = progressRef.current.getBoundingClientRect()
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    seek(ratio * duration)
+  }, [duration, seek])
 
   // 上传本地音乐
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files) return
 
-    const newTracks: typeof BUILT_IN_TRACKS = []
+    const newOnes: typeof tracks = []
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       if (!file.type.startsWith('audio/')) continue
-      const url = URL.createObjectURL(file)
-      newTracks.push({
+      newOnes.push({
         id: `custom-${Date.now()}-${i}`,
         name: file.name.replace(/\.[^.]+$/, ''),
         artist: '本地上传',
-        url,
+        url: URL.createObjectURL(file),
         type: 'custom',
       })
     }
 
-    if (newTracks.length > 0) {
-      const updated = [...customTracks, ...newTracks]
-      setCustomTracks(updated)
-      setTracks([...BUILT_IN_TRACKS, ...updated])
-      localStorage.setItem('custom-music-tracks', JSON.stringify(updated))
+    if (newOnes.length > 0) {
+      addCustomTracks(newOnes)
     }
-
     e.target.value = ''
-  }, [customTracks])
-
-  // 当 currentIndex 变化时，加载并播放
-  useEffect(() => {
-    if (currentIndex < 0 || !audioRef.current) return
-    const track = tracks[currentIndex]
-    if (!track) return
-
-    audioRef.current.src = track.url
-    if (isPlaying) {
-      audioRef.current.play()
-    }
-  }, [currentIndex])
-
-  // 音频事件监听
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
-
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime)
-    const onLoadedMetadata = () => setDuration(audio.duration)
-    const onEnded = () => nextTrack()
-
-    audio.addEventListener('timeupdate', onTimeUpdate)
-    audio.addEventListener('loadedmetadata', onLoadedMetadata)
-    audio.addEventListener('ended', onEnded)
-
-    return () => {
-      audio.removeEventListener('timeupdate', onTimeUpdate)
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata)
-      audio.removeEventListener('ended', onEnded)
-    }
-  }, [nextTrack])
-
-  // 当播放状态变化时，更新 body 属性（用于导航条发光效果）
-  useEffect(() => {
-    document.body.setAttribute('data-music-playing', isPlaying ? 'true' : 'false')
-    return () => {
-      document.body.setAttribute('data-music-playing', 'false')
-    }
-  }, [isPlaying])
+  }, [tracks, addCustomTracks])
 
   const currentTrack = currentIndex >= 0 ? tracks[currentIndex] : null
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
   return (
     <div className="music-player">
-      <audio ref={audioRef} preload="metadata" />
-
       {/* 当前播放信息 */}
       <div className="music-now-playing">
         {currentTrack ? (
@@ -157,7 +70,11 @@ export function MusicPlayer() {
       </div>
 
       {/* 进度条 */}
-      <div className="music-progress">
+      <div
+        ref={progressRef}
+        className="music-progress"
+        onClick={handleProgressClick}
+      >
         <div className="music-progress-bar" style={{ width: `${progress}%` }} />
       </div>
       <div className="music-time">
@@ -187,7 +104,7 @@ export function MusicPlayer() {
           <div
             key={track.id}
             className={`music-list-item ${i === currentIndex ? 'is-playing' : ''}`}
-            onClick={() => { setCurrentIndex(i); setIsPlaying(true) }}
+            onClick={() => play(i)}
           >
             <span className="music-list-icon">{i === currentIndex && isPlaying ? '🎵' : '♪'}</span>
             <span className="music-list-name">{track.name}</span>
@@ -197,11 +114,4 @@ export function MusicPlayer() {
       </div>
     </div>
   )
-}
-
-function formatTime(seconds: number): string {
-  if (isNaN(seconds) || seconds < 0) return '0:00'
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  return `${m}:${s.toString().padStart(2, '0')}`
 }

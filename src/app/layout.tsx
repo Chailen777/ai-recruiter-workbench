@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
 
 import { AppShell } from '@/components/layout/AppShell'
-import { KeyboardShortcutProvider, ThemeProvider, ToastProvider } from '@/components/providers'
+import { KeyboardShortcutProvider, MusicProvider, ThemeProvider, ToastProvider } from '@/components/providers'
 import { ensureWAL } from '@/lib/prisma'
 
 import './globals.css'
@@ -80,11 +80,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <SkipLink />
         <ThemeProvider>
-          <ToastProvider>
-            <KeyboardShortcutProvider>
-              <AppShell>{children}</AppShell>
-            </KeyboardShortcutProvider>
-          </ToastProvider>
+          <MusicProvider>
+            <ToastProvider>
+              <KeyboardShortcutProvider>
+                <AppShell>{children}</AppShell>
+              </KeyboardShortcutProvider>
+            </ToastProvider>
+          </MusicProvider>
         </ThemeProvider>
       </body>
     </html>
