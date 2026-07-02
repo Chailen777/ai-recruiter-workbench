@@ -339,6 +339,7 @@ export function NoteViewFab({
         type="button"
         ref={mainBtnRef}
         className="note-view-fab-main"
+        style={{ touchAction: 'none' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

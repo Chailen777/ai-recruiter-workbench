@@ -754,6 +754,22 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
 
       {/* ── 快速输入区（日历/收藏视图下隐藏）── */}
       {(viewMode !== 'calendar' && viewMode !== 'bookmark') && (
+      <>
+        {/* 手机端关闭按钮：在输入面板外部右上角 */}
+        {mobileComposeVisible && onCloseMobileCompose && createPortal(
+          <button
+            type="button"
+            className="note-compose-close-btn"
+            onClick={onCloseMobileCompose}
+            aria-label="关闭输入框"
+          >
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <line x1="5" y1="5" x2="15" y2="15"/>
+              <line x1="15" y1="5" x2="5" y2="15"/>
+            </svg>
+          </button>,
+          document.body
+        )}
       <form
         ref={formRef}
         className={`note-input-area${mobileComposeVisible ? ' is-mobile-visible' : ''}`}
@@ -762,20 +778,6 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
           handleSubmit()
         }}
       >
-        {/* 手机端关闭按钮 */}
-        {mobileComposeVisible && onCloseMobileCompose && (
-          <button
-            type="button"
-            className="note-compose-close-btn"
-            onClick={onCloseMobileCompose}
-            aria-label="关闭输入框"
-          >
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="5" y1="5" x2="15" y2="15"/>
-              <line x1="15" y1="5" x2="5" y2="15"/>
-            </svg>
-          </button>
-        )}
         <input type="hidden" name="entityType" value={entityType} />
         <input type="hidden" name="entityId" value={entityId} />
         <input type="hidden" name="type" value={inputType} />
@@ -1198,7 +1200,7 @@ export function NotePanel({ notes, entityType, entityId, onNotesChanged, filterD
           </div>
         </div>
       </form>
-      )}
+      </>)}
 
       {/* ── 日记全屏写作模式 ── */}
       {isFullscreen && inputType === 'diary' && typeof document !== 'undefined' && createPortal(
